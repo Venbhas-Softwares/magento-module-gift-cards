@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Acl/etc/acl.xsd">
+    <acl>
+        <resources>
+            <resource id="Magento_Backend::admin">
+                <resource id="Venbhas_GiftCard::root" title="Gift Cards" sortOrder="80">
+                    <resource id="Venbhas_GiftCard::config" title="Configuration" sortOrder="5"/>
+                    <resource id="Venbhas_GiftCard::codes" title="Gift Card Codes" sortOrder="10"/>
+                </resource>
+            </resource>
+        </resources>
+    </acl>
+</config>

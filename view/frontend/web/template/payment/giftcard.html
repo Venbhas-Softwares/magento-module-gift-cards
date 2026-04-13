@@ -1,0 +1,73 @@
+<!-- ko if: true -->
+<div class="payment-option _collapsible opc-payment-additional venbhas-giftcard"
+     data-bind="mageInit: {'collapsible':{'openedState': '_active'}}">
+    <div class="payment-option-title field choice" data-role="title">
+        <span class="action action-toggle" id="block-giftcard-heading" role="heading" aria-level="2">
+            <!-- ko i18n: 'Apply Gift Card'--><!-- /ko -->
+        </span>
+    </div>
+    <div class="payment-option-content" data-role="content">
+        <!-- ko foreach: getRegion('messages') -->
+        <!-- ko template: getTemplate() --><!-- /ko -->
+        <!--/ko-->
+
+        <form class="form form-giftcard" id="giftcard-form" data-bind="submit: apply">
+            <div class="payment-option-inner">
+                <div class="field">
+                    <label class="label" for="giftcard-code">
+                        <span data-bind="i18n: 'Enter gift card code'"></span>
+                    </label>
+                    <div class="control">
+                        <input class="input-text"
+                               type="text"
+                               id="giftcard-code"
+                               name="giftcard_code"
+                               data-validate="{'required-entry':true}"
+                               data-bind="value: giftcardCode, attr:{placeholder: $t('Enter gift card code')}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="actions-toolbar">
+                <div class="primary">
+                    <button class="action action-apply" type="submit">
+                        <span><!-- ko i18n: 'Apply'--><!-- /ko --></span>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- ko if: isApplied() -->
+        <div class="applied-giftcards" style="margin-top: 12px;">
+            <strong data-bind="i18n: 'Applied gift cards'"></strong>
+            <ul class="items" data-bind="foreach: appliedCodes">
+                <li class="item">
+                    <span data-bind="text: $data"></span>
+                    <button type="button" class="action action-remove" data-bind="click: function(){ $parent.remove($data); }">
+                        <span data-bind="i18n: 'Remove'"></span>
+                    </button>
+                </li>
+            </ul>
+            <!-- ko if: balanceDetails().length -->
+            <div class="giftcard-balances" style="margin-top:10px;font-size:13px;">
+                <strong data-bind="i18n: 'Balance after this order'"></strong>
+                <ul class="items" data-bind="foreach: balanceDetails">
+                    <li class="item">
+                        <span data-bind="text: code"></span>:
+                        <!-- ko i18n: 'remaining'--><!-- /ko -->
+                        <span data-bind="text: typeof balance_after !== 'undefined' ? Number(balance_after).toFixed(2) : ''"></span>
+                        <span data-bind="text: currency"></span>
+                        <!-- ko if: typeof amount_applied !== 'undefined' && Number(amount_applied) > 0 -->
+                        <span> (</span><span data-bind="i18n: 'this order'"></span><span>: </span>
+                        <span data-bind="text: Number(amount_applied).toFixed(2)"></span>
+                        <span>)</span>
+                        <!-- /ko -->
+                    </li>
+                </ul>
+            </div>
+            <!-- /ko -->
+        </div>
+        <!-- /ko -->
+    </div>
+</div>
+<!-- /ko -->
+

@@ -1,0 +1,41 @@
+<?php
+/** @var \Venbhas\GiftCard\Block\Account\MyGiftCards $block */
+$cards = $block->getGiftCards();
+?>
+<div class="venbhas-giftcards-account">
+    <div class="page-title-wrapper">
+        <h1 class="page-title"><span class="base"><?= $block->escapeHtml(__('My Gift Cards')) ?></span></h1>
+    </div>
+
+    <?php if (!$cards->getSize()): ?>
+        <div class="message info empty">
+            <span><?= $block->escapeHtml(__('You have no gift cards yet.')) ?></span>
+        </div>
+    <?php else: ?>
+        <div class="table-wrapper">
+            <table class="data table table-giftcards" id="my-giftcards-table">
+                <thead>
+                <tr>
+                    <th scope="col"><?= $block->escapeHtml(__('Code')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Balance')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Currency')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Recipient Email')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Created')) ?></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($cards as $card): ?>
+                    <tr>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Code')) ?>"><?= $block->escapeHtml((string)$card->getData('code')) ?></td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Balance')) ?>"><?= $block->escapeHtml((string)$card->getData('balance')) ?></td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Currency')) ?>"><?= $block->escapeHtml((string)$card->getData('currency_code')) ?></td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Recipient Email')) ?>"><?= $block->escapeHtml((string)$card->getData('recipient_email')) ?></td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Created')) ?>"><?= $block->escapeHtml((string)$card->getData('created_at')) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div>
+

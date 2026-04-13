@@ -1,0 +1,86 @@
+{
+  "venbhas_giftcard_code": {
+    "column": {
+      "entity_id": true,
+      "code": true,
+      "status": true,
+      "balance": true,
+      "initial_value": true,
+      "currency_code": true,
+      "website_id": true,
+      "store_id": true,
+      "customer_id": true,
+      "redeemer_customer_id": true,
+      "redeemer_email": true,
+      "product_id": true,
+      "order_id": true,
+      "order_item_id": true,
+      "sender_name": true,
+      "sender_email": true,
+      "recipient_name": true,
+      "recipient_email": true,
+      "message": true,
+      "delivery_type": true,
+      "delivery_street": true,
+      "delivery_city": true,
+      "delivery_region": true,
+      "delivery_postcode": true,
+      "delivery_country": true,
+      "created_at": true,
+      "updated_at": true
+    },
+    "constraint": {
+      "PRIMARY": true,
+      "VENBHAS_GIFTCARD_CODE_UNQ_CODE": true
+    },
+    "index": {
+      "VENBHAS_GIFTCARD_CODE_IDX_ORDER": true,
+      "VENBHAS_GIFTCARD_CODE_IDX_EMAIL": true,
+      "VENBHAS_GIFTCARD_CODE_IDX_CUSTOMER": true
+    }
+  },
+  "venbhas_giftcard_transaction": {
+    "column": {
+      "entity_id": true,
+      "giftcard_id": true,
+      "action": true,
+      "amount": true,
+      "balance_after": true,
+      "order_id": true,
+      "invoice_id": true,
+      "creditmemo_id": true,
+      "customer_id": true,
+      "customer_email": true,
+      "created_at": true
+    },
+    "constraint": {
+      "PRIMARY": true,
+      "VENBHAS_GIFTCARD_TRX_FK_GIFTCARD": true
+    },
+    "index": {
+      "VENBHAS_GIFTCARD_TRX_IDX_ORDER": true,
+      "VENBHAS_GIFTCARD_TRX_IDX_CUSTOMER": true
+    }
+  },
+  "quote": {
+    "column": {
+      "venbhas_giftcard_amount": true,
+      "base_venbhas_giftcard_amount": true,
+      "venbhas_giftcard_codes": true,
+      "venbhas_giftcard_applied": true,
+      "venbhas_giftcard_usage_details": true,
+      "venbhas_giftcard_balance_details": true
+    }
+  },
+  "sales_order": {
+    "column": {
+      "venbhas_giftcard_amount": true,
+      "base_venbhas_giftcard_amount": true,
+      "venbhas_giftcard_codes": true,
+      "venbhas_giftcard_applied": true,
+      "venbhas_giftcard_usage_details": true,
+      "venbhas_giftcard_redeemed": true
+    }
+  }
+}
+

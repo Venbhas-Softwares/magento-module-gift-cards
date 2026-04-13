@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Luma: without custom options only product_info_form_content renders (see Magento_Catalog::product/view/form.phtml). -->
+        <referenceContainer name="product.info.form.content">
+            <block class="Venbhas\GiftCard\Block\Product\View\Fields"
+                   name="venbhas.giftcard.fields.main"
+                   template="Venbhas_GiftCard::product/view/fields.phtml"
+                   before="product.info.addtocart"/>
+        </referenceContainer>
+        <!-- When product has custom options, options wrapper + additional add to cart is used. -->
+        <referenceBlock name="product.info.options.wrapper.bottom">
+            <block class="Venbhas\GiftCard\Block\Product\View\Fields"
+                   name="venbhas.giftcard.fields.options"
+                   template="Venbhas_GiftCard::product/view/fields.phtml"
+                   before="product.info.addtocart.additional"/>
+        </referenceBlock>
+    </body>
+</page>

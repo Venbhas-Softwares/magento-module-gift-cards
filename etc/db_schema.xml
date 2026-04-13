@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+
+    <table name="venbhas_giftcard_code" resource="default" engine="innodb" comment="Venbhas Gift Card Codes">
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="varchar" name="code" length="64" nullable="false" comment="Gift Card Code"/>
+        <column xsi:type="smallint" name="status" unsigned="true" nullable="false" default="1" comment="Status"/>
+        <column xsi:type="decimal" name="balance" precision="12" scale="4" nullable="false" default="0.0000" comment="Current Balance"/>
+        <column xsi:type="decimal" name="initial_value" precision="12" scale="4" nullable="false" default="0.0000" comment="Initial Value"/>
+        <column xsi:type="varchar" name="currency_code" length="3" nullable="false" comment="Currency Code"/>
+        <column xsi:type="int" name="website_id" unsigned="true" nullable="false" default="0" comment="Website ID"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="false" default="0" comment="Store ID"/>
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="true" comment="Purchaser Customer ID"/>
+        <column xsi:type="int" name="redeemer_customer_id" unsigned="true" nullable="true"
+                comment="Customer who first redeemed (locks card to this account)"/>
+        <column xsi:type="varchar" name="redeemer_email" length="255" nullable="true"
+                comment="Email that first redeemed as guest (locks card to this email)"/>
+
+        <column xsi:type="int" name="product_id" unsigned="true" nullable="true" comment="Source Product ID"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="true" comment="Order ID"/>
+        <column xsi:type="int" name="order_item_id" unsigned="true" nullable="true" comment="Order Item ID"/>
+
+        <column xsi:type="varchar" name="sender_name" length="255" nullable="true" comment="Sender Name"/>
+        <column xsi:type="varchar" name="sender_email" length="255" nullable="true" comment="Sender Email"/>
+        <column xsi:type="varchar" name="recipient_name" length="255" nullable="true" comment="Recipient Name"/>
+        <column xsi:type="varchar" name="recipient_email" length="255" nullable="true" comment="Recipient Email"/>
+        <column xsi:type="text" name="message" nullable="true" comment="Message"/>
+
+        <column xsi:type="varchar" name="delivery_type" length="32" nullable="true" comment="Delivery Type (virtual|physical|both choice)"/>
+        <column xsi:type="varchar" name="delivery_street" length="255" nullable="true" comment="Physical delivery street"/>
+        <column xsi:type="varchar" name="delivery_city" length="128" nullable="true" comment="Physical delivery city"/>
+        <column xsi:type="varchar" name="delivery_region" length="128" nullable="true" comment="Physical delivery region"/>
+        <column xsi:type="varchar" name="delivery_postcode" length="32" nullable="true" comment="Physical delivery postcode"/>
+        <column xsi:type="varchar" name="delivery_country" length="128" nullable="true" comment="Physical delivery country"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true" comment="Updated At"/>
+
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="VENBHAS_GIFTCARD_CODE_UNQ_CODE">
+            <column name="code"/>
+        </constraint>
+        <index referenceId="VENBHAS_GIFTCARD_CODE_IDX_ORDER" indexType="btree">
+            <column name="order_id"/>
+        </index>
+        <index referenceId="VENBHAS_GIFTCARD_CODE_IDX_EMAIL" indexType="btree">
+            <column name="recipient_email"/>
+        </index>
+        <index referenceId="VENBHAS_GIFTCARD_CODE_IDX_CUSTOMER" indexType="btree">
+            <column name="customer_id"/>
+        </index>
+    </table>
+
+    <table name="venbhas_giftcard_transaction" resource="default" engine="innodb" comment="Venbhas Gift Card Transactions">
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="int" name="giftcard_id" unsigned="true" nullable="false" comment="Gift Card ID"/>
+        <column xsi:type="varchar" name="action" length="32" nullable="false" comment="Action"/>
+        <column xsi:type="decimal" name="amount" precision="12" scale="4" nullable="false" default="0.0000" comment="Amount"/>
+        <column xsi:type="decimal" name="balance_after" precision="12" scale="4" nullable="false" default="0.0000" comment="Balance After"/>
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="true" comment="Order ID"/>
+        <column xsi:type="int" name="invoice_id" unsigned="true" nullable="true" comment="Invoice ID"/>
+        <column xsi:type="int" name="creditmemo_id" unsigned="true" nullable="true" comment="Creditmemo ID"/>
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="true" comment="Customer who used the card"/>
+        <column xsi:type="varchar" name="customer_email" length="255" nullable="true" comment="Customer email at redemption"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="VENBHAS_GIFTCARD_TRX_FK_GIFTCARD"
+                    table="venbhas_giftcard_transaction" column="giftcard_id"
+                    referenceTable="venbhas_giftcard_code" referenceColumn="entity_id"
+                    onDelete="CASCADE"/>
+        <index referenceId="VENBHAS_GIFTCARD_TRX_IDX_ORDER" indexType="btree">
+            <column name="order_id"/>
+        </index>
+        <index referenceId="VENBHAS_GIFTCARD_TRX_IDX_CUSTOMER" indexType="btree">
+            <column name="customer_id"/>
+        </index>
+    </table>
+
+    <!-- Quote totals persistence -->
+    <table name="quote" resource="checkout" comment="Quotes">
+        <column xsi:type="decimal" name="venbhas_giftcard_amount" precision="12" scale="4" nullable="true" comment="Venbhas Gift Card Amount"/>
+        <column xsi:type="decimal" name="base_venbhas_giftcard_amount" precision="12" scale="4" nullable="true" comment="Venbhas Gift Card Base Amount"/>
+        <column xsi:type="text" name="venbhas_giftcard_codes" nullable="true" comment="Venbhas Gift Card Codes (CSV)"/>
+        <column xsi:type="text" name="venbhas_giftcard_applied" nullable="true" comment="Venbhas Gift Card Applied Breakdown (JSON)"/>
+        <column xsi:type="text" name="venbhas_giftcard_usage_details" nullable="true"
+                comment="Gift card code and base amount used per card (JSON, mirrors applied)"/>
+        <column xsi:type="text" name="venbhas_giftcard_balance_details" nullable="true"
+                comment="Checkout gift card balance snapshot (JSON)"/>
+    </table>
+
+    <!-- Order totals persistence -->
+    <table name="sales_order" resource="sales" comment="Sales Order">
+        <column xsi:type="decimal" name="venbhas_giftcard_amount" precision="12" scale="4" nullable="true" comment="Venbhas Gift Card Amount"/>
+        <column xsi:type="decimal" name="base_venbhas_giftcard_amount" precision="12" scale="4" nullable="true" comment="Venbhas Gift Card Base Amount"/>
+        <column xsi:type="text" name="venbhas_giftcard_codes" nullable="true" comment="Venbhas Gift Card Codes (CSV)"/>
+        <column xsi:type="text" name="venbhas_giftcard_applied" nullable="true" comment="Venbhas Gift Card Applied Breakdown (JSON)"/>
+        <column xsi:type="text" name="venbhas_giftcard_usage_details" nullable="true"
+                comment="Gift card code and base amount used per card (JSON, mirrors applied)"/>
+        <column xsi:type="smallint" name="venbhas_giftcard_redeemed" unsigned="true" nullable="false" default="0" comment="Gift Card Redeemed Flag"/>
+    </table>
+
+</schema>
+

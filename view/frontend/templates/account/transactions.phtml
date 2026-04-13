@@ -1,0 +1,54 @@
+<?php
+/** @var \Venbhas\GiftCard\Block\Account\GiftCardTransactions $block */
+$rows = $block->getTransactions();
+?>
+<div class="block block-giftcard-transactions">
+    <div class="block-title">
+        <strong><?= $block->escapeHtml(__('Gift card usage history')) ?></strong>
+    </div>
+    <div class="block-content">
+        <?php if (!$rows): ?>
+            <p><?= $block->escapeHtml(__('You have no gift card transactions yet.')) ?></p>
+        <?php else: ?>
+            <div class="table-wrapper">
+                <table class="data table" id="giftcard-transactions-table">
+                    <caption class="table-caption"><?= $block->escapeHtml(__('Gift card transactions')) ?></caption>
+                    <thead>
+                    <tr>
+                        <th scope="col"><?= $block->escapeHtml(__('Date')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Order')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Gift card code')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Amount used')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Balance after')) ?></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($rows as $trx): ?>
+                        <?php
+                        $orderId = (int) $trx->getData('order_id');
+                        $incrementId = (string) $trx->getData('increment_id');
+                        $code = (string) $trx->getData('giftcard_code');
+                        $currency = (string) $trx->getData('gc_currency');
+                        ?>
+                        <tr>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Date')) ?>"><?= $block->escapeHtml($trx->getData('created_at')) ?></td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Order')) ?>">
+                                <?php if ($orderId && $incrementId !== ''): ?>
+                                    <a href="<?= $block->escapeUrl($block->getOrderViewUrl($orderId)) ?>">
+                                        <?= $block->escapeHtml($incrementId) ?>
+                                    </a>
+                                <?php else: ?>
+                                    <?= $block->escapeHtml(__('—')) ?>
+                                <?php endif; ?>
+                            </td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Gift card code')) ?>"><?= $block->escapeHtml($code) ?></td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Amount used')) ?>"><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('amount'), $currency)) ?></td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Balance after')) ?>"><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('balance_after'), $currency)) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>

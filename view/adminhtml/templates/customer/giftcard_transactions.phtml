@@ -1,0 +1,46 @@
+<?php
+/** @var \Venbhas\GiftCard\Block\Adminhtml\Customer\Edit\Tab\GiftCardTransactions $block */
+$rows = $block->getTransactions();
+?>
+<div class="admin__data-grid-wrap">
+    <?php if (!$rows): ?>
+        <p><?= $block->escapeHtml(__('No gift card redemptions recorded for this customer.')) ?></p>
+    <?php else: ?>
+        <table class="admin__table-secondary">
+            <thead>
+            <tr>
+                <th><?= $block->escapeHtml(__('Date')) ?></th>
+                <th><?= $block->escapeHtml(__('Order')) ?></th>
+                <th><?= $block->escapeHtml(__('Gift card code')) ?></th>
+                <th><?= $block->escapeHtml(__('Amount used')) ?></th>
+                <th><?= $block->escapeHtml(__('Balance after')) ?></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($rows as $trx): ?>
+                <?php
+                $orderId = (int) $trx->getData('order_id');
+                $incrementId = (string) $trx->getData('increment_id');
+                $code = (string) $trx->getData('giftcard_code');
+                $currency = (string) $trx->getData('gc_currency');
+                ?>
+                <tr>
+                    <td><?= $block->escapeHtml($trx->getData('created_at')) ?></td>
+                    <td>
+                        <?php if ($orderId && $incrementId !== ''): ?>
+                            <a href="<?= $block->escapeUrl($block->getAdminOrderUrl($orderId)) ?>">
+                                <?= $block->escapeHtml($incrementId) ?>
+                            </a>
+                        <?php else: ?>
+                            <?= $block->escapeHtml(__('—')) ?>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= $block->escapeHtml($code) ?></td>
+                    <td><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('amount'), $currency)) ?></td>
+                    <td><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('balance_after'), $currency)) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+</div>

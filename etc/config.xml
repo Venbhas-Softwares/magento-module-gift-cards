@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <venbhas_giftcard>
+            <general>
+                <enabled>1</enabled>
+                <total_title>Gift Card</total_title>
+                <allow_custom_message>1</allow_custom_message>
+            </general>
+            <amount>
+                <allow_custom_amount>1</allow_custom_amount>
+                <presets>25,50,75,100</presets>
+                <min>1</min>
+                <max>10000</max>
+            </amount>
+            <delivery>
+                <gift_delivery_type>both</gift_delivery_type>
+            </delivery>
+        </venbhas_giftcard>
+    </default>
+</config>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Register in global di.xml so array merges with core; adminhtml/di.xml would replace the whole collections map. -->
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="venbhas_giftcard_code_listing_data_source" xsi:type="string">Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Venbhas\GiftCard\Model\Product\Type\GiftCard">
+        <arguments>
+            <argument name="giftOptionsResolver" xsi:type="object">Venbhas\GiftCard\Model\Product\GiftOptionsResolver</argument>
+        </arguments>
+    </type>
+    <type name="Magento\Quote\Api\CartTotalRepositoryInterface">
+        <plugin name="venbhas_giftcard_totals_extension"
+                type="Venbhas\GiftCard\Plugin\Quote\CartTotalRepositoryPlugin"
+                sortOrder="10"/>
+    </type>
+</config>

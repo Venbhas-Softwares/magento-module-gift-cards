@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="venbhas" translate="label" sortOrder="400">
+            <label>Venbhas</label>
+        </tab>
+        <section id="venbhas_giftcard" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Gift Card</label>
+            <tab>venbhas</tab>
+            <resource>Venbhas_GiftCard::config</resource>
+            <group id="general" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>General</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable Gift Card Extension</label>
+                    <comment>Master switch for Venbhas Gift Card features (product page fields, checkout total, codes, etc.).</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="total_title" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Checkout Total Title</label>
+                </field>
+                <field id="allow_custom_message" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allow Custom Message (default)</label>
+                    <comment>Default when a gift card product uses “Use configuration defaults” for Custom Message Allowed.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+            <group id="amount" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Amount (product page)</label>
+                <field id="allow_custom_amount" translate="label comment" type="select" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allow Custom Amount</label>
+                    <comment>When Yes, customers can use “Other amount” (within min/max). When No, only preset amounts can be selected.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="presets" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Preset Amounts</label>
+                    <comment>Comma-separated, e.g. 25,50,75,100</comment>
+                </field>
+                <field id="min" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Minimum Amount</label>
+                </field>
+                <field id="max" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Maximum Amount</label>
+                </field>
+            </group>
+            <group id="delivery" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Gift delivery type</label>
+                <field id="gift_delivery_type" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allowed delivery types</label>
+                    <comment>Virtual: email delivery only (no shipping). Physical: treat as shippable. Both: customer chooses on the product page.</comment>
+                    <source_model>Venbhas\GiftCard\Model\Config\Source\GiftDeliveryType</source_model>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
