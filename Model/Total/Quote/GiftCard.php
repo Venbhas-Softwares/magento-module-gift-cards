@@ -19,13 +19,43 @@ class GiftCard extends AbstractTotal
 {
     public const CODE = 'venbhas_giftcard';
 
+    /**
+     * @var GiftCardManager
+     */
+    private $giftCardManager;
+
+    /**
+     * @var CodeCollectionFactory
+     */
+    private $codeCollectionFactory;
+
+    /**
+     * @var Config
+     */
+    private $config;
+
+    /**
+     * @var Json
+     */
+    private $json;
+
+    /**
+     * @var GiftCardRedeemValidator
+     */
+    private $redeemValidator;
+
     public function __construct(
-        private readonly GiftCardManager $giftCardManager,
-        private readonly CodeCollectionFactory $codeCollectionFactory,
-        private readonly Config $config,
-        private readonly Json $json,
-        private readonly GiftCardRedeemValidator $redeemValidator
+        GiftCardManager $giftCardManager,
+        CodeCollectionFactory $codeCollectionFactory,
+        Config $config,
+        Json $json,
+        GiftCardRedeemValidator $redeemValidator
     ) {
+        $this->giftCardManager = $giftCardManager;
+        $this->codeCollectionFactory = $codeCollectionFactory;
+        $this->config = $config;
+        $this->json = $json;
+        $this->redeemValidator = $redeemValidator;
         $this->setCode(self::CODE);
     }
 
@@ -36,13 +66,17 @@ class GiftCard extends AbstractTotal
     ) {
         parent::collect($quote, $shippingAssignment, $total);
 
+        // Preserve previously computed gift card data. collectTotals() can run multiple times;
+        // if a later pass starts with grand total already 0, we must not lose the applied JSON.
+        $prevAmount = (float) ($quote->getData('base_venbhas_giftcard_amount') ?? 0);
+        $prevApplied = (string) ($quote->getData('venbhas_giftcard_applied') ?? '');
+
         $total->setData('venbhas_giftcard_amount', 0.0);
         $total->setData('base_venbhas_giftcard_amount', 0.0);
         $quote->setData('venbhas_giftcard_amount', 0.0);
         $quote->setData('base_venbhas_giftcard_amount', 0.0);
         $quote->setData('venbhas_giftcard_applied', null);
-        $quote->setData('venbhas_giftcard_usage_details', null);
-        $quote->setData('venbhas_giftcard_balance_details', null);
+        $quote->unsetData('venbhas_giftcard_balance_details');
 
         if (!$this->config->isEnabled((int) $quote->getStoreId())) {
             return $this;
@@ -60,6 +94,22 @@ class GiftCard extends AbstractTotal
 
         $baseGrandTotal = (float) $total->getBaseGrandTotal();
         if ($baseGrandTotal <= 0.0001) {
+            // Reconstruct the pre-gift-card base when grand total is already zero (e.g. another
+            // collector ran first, or a second totals pass) so codes and JSON still persist on quote.
+            $baseGrandTotal = (float) $total->getData('base_subtotal_with_discount')
+                + (float) $total->getData('base_shipping_amount')
+                + (float) $total->getData('base_tax_amount');
+        }
+        if ($baseGrandTotal <= 0.0001) {
+            if ($prevAmount > 0.0001 && $prevApplied !== '') {
+                $quote->setData('venbhas_giftcard_amount', $prevAmount);
+                $quote->setData('base_venbhas_giftcard_amount', $prevAmount);
+                $quote->setData('venbhas_giftcard_applied', $prevApplied);
+                $total->setData('venbhas_giftcard_amount', $prevAmount);
+                $total->setData('base_venbhas_giftcard_amount', $prevAmount);
+
+                return $this;
+            }
             $this->attachBalanceDetailsForDisplay($quote, $codes);
 
             return $this;
@@ -78,21 +128,28 @@ class GiftCard extends AbstractTotal
                 continue;
             }
             $code = strtoupper((string) $giftCard->getData('code'));
-            $balance = (float) $giftCard->getData('balance');
-            if ($balance <= 0.0001) {
+            $amount = (float) ($giftCard->getData('balance_amount') ?? 0);
+            if ($amount <= 0.0001) {
+                // Backward-compat: older installs may use column name "amount" or "balance".
+                $amount = (float) ($giftCard->getData('amount') ?? 0);
+                if ($amount <= 0.0001) {
+                    $amount = (float) ($giftCard->getData('balance') ?? 0);
+                }
+            }
+            if ($amount <= 0.0001) {
                 continue;
             }
             $remaining = max(0.0, $baseGrandTotal - $baseToApply);
             if ($remaining <= 0.0001) {
                 break;
             }
-            $use = min($balance, $remaining);
+            $use = min($amount, $remaining);
             $baseToApply += $use;
             $applied[] = ['code' => $code, 'base_amount' => $use];
-            $balanceAfter = max(0.0, $balance - $use);
+            $balanceAfter = max(0.0, $amount - $use);
             $detailRows[] = [
                 'code' => $code,
-                'balance_before' => $balance,
+                'balance_before' => $amount,
                 'amount_applied' => $use,
                 'balance_after' => $balanceAfter,
                 'currency' => (string) $quote->getBaseCurrencyCode(),
@@ -122,7 +179,6 @@ class GiftCard extends AbstractTotal
         $quote->setData('base_venbhas_giftcard_amount', $baseToApply);
         $appliedJson = $this->json->serialize($applied);
         $quote->setData('venbhas_giftcard_applied', $appliedJson);
-        $quote->setData('venbhas_giftcard_usage_details', $appliedJson);
 
         return $this;
     }
@@ -173,15 +229,21 @@ class GiftCard extends AbstractTotal
                 continue;
             }
             $code = strtoupper((string) $giftCard->getData('code'));
-            $balance = (float) $giftCard->getData('balance');
-            if ($balance <= 0.0001 || (int) $giftCard->getData('status') !== GiftCardCode::STATUS_ACTIVE) {
+            $amount = (float) ($giftCard->getData('balance_amount') ?? 0);
+            if ($amount <= 0.0001) {
+                $amount = (float) ($giftCard->getData('amount') ?? 0);
+                if ($amount <= 0.0001) {
+                    $amount = (float) ($giftCard->getData('balance') ?? 0);
+                }
+            }
+            if ($amount <= 0.0001 || (int) $giftCard->getData('status') !== GiftCardCode::STATUS_ACTIVE) {
                 continue;
             }
             $rows[] = [
                 'code' => $code,
-                'balance_before' => $balance,
+                'balance_before' => $amount,
                 'amount_applied' => 0.0,
-                'balance_after' => $balance,
+                'balance_after' => $amount,
                 'currency' => (string) $quote->getBaseCurrencyCode(),
             ];
         }

@@ -4,7 +4,7 @@
       "entity_id": true,
       "code": true,
       "status": true,
-      "balance": true,
+      "balance_amount": true,
       "initial_value": true,
       "currency_code": true,
       "website_id": true,
@@ -67,9 +67,7 @@
       "venbhas_giftcard_amount": true,
       "base_venbhas_giftcard_amount": true,
       "venbhas_giftcard_codes": true,
-      "venbhas_giftcard_applied": true,
-      "venbhas_giftcard_usage_details": true,
-      "venbhas_giftcard_balance_details": true
+      "venbhas_giftcard_applied": true
     }
   },
   "sales_order": {

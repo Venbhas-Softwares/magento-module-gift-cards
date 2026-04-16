@@ -4,12 +4,13 @@ $rows = $block->getTransactions();
 ?>
 <div class="admin__data-grid-wrap">
     <?php if (!$rows): ?>
-        <p><?= $block->escapeHtml(__('No gift card redemptions recorded for this customer.')) ?></p>
+        <p><?= $block->escapeHtml(__('No gift card transactions recorded for this customer.')) ?></p>
     <?php else: ?>
         <table class="admin__table-secondary">
             <thead>
             <tr>
                 <th><?= $block->escapeHtml(__('Date')) ?></th>
+                <th><?= $block->escapeHtml(__('Type')) ?></th>
                 <th><?= $block->escapeHtml(__('Order')) ?></th>
                 <th><?= $block->escapeHtml(__('Gift card code')) ?></th>
                 <th><?= $block->escapeHtml(__('Amount used')) ?></th>
@@ -26,6 +27,7 @@ $rows = $block->getTransactions();
                 ?>
                 <tr>
                     <td><?= $block->escapeHtml($trx->getData('created_at')) ?></td>
+                    <td><?= $block->escapeHtml($block->getActionLabel($trx)) ?></td>
                     <td>
                         <?php if ($orderId && $incrementId !== ''): ?>
                             <a href="<?= $block->escapeUrl($block->getAdminOrderUrl($orderId)) ?>">

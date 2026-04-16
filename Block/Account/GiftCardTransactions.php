@@ -8,6 +8,7 @@ use Magento\Customer\Model\Session;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
+use Magento\Framework\Phrase;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\CollectionFactory;
 
@@ -36,11 +37,23 @@ class GiftCardTransactions extends Template
         $collection->joinGiftCardCode();
         $collection->joinSalesOrder();
         $collection->addFieldToFilter('main_table.customer_id', $cid);
-        $collection->addFieldToFilter('main_table.action', GiftCardTransaction::ACTION_REDEEM);
+        $collection->addFieldToFilter(
+            'main_table.action',
+            ['in' => [GiftCardTransaction::ACTION_REDEEM, GiftCardTransaction::ACTION_CHECKOUT_APPLY]]
+        );
         $collection->setOrder('main_table.entity_id', 'desc');
         $collection->setPageSize(100);
 
         return $collection->getItems();
+    }
+
+    public function getActionLabel(GiftCardTransaction $trx): Phrase
+    {
+        return match ((string)$trx->getData('action')) {
+            GiftCardTransaction::ACTION_CHECKOUT_APPLY => __('Applied at checkout'),
+            GiftCardTransaction::ACTION_REDEEM => __('Redeemed on payment'),
+            default => __('Gift card'),
+        };
     }
 
     public function formatAmount(float $amount, ?string $currencyCode): string

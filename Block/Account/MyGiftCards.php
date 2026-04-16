@@ -6,6 +6,7 @@ namespace Venbhas\GiftCard\Block\Account;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
+use Venbhas\GiftCard\Model\GiftCardCode;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\CollectionFactory as CodeCollectionFactory;
 
 class MyGiftCards extends Template
@@ -24,6 +25,7 @@ class MyGiftCards extends Template
         $customerId = (int)$this->customerSession->getCustomerId();
         $collection = $this->collectionFactory->create();
         $collection->addFieldToFilter('customer_id', $customerId);
+        $collection->addFieldToFilter('status', GiftCardCode::STATUS_ACTIVE);
         $collection->setOrder('created_at', 'DESC');
         return $collection;
     }

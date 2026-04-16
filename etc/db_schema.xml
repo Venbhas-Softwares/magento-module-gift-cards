@@ -6,7 +6,7 @@
         <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
         <column xsi:type="varchar" name="code" length="64" nullable="false" comment="Gift Card Code"/>
         <column xsi:type="smallint" name="status" unsigned="true" nullable="false" default="1" comment="Status"/>
-        <column xsi:type="decimal" name="balance" precision="12" scale="4" nullable="false" default="0.0000" comment="Current Balance"/>
+        <column xsi:type="decimal" name="balance_amount" precision="12" scale="4" nullable="false" default="0.0000" comment="Current Amount"/>
         <column xsi:type="decimal" name="initial_value" precision="12" scale="4" nullable="false" default="0.0000" comment="Initial Value"/>
         <column xsi:type="varchar" name="currency_code" length="3" nullable="false" comment="Currency Code"/>
         <column xsi:type="int" name="website_id" unsigned="true" nullable="false" default="0" comment="Website ID"/>
@@ -26,7 +26,6 @@
         <column xsi:type="varchar" name="recipient_name" length="255" nullable="true" comment="Recipient Name"/>
         <column xsi:type="varchar" name="recipient_email" length="255" nullable="true" comment="Recipient Email"/>
         <column xsi:type="text" name="message" nullable="true" comment="Message"/>
-
         <column xsi:type="varchar" name="delivery_type" length="32" nullable="true" comment="Delivery Type (virtual|physical|both choice)"/>
         <column xsi:type="varchar" name="delivery_street" length="255" nullable="true" comment="Physical delivery street"/>
         <column xsi:type="varchar" name="delivery_city" length="128" nullable="true" comment="Physical delivery city"/>
@@ -87,10 +86,6 @@
         <column xsi:type="decimal" name="base_venbhas_giftcard_amount" precision="12" scale="4" nullable="true" comment="Venbhas Gift Card Base Amount"/>
         <column xsi:type="text" name="venbhas_giftcard_codes" nullable="true" comment="Venbhas Gift Card Codes (CSV)"/>
         <column xsi:type="text" name="venbhas_giftcard_applied" nullable="true" comment="Venbhas Gift Card Applied Breakdown (JSON)"/>
-        <column xsi:type="text" name="venbhas_giftcard_usage_details" nullable="true"
-                comment="Gift card code and base amount used per card (JSON, mirrors applied)"/>
-        <column xsi:type="text" name="venbhas_giftcard_balance_details" nullable="true"
-                comment="Checkout gift card balance snapshot (JSON)"/>
     </table>
 
     <!-- Order totals persistence -->

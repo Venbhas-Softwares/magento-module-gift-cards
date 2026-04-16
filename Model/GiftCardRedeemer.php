@@ -12,10 +12,22 @@ use Magento\Sales\Api\Data\OrderInterface;
 
 class GiftCardRedeemer
 {
+    /**
+     * @var ResourceConnection
+     */
+    private $resource;
+
+    /**
+     * @var Json
+     */
+    private $json;
+
     public function __construct(
-        private readonly ResourceConnection $resource,
-        private readonly Json $json
+        ResourceConnection $resource,
+        Json $json
     ) {
+        $this->resource = $resource;
+        $this->json = $json;
     }
 
     /**
@@ -60,6 +72,8 @@ class GiftCardRedeemer
                 $select = $conn->select()
                     ->from($codeTable, [
                         'entity_id',
+                        'balance_amount',
+                        'amount',
                         'balance',
                         'status',
                         'redeemer_customer_id',
@@ -77,16 +91,22 @@ class GiftCardRedeemer
 
                 $this->assertOrderMatchesRedeemerLock($order, $gc);
 
-                $balance = (float) $gc['balance'];
-                if ($balance + 0.0001 < $amount) {
+                $currentAmount = (float) ($gc['balance_amount'] ?? 0);
+                if ($currentAmount <= 0.0001) {
+                    $currentAmount = (float) ($gc['amount'] ?? 0);
+                    if ($currentAmount <= 0.0001) {
+                        $currentAmount = (float) ($gc['balance'] ?? 0);
+                    }
+                }
+                if ($currentAmount + 0.0001 < $amount) {
                     throw new LocalizedException(__('Gift card code %1 has insufficient balance.', $code));
                 }
 
-                $newBalance = max(0.0, $balance - $amount);
-                $newStatus = $newBalance <= 0.0001 ? GiftCardCode::STATUS_INACTIVE : GiftCardCode::STATUS_ACTIVE;
+                $newAmount = max(0.0, $currentAmount - $amount);
+                $newStatus = $newAmount <= 0.0001 ? GiftCardCode::STATUS_INACTIVE : GiftCardCode::STATUS_ACTIVE;
 
                 $update = [
-                    'balance' => $newBalance,
+                    'balance_amount' => $newAmount,
                     'status' => $newStatus,
                 ];
 
@@ -109,7 +129,7 @@ class GiftCardRedeemer
                     'giftcard_id' => (int) $gc['entity_id'],
                     'action' => 'redeem',
                     'amount' => $amount,
-                    'balance_after' => $newBalance,
+                    'balance_after' => $newAmount,
                     'order_id' => (int) $order->getEntityId() ?: null,
                     'invoice_id' => (int) $invoice->getEntityId() ?: null,
                     'creditmemo_id' => null,
@@ -163,7 +183,7 @@ class GiftCardRedeemer
     {
         try {
             $decoded = $this->json->unserialize($raw);
-        } catch (\Throwable) {
+        } catch (\Exception $e) {
             $decoded = null;
         }
         if (!is_array($decoded)) {

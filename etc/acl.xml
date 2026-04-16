@@ -7,6 +7,7 @@
                 <resource id="Venbhas_GiftCard::root" title="Gift Cards" sortOrder="80">
                     <resource id="Venbhas_GiftCard::config" title="Configuration" sortOrder="5"/>
                     <resource id="Venbhas_GiftCard::codes" title="Gift Card Codes" sortOrder="10"/>
+                    <resource id="Venbhas_GiftCard::transactions" title="Gift Card Transactions" sortOrder="20"/>
                 </resource>
             </resource>
         </resources>

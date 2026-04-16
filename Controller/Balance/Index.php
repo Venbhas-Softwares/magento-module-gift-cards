@@ -10,11 +10,30 @@ use Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\CollectionFactory as CodeC
 
 class Index implements HttpGetActionInterface
 {
+    /**
+     * @var RequestInterface
+     */
+    private $request;
+
+    /**
+     * @var JsonFactory
+     */
+    private $jsonFactory;
+
+    /**
+     * @var CodeCollectionFactory
+     */
+    private $codeCollectionFactory;
+
     public function __construct(
-        private readonly RequestInterface $request,
-        private readonly JsonFactory $jsonFactory,
-        private readonly CodeCollectionFactory $codeCollectionFactory
-    ) {}
+        RequestInterface $request,
+        JsonFactory $jsonFactory,
+        CodeCollectionFactory $codeCollectionFactory
+    ) {
+        $this->request = $request;
+        $this->jsonFactory = $jsonFactory;
+        $this->codeCollectionFactory = $codeCollectionFactory;
+    }
 
     public function execute()
     {
@@ -36,7 +55,8 @@ class Index implements HttpGetActionInterface
             'success' => true,
             'code' => $code,
             'status' => (int)$giftCard->getData('status'),
-            'balance' => (float)$giftCard->getData('balance'),
+            // Keep API key 'balance' for backward compatibility with existing JS.
+            'balance' => (float)($giftCard->getData('balance_amount') ?? $giftCard->getData('amount') ?? $giftCard->getData('balance') ?? 0),
             'currency' => (string)$giftCard->getData('currency_code'),
             'expires_at' => $giftCard->getData('expires_at'),
         ]);

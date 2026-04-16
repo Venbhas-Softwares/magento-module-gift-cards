@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Venbhas\GiftCard\Block\Order;
 
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\App\State;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\Registry;
@@ -11,17 +12,49 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Sales\Api\Data\OrderInterface;
+use Venbhas\GiftCard\Model\GiftCardTransaction;
 
 class GiftCardUsage extends Template
 {
+    /**
+     * @var Registry
+     */
+    private $registry;
+
+    /**
+     * @var Json
+     */
+    private $json;
+
+    /**
+     * @var PriceCurrencyInterface
+     */
+    private $priceCurrency;
+
+    /**
+     * @var State
+     */
+    private $appState;
+
+    /**
+     * @var ResourceConnection
+     */
+    private $resource;
+
     public function __construct(
         Context $context,
-        private readonly Registry $registry,
-        private readonly Json $json,
-        private readonly PriceCurrencyInterface $priceCurrency,
-        private readonly State $appState,
+        Registry $registry,
+        Json $json,
+        PriceCurrencyInterface $priceCurrency,
+        State $appState,
+        ResourceConnection $resource,
         array $data = []
     ) {
+        $this->registry = $registry;
+        $this->json = $json;
+        $this->priceCurrency = $priceCurrency;
+        $this->appState = $appState;
+        $this->resource = $resource;
         parent::__construct($context, $data);
     }
 
@@ -49,7 +82,7 @@ class GiftCardUsage extends Template
         }
         try {
             $decoded = $this->json->unserialize($raw);
-        } catch (\Throwable) {
+        } catch (\Exception $e) {
             return [];
         }
         if (!is_array($decoded)) {
@@ -62,6 +95,51 @@ class GiftCardUsage extends Template
             }
             $code = strtoupper(trim((string) ($row['code'] ?? '')));
             $amt = (float) ($row['base_amount'] ?? 0);
+            if ($code === '' || $amt <= 0.0001) {
+                continue;
+            }
+            $rows[] = ['code' => $code, 'amount' => $amt];
+        }
+
+        if ($rows !== []) {
+            return $rows;
+        }
+
+        return $this->getUsageRowsFromTransactions($order);
+    }
+
+    /**
+     * Fallback when order JSON is empty: read from venbhas_giftcard_transaction ledger.
+     *
+     * @return array<int, array{code: string, amount: float}>
+     */
+    private function getUsageRowsFromTransactions(OrderInterface $order): array
+    {
+        $orderId = (int) $order->getEntityId();
+        if ($orderId < 1) {
+            return [];
+        }
+
+        $conn = $this->resource->getConnection();
+        $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
+        $codeTable = $this->resource->getTableName('venbhas_giftcard_code');
+
+        $select = $conn->select()
+            ->from(['t' => $trxTable], [])
+            ->joinLeft(['gc' => $codeTable], 't.giftcard_id = gc.entity_id', [])
+            ->where('t.order_id = ?', $orderId)
+            ->where('t.action IN (?)', [GiftCardTransaction::ACTION_CHECKOUT_APPLY, GiftCardTransaction::ACTION_REDEEM])
+            ->columns([
+                'code' => 'gc.code',
+                'amount' => new \Zend_Db_Expr('SUM(t.amount)'),
+            ])
+            ->group('gc.code')
+            ->order('gc.code ASC');
+
+        $rows = [];
+        foreach ($conn->fetchAll($select) as $r) {
+            $code = strtoupper(trim((string) ($r['code'] ?? '')));
+            $amt = (float) ($r['amount'] ?? 0);
             if ($code === '' || $amt <= 0.0001) {
                 continue;
             }

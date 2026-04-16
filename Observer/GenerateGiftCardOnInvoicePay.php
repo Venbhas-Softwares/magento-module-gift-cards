@@ -58,8 +58,12 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
             if (!$orderItem) {
                 continue;
             }
-            // Issue codes for giftcard product items
-            $codes = $this->issuer->issueForOrderItem($order, $orderItem);
+            $qtyThisInvoice = (int)max(0, (float)$invoiceItem->getQty());
+            if ($qtyThisInvoice < 1) {
+                continue;
+            }
+            // Activate pending rows (or create legacy rows) for this invoice line only
+            $codes = $this->issuer->issueForOrderItem($order, $orderItem, $qtyThisInvoice);
             foreach ($codes as $code) {
                 $this->sender->send($code);
             }

@@ -7,6 +7,7 @@ namespace Venbhas\GiftCard\Block\Adminhtml\Customer\Edit\Tab;
 use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Framework\Phrase;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\Registry;
 use Magento\Ui\Component\Layout\Tabs\TabInterface;
@@ -40,11 +41,23 @@ class GiftCardTransactions extends Template implements TabInterface
         $collection->joinGiftCardCode();
         $collection->joinSalesOrder();
         $collection->addFieldToFilter('main_table.customer_id', $cid);
-        $collection->addFieldToFilter('main_table.action', GiftCardTransaction::ACTION_REDEEM);
+        $collection->addFieldToFilter(
+            'main_table.action',
+            ['in' => [GiftCardTransaction::ACTION_REDEEM, GiftCardTransaction::ACTION_CHECKOUT_APPLY]]
+        );
         $collection->setOrder('main_table.entity_id', 'desc');
         $collection->setPageSize(200);
 
         return $collection->getItems();
+    }
+
+    public function getActionLabel(GiftCardTransaction $trx): Phrase
+    {
+        return match ((string)$trx->getData('action')) {
+            GiftCardTransaction::ACTION_CHECKOUT_APPLY => __('Applied at checkout'),
+            GiftCardTransaction::ACTION_REDEEM => __('Redeemed on payment'),
+            default => __('Gift card'),
+        };
     }
 
     public function formatAmount(float $amount, ?string $currencyCode): string

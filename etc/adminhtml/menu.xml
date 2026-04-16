@@ -15,6 +15,14 @@
              parent="Venbhas_GiftCard::root"
              action="venbhas_giftcard/code/index"
              resource="Venbhas_GiftCard::codes"/>
+
+        <add id="Venbhas_GiftCard::transactions"
+             title="Gift Card Transactions"
+             module="Venbhas_GiftCard"
+             sortOrder="20"
+             parent="Venbhas_GiftCard::root"
+             action="venbhas_giftcard/transaction/index"
+             resource="Venbhas_GiftCard::transactions"/>
     </menu>
 </config>
 

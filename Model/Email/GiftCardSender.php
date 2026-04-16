@@ -4,16 +4,18 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Model\Email;
 
 use Magento\Framework\App\Area;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\MailException;
 use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Store\Model\StoreManagerInterface;
+use Psr\Log\LoggerInterface;
 use Venbhas\GiftCard\Model\GiftCardCode;
 
 class GiftCardSender
 {
     public function __construct(
         private readonly TransportBuilder $transportBuilder,
-        private readonly StoreManagerInterface $storeManager
+        private readonly StoreManagerInterface $storeManager,
+        private readonly LoggerInterface $logger
     ) {}
 
     public function send(GiftCardCode $giftCard): void
@@ -39,7 +41,18 @@ class GiftCardSender
             ->addTo($toEmail, (string)$giftCard->getData('recipient_name'))
             ->getTransport();
 
-        $transport->sendMessage();
+        try {
+            $transport->sendMessage();
+        } catch (MailException $e) {
+            $this->logger->error(
+                'Venbhas GiftCard: could not email gift card after invoice (invoice still saved).',
+                [
+                    'recipient' => $toEmail,
+                    'gift_card_id' => $giftCard->getId(),
+                    'exception' => $e,
+                ]
+            );
+        }
     }
 }
 

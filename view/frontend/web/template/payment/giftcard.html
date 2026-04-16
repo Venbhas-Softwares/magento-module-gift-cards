@@ -36,6 +36,27 @@
             </div>
         </form>
 
+        <!-- ko if: myCodes().length -->
+        <div class="venbhas-giftcard-previous" style="margin-top: 12px;">
+            <strong data-bind="i18n: 'Previously used gift cards'"></strong>
+            <div style="font-size: 13px; margin-top: 6px;">
+                <span data-bind="i18n: 'You used these gift card code(s) previously. Balance is still available; click Apply to use again.'"></span>
+            </div>
+            <ul class="items" style="margin-top: 8px;" data-bind="foreach: myCodes">
+                <li class="item" style="margin-bottom: 6px;">
+                    <span data-bind="text: code"></span>
+                    <span> - </span>
+                    <span data-bind="text: Number(amount).toFixed(2)"></span>
+                    <span data-bind="text: currency ? (' ' + currency) : ''"></span>
+                    <button type="button" class="action action-apply" style="margin-left: 10px;"
+                            data-bind="click: function(){ $parent.useMyCode($data); }">
+                        <span data-bind="i18n: 'Apply'"></span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <!-- /ko -->
+
         <!-- ko if: isApplied() -->
         <div class="applied-giftcards" style="margin-top: 12px;">
             <strong data-bind="i18n: 'Applied gift cards'"></strong>

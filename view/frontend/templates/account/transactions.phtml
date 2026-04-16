@@ -16,6 +16,7 @@ $rows = $block->getTransactions();
                     <thead>
                     <tr>
                         <th scope="col"><?= $block->escapeHtml(__('Date')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Type')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Order')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Gift card code')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Amount used')) ?></th>
@@ -32,6 +33,7 @@ $rows = $block->getTransactions();
                         ?>
                         <tr>
                             <td data-th="<?= $block->escapeHtmlAttr(__('Date')) ?>"><?= $block->escapeHtml($trx->getData('created_at')) ?></td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Type')) ?>"><?= $block->escapeHtml($block->getActionLabel($trx)) ?></td>
                             <td data-th="<?= $block->escapeHtmlAttr(__('Order')) ?>">
                                 <?php if ($orderId && $incrementId !== ''): ?>
                                     <a href="<?= $block->escapeUrl($block->getOrderViewUrl($orderId)) ?>">

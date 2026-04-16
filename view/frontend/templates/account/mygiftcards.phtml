@@ -27,7 +27,7 @@ $cards = $block->getGiftCards();
                 <?php foreach ($cards as $card): ?>
                     <tr>
                         <td data-th="<?= $block->escapeHtmlAttr(__('Code')) ?>"><?= $block->escapeHtml((string)$card->getData('code')) ?></td>
-                        <td data-th="<?= $block->escapeHtmlAttr(__('Balance')) ?>"><?= $block->escapeHtml((string)$card->getData('balance')) ?></td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Balance')) ?>"><?= $block->escapeHtml((string)$card->getData('balance_amount')) ?></td>
                         <td data-th="<?= $block->escapeHtmlAttr(__('Currency')) ?>"><?= $block->escapeHtml((string)$card->getData('currency_code')) ?></td>
                         <td data-th="<?= $block->escapeHtmlAttr(__('Recipient Email')) ?>"><?= $block->escapeHtml((string)$card->getData('recipient_email')) ?></td>
                         <td data-th="<?= $block->escapeHtmlAttr(__('Created')) ?>"><?= $block->escapeHtml((string)$card->getData('created_at')) ?></td>

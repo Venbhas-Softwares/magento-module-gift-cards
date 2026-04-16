@@ -5,8 +5,9 @@ define([
     'Venbhas_GiftCard/js/action/apply-giftcard',
     'Venbhas_GiftCard/js/action/remove-giftcard',
     'Magento_Checkout/js/model/quote',
-    'Magento_SalesRule/js/model/payment/discount-messages'
-], function ($, ko, Component, applyAction, removeAction, quote, messageContainer) {
+    'Magento_SalesRule/js/model/payment/discount-messages',
+    'Magento_Customer/js/customer-data'
+], function ($, ko, Component, applyAction, removeAction, quote, messageContainer, customerData) {
     'use strict';
 
     function readTotalsExtras(totals) {
@@ -41,6 +42,7 @@ define([
         isApplied: ko.observable(false),
         appliedCodes: ko.observableArray([]),
         balanceDetails: ko.observableArray([]),
+        myCodes: ko.observableArray([]),
 
         initialize: function () {
             this._super();
@@ -53,6 +55,8 @@ define([
             totals.subscribe(function (t) {
                 this._syncFromTotals(t || {});
             }, this);
+
+            this._loadMyCodes();
 
             return this;
         },
@@ -83,6 +87,35 @@ define([
 
         remove: function (code) {
             removeAction(code);
+        },
+
+        useMyCode: function (row) {
+            if (!row || !row.code) {
+                return;
+            }
+            this.giftcardCode(row.code);
+            this.apply();
+        },
+
+        _loadMyCodes: function () {
+            var customer = customerData.get('customer');
+            var c = customer && customer();
+            if (!c || !c.firstname) {
+                this.myCodes([]);
+                return;
+            }
+
+            $.getJSON((window.BASE_URL || '/') + 'venbhas_giftcard/checkout/mycodes')
+                .done(function (resp) {
+                    if (resp && resp.success && Array.isArray(resp.codes)) {
+                        this.myCodes(resp.codes);
+                    } else {
+                        this.myCodes([]);
+                    }
+                }.bind(this))
+                .fail(function () {
+                    this.myCodes([]);
+                }.bind(this));
         }
     });
 });

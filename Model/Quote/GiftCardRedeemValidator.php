@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Venbhas\GiftCard\Model\Quote;
 
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Quote\Model\Quote;
 use Venbhas\GiftCard\Model\GiftCardCode;
@@ -11,9 +12,22 @@ use Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\CollectionFactory as CodeC
 
 class GiftCardRedeemValidator
 {
+    /**
+     * @var CodeCollectionFactory
+     */
+    private $codeCollectionFactory;
+
+    /**
+     * @var ResourceConnection
+     */
+    private $resource;
+
     public function __construct(
-        private readonly CodeCollectionFactory $codeCollectionFactory
+        CodeCollectionFactory $codeCollectionFactory,
+        ResourceConnection $resource
     ) {
+        $this->codeCollectionFactory = $codeCollectionFactory;
+        $this->resource = $resource;
     }
 
     /**
@@ -36,10 +50,22 @@ class GiftCardRedeemValidator
         if ((int) $gc->getData('status') !== GiftCardCode::STATUS_ACTIVE) {
             throw new LocalizedException(__('Gift card code is not active.'));
         }
-        if ((float) $gc->getData('balance') <= 0.0001) {
+        $available = (float) ($gc->getData('balance_amount') ?? 0);
+        if ($available <= 0.0001) {
+            // Backward-compat: older installs may use column name "amount" or "balance".
+            $available = (float) ($gc->getData('amount') ?? 0);
+            if ($available <= 0.0001) {
+                $available = (float) ($gc->getData('balance') ?? 0);
+            }
+        }
+        if ($available <= 0.0001) {
             throw new LocalizedException(__('Gift card has no remaining balance.'));
         }
         $this->assertQuoteMatchesRedeemerLock($quote, $gc);
+
+        // Lock the card to the first user who applies it (guest email or logged-in customer),
+        // so other customers cannot apply the same code later.
+        $this->lockCardToQuoteIfNeeded($quote, $gc);
     }
 
     /**
@@ -50,7 +76,14 @@ class GiftCardRedeemValidator
         if ((int) $gc->getData('status') !== GiftCardCode::STATUS_ACTIVE) {
             return false;
         }
-        if ((float) $gc->getData('balance') <= 0.0001) {
+        $available = (float) ($gc->getData('balance_amount') ?? 0);
+        if ($available <= 0.0001) {
+            $available = (float) ($gc->getData('amount') ?? 0);
+            if ($available <= 0.0001) {
+                $available = (float) ($gc->getData('balance') ?? 0);
+            }
+        }
+        if ($available <= 0.0001) {
             return false;
         }
         return $this->quoteMatchesRedeemerLock($quote, $gc);
@@ -93,5 +126,45 @@ class GiftCardRedeemValidator
                 __('This gift card can only be used with the email address that first applied it.')
             );
         }
+    }
+
+    private function lockCardToQuoteIfNeeded(Quote $quote, GiftCardCode $gc): void
+    {
+        $hasLock = (int) $gc->getData('redeemer_customer_id') > 0
+            || trim((string) $gc->getData('redeemer_email')) !== '';
+        if ($hasLock) {
+            return;
+        }
+
+        $customerId = $quote->getCustomerId() ? (int) $quote->getCustomerId() : null;
+        $email = strtolower(trim((string) $quote->getCustomerEmail()));
+        if (!$customerId && $email === '') {
+            return;
+        }
+
+        $conn = $this->resource->getConnection();
+        $table = $this->resource->getTableName('venbhas_giftcard_code');
+        $entityId = (int) $gc->getId();
+        if ($entityId < 1) {
+            return;
+        }
+
+        $update = [];
+        if ($customerId) {
+            $update['redeemer_customer_id'] = $customerId;
+        } else {
+            $update['redeemer_email'] = $email;
+        }
+
+        // Only set the lock if it is still empty in DB (avoid overwriting in races).
+        $conn->update(
+            $table,
+            $update,
+            [
+                'entity_id = ?' => $entityId,
+                '(redeemer_customer_id IS NULL OR redeemer_customer_id = 0)',
+                "(redeemer_email IS NULL OR redeemer_email = '')",
+            ]
+        );
     }
 }

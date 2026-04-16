@@ -46,10 +46,15 @@ class GiftCard extends Template
 
         $storeId = (int) $order->getStoreId();
         $title = $this->config->getTotalTitle($storeId);
+        $baseAmount = (float) $order->getData('base_venbhas_giftcard_amount');
+        if ($baseAmount <= 0.0001) {
+            $baseAmount = $amount;
+        }
         $total = new DataObject([
             'code' => 'venbhas_giftcard',
             'label' => $title,
             'value' => -$amount,
+            'base_value' => -$baseAmount,
         ]);
         $parent->addTotal($total, 'discount');
 

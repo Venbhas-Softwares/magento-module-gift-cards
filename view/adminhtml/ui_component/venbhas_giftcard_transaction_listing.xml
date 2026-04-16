@@ -3,16 +3,16 @@
          xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
     <argument name="data" xsi:type="array">
         <item name="js_config" xsi:type="array">
-            <item name="provider" xsi:type="string">venbhas_giftcard_code_listing.venbhas_giftcard_code_listing_data_source</item>
-            <item name="deps" xsi:type="string">venbhas_giftcard_code_listing.venbhas_giftcard_code_listing_data_source</item>
+            <item name="provider" xsi:type="string">venbhas_giftcard_transaction_listing.venbhas_giftcard_transaction_listing_data_source</item>
+            <item name="deps" xsi:type="string">venbhas_giftcard_transaction_listing.venbhas_giftcard_transaction_listing_data_source</item>
         </item>
         <item name="spinner" xsi:type="string">listing_columns</item>
     </argument>
 
-    <dataSource name="venbhas_giftcard_code_listing_data_source">
+    <dataSource name="venbhas_giftcard_transaction_listing_data_source">
         <argument name="dataProvider" xsi:type="configurableObject">
             <argument name="class" xsi:type="string">Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider</argument>
-            <argument name="name" xsi:type="string">venbhas_giftcard_code_listing_data_source</argument>
+            <argument name="name" xsi:type="string">venbhas_giftcard_transaction_listing_data_source</argument>
             <argument name="primaryFieldName" xsi:type="string">entity_id</argument>
             <argument name="requestFieldName" xsi:type="string">entity_id</argument>
             <argument name="data" xsi:type="array">
@@ -44,40 +44,64 @@
                 <sorting>desc</sorting>
             </settings>
         </column>
-        <column name="code">
+        <column name="giftcard_code">
             <settings>
                 <filter>text</filter>
-                <label translate="true">Code</label>
+                <label translate="true">Gift Card Code</label>
             </settings>
         </column>
-        <column name="balance_amount">
+        <column name="action">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Action</label>
+            </settings>
+        </column>
+        <column name="amount">
             <settings>
                 <filter>textRange</filter>
-                <label translate="true">Balance Amount</label>
+                <label translate="true">Amount</label>
             </settings>
         </column>
-        <column name="initial_value">
+        <column name="balance_after">
             <settings>
                 <filter>textRange</filter>
-                <label translate="true">Purchased Amount</label>
-            </settings>
-        </column>
-        <column name="currency_code">
-            <settings>
-                <filter>text</filter>
-                <label translate="true">Currency</label>
-            </settings>
-        </column>
-        <column name="recipient_email">
-            <settings>
-                <filter>text</filter>
-                <label translate="true">Recipient Email</label>
+                <label translate="true">Balance After</label>
             </settings>
         </column>
         <column name="order_id">
             <settings>
                 <filter>textRange</filter>
                 <label translate="true">Order ID</label>
+            </settings>
+        </column>
+        <column name="increment_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Order #</label>
+            </settings>
+        </column>
+        <column name="invoice_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Invoice ID</label>
+            </settings>
+        </column>
+        <column name="creditmemo_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Credit Memo ID</label>
+            </settings>
+        </column>
+        <column name="customer_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Customer ID</label>
+            </settings>
+        </column>
+        <column name="customer_email">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Customer Email</label>
             </settings>
         </column>
         <column name="created_at">
