@@ -1,0 +1,22 @@
+<!--@subject {{trans "Gift card usage for order #%increment_id" increment_id=$order_increment_id}} @-->
+<!--@vars {
+"var customer_name":"Customer Name",
+"var order_increment_id":"Order Increment Id",
+"var redemption_table_html":"Redemption Table Html"
+} @-->
+
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Hi %name," name=$customer_name}}</p>
+
+<p>
+    {{trans "Your order %order_id included a gift card payment. Below is a summary of the gift card(s) applied."
+        order_id=$order_increment_id
+    }}
+</p>
+
+{{var redemption_table_html|raw}}
+
+<p>{{trans "Thank you for your purchase."}}</p>
+
+{{template config_path="design/email/footer_template"}}

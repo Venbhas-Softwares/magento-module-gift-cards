@@ -11,8 +11,9 @@ use Magento\Framework\Phrase;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\Registry;
 use Magento\Ui\Component\Layout\Tabs\TabInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
-use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\CollectionFactory;
+use Venbhas\GiftCard\Model\CustomerGiftCardTransactionsLoader;
 
 class GiftCardTransactions extends Template implements TabInterface
 {
@@ -21,7 +22,8 @@ class GiftCardTransactions extends Template implements TabInterface
     public function __construct(
         Context $context,
         private readonly Registry $registry,
-        private readonly CollectionFactory $collectionFactory,
+        private readonly CustomerGiftCardTransactionsLoader $transactionsLoader,
+        private readonly CustomerRepositoryInterface $customerRepository,
         private readonly PriceCurrencyInterface $priceCurrency,
         array $data = []
     ) {
@@ -37,27 +39,31 @@ class GiftCardTransactions extends Template implements TabInterface
         if ($cid <= 0) {
             return [];
         }
-        $collection = $this->collectionFactory->create();
-        $collection->joinGiftCardCode();
-        $collection->joinSalesOrder();
-        $collection->addFieldToFilter('main_table.customer_id', $cid);
-        $collection->addFieldToFilter(
-            'main_table.action',
-            ['in' => [GiftCardTransaction::ACTION_REDEEM, GiftCardTransaction::ACTION_CHECKOUT_APPLY]]
-        );
-        $collection->setOrder('main_table.entity_id', 'desc');
-        $collection->setPageSize(200);
+
+        try {
+            $email = (string) $this->customerRepository->getById($cid)->getEmail();
+        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+            return [];
+        }
+
+        $collection = $this->transactionsLoader->createCollection($cid, $email, 200);
 
         return $collection->getItems();
     }
 
     public function getActionLabel(GiftCardTransaction $trx): Phrase
     {
-        return match ((string)$trx->getData('action')) {
-            GiftCardTransaction::ACTION_CHECKOUT_APPLY => __('Applied at checkout'),
-            GiftCardTransaction::ACTION_REDEEM => __('Redeemed on payment'),
-            default => __('Gift card'),
-        };
+        $action = (string) $trx->getData('action');
+        if ($action === GiftCardTransaction::ACTION_CHECKOUT_APPLY) {
+            return __('Applied at checkout');
+        }
+        if ($action === GiftCardTransaction::ACTION_REDEEM) {
+            return ((int) $trx->getData('invoice_id')) > 0
+                ? __('Redeemed on invoice payment')
+                : __('Redeemed when order was placed');
+        }
+
+        return __('Gift card');
     }
 
     public function formatAmount(float $amount, ?string $currencyCode): string

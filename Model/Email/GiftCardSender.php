@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Venbhas\GiftCard\Model\Email;
@@ -6,39 +7,84 @@ namespace Venbhas\GiftCard\Model\Email;
 use Magento\Framework\App\Area;
 use Magento\Framework\Exception\MailException;
 use Magento\Framework\Mail\Template\TransportBuilder;
+use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
+use Venbhas\GiftCard\Model\Config;
 use Venbhas\GiftCard\Model\GiftCardCode;
 
 class GiftCardSender
 {
+    /**
+     * @var TransportBuilder
+     */
+    private $transportBuilder;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var PriceCurrencyInterface
+     */
+    private $priceCurrency;
+
     public function __construct(
-        private readonly TransportBuilder $transportBuilder,
-        private readonly StoreManagerInterface $storeManager,
-        private readonly LoggerInterface $logger
-    ) {}
+        TransportBuilder $transportBuilder,
+        StoreManagerInterface $storeManager,
+        LoggerInterface $logger,
+        PriceCurrencyInterface $priceCurrency
+    ) {
+        $this->transportBuilder = $transportBuilder;
+        $this->storeManager = $storeManager;
+        $this->logger = $logger;
+        $this->priceCurrency = $priceCurrency;
+    }
 
     public function send(GiftCardCode $giftCard): void
     {
-        $toEmail = (string)$giftCard->getData('recipient_email');
+        // Physical shipment: do not email the gift card code (customer receives physical card).
+        $deliveryType = strtolower(trim((string) $giftCard->getData('delivery_type')));
+        if ($deliveryType === Config::GIFT_DELIVERY_PHYSICAL || $deliveryType === 'physical') {
+            return;
+        }
+
+        $toEmail = (string) $giftCard->getData('recipient_email');
         if ($toEmail === '') {
             return;
         }
 
-        $storeId = (int)$giftCard->getData('store_id') ?: (int)$this->storeManager->getStore()->getId();
+        $storeId = (int) $giftCard->getData('store_id') ?: (int) $this->storeManager->getStore()->getId();
+        $amount = (float) ($giftCard->getData('initial_value') ?? 0);
+        $currency = (string) $giftCard->getData('currency_code');
+        $formattedValue = $this->priceCurrency->format(
+            $amount,
+            false,
+            PriceCurrencyInterface::DEFAULT_PRECISION,
+            null,
+            $currency !== '' ? $currency : null
+        );
+
         $transport = $this->transportBuilder
             ->setTemplateIdentifier('venbhas_giftcard_email_template')
             ->setTemplateOptions(['area' => Area::AREA_FRONTEND, 'store' => $storeId])
             ->setTemplateVars([
-                'giftcard_code' => (string)$giftCard->getData('code'),
-                'giftcard_value' => (string)$giftCard->getData('initial_value'),
-                'giftcard_currency' => (string)$giftCard->getData('currency_code'),
-                'sender_name' => (string)$giftCard->getData('sender_name'),
-                'recipient_name' => (string)$giftCard->getData('recipient_name'),
-                'message' => (string)$giftCard->getData('message'),
+                'giftcard_code' => (string) $giftCard->getData('code'),
+                'giftcard_value' => (string) $giftCard->getData('initial_value'),
+                'giftcard_value_formatted' => $formattedValue,
+                'giftcard_currency' => (string) $giftCard->getData('currency_code'),
+                'sender_name' => (string) $giftCard->getData('sender_name'),
+                'recipient_name' => (string) $giftCard->getData('recipient_name'),
+                'message' => (string) $giftCard->getData('message'),
             ])
             ->setFromByScope('general', $storeId)
-            ->addTo($toEmail, (string)$giftCard->getData('recipient_name'))
+            ->addTo($toEmail, (string) $giftCard->getData('recipient_name'))
             ->getTransport();
 
         try {
@@ -55,4 +101,3 @@ class GiftCardSender
         }
     }
 }
-

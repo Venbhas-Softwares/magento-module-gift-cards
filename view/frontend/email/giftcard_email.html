@@ -1,7 +1,8 @@
 <!--@subject {{trans "You received a Gift Card"}} @-->
 <!--@vars {
 "var giftcard_code":"Gift Card Code",
-"var giftcard_value":"Gift Card Value",
+"var giftcard_value":"Gift Card Value (raw)",
+"var giftcard_value_formatted":"Gift Card Value (formatted)",
 "var giftcard_currency":"Gift Card Currency",
 "var sender_name":"Sender Name",
 "var recipient_name":"Recipient Name",
@@ -17,7 +18,7 @@
 </p>
 
 <p><strong>{{trans "Gift Card Code:"}}</strong> {{var giftcard_code}}</p>
-<p><strong>{{trans "Value:"}}</strong> {{var giftcard_value}} {{var giftcard_currency}}</p>
+<p><strong>{{trans "Amount:"}}</strong> {{var giftcard_value_formatted}}</p>
 
 {{depend message}}
 <p><strong>{{trans "Message:"}}</strong><br/>{{var message|escape|nl2br}}</p>

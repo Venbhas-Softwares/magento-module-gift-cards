@@ -51,13 +51,7 @@ class GiftCardRedeemValidator
             throw new LocalizedException(__('Gift card code is not active.'));
         }
         $available = (float) ($gc->getData('balance_amount') ?? 0);
-        if ($available <= 0.0001) {
-            // Backward-compat: older installs may use column name "amount" or "balance".
-            $available = (float) ($gc->getData('amount') ?? 0);
-            if ($available <= 0.0001) {
-                $available = (float) ($gc->getData('balance') ?? 0);
-            }
-        }
+        
         if ($available <= 0.0001) {
             throw new LocalizedException(__('Gift card has no remaining balance.'));
         }
@@ -77,12 +71,6 @@ class GiftCardRedeemValidator
             return false;
         }
         $available = (float) ($gc->getData('balance_amount') ?? 0);
-        if ($available <= 0.0001) {
-            $available = (float) ($gc->getData('amount') ?? 0);
-            if ($available <= 0.0001) {
-                $available = (float) ($gc->getData('balance') ?? 0);
-            }
-        }
         if ($available <= 0.0001) {
             return false;
         }

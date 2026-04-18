@@ -10,14 +10,14 @@ use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Framework\Phrase;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
-use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\CollectionFactory;
+use Venbhas\GiftCard\Model\CustomerGiftCardTransactionsLoader;
 
 class GiftCardTransactions extends Template
 {
     public function __construct(
         Context $context,
         private readonly Session $customerSession,
-        private readonly CollectionFactory $collectionFactory,
+        private readonly CustomerGiftCardTransactionsLoader $transactionsLoader,
         private readonly PriceCurrencyInterface $priceCurrency,
         array $data = []
     ) {
@@ -33,27 +33,47 @@ class GiftCardTransactions extends Template
         if ($cid <= 0) {
             return [];
         }
-        $collection = $this->collectionFactory->create();
-        $collection->joinGiftCardCode();
-        $collection->joinSalesOrder();
-        $collection->addFieldToFilter('main_table.customer_id', $cid);
-        $collection->addFieldToFilter(
-            'main_table.action',
-            ['in' => [GiftCardTransaction::ACTION_REDEEM, GiftCardTransaction::ACTION_CHECKOUT_APPLY]]
+
+        $email = '';
+        try {
+            $customerData = method_exists($this->customerSession, 'getCustomerData')
+                ? $this->customerSession->getCustomerData()
+                : null;
+            if ($customerData && $customerData->getEmail()) {
+                $email = trim((string) $customerData->getEmail());
+            }
+            if ($email === '') {
+                $customer = $this->customerSession->getCustomer();
+                if ($customer && $customer->getEmail()) {
+                    $email = trim((string) $customer->getEmail());
+                }
+            }
+        } catch (\Exception $e) {
+            $email = '';
+        }
+
+        $collection = $this->transactionsLoader->createCollection(
+            $cid,
+            $email !== '' ? $email : null,
+            100
         );
-        $collection->setOrder('main_table.entity_id', 'desc');
-        $collection->setPageSize(100);
 
         return $collection->getItems();
     }
 
     public function getActionLabel(GiftCardTransaction $trx): Phrase
     {
-        return match ((string)$trx->getData('action')) {
-            GiftCardTransaction::ACTION_CHECKOUT_APPLY => __('Applied at checkout'),
-            GiftCardTransaction::ACTION_REDEEM => __('Redeemed on payment'),
-            default => __('Gift card'),
-        };
+        $action = (string) $trx->getData('action');
+        if ($action === GiftCardTransaction::ACTION_CHECKOUT_APPLY) {
+            return __('Applied at checkout');
+        }
+        if ($action === GiftCardTransaction::ACTION_REDEEM) {
+            return ((int) $trx->getData('invoice_id')) > 0
+                ? __('Redeemed on invoice payment')
+                : __('Redeemed when order was placed');
+        }
+
+        return __('Gift card');
     }
 
     public function formatAmount(float $amount, ?string $currencyCode): string

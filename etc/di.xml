@@ -20,4 +20,9 @@
                 type="Venbhas\GiftCard\Plugin\Quote\CartTotalRepositoryPlugin"
                 sortOrder="10"/>
     </type>
+    <type name="Magento\Quote\Model\Quote\Item\ToOrderItem">
+        <plugin name="venbhas_giftcard_quote_item_additional_options_to_order_item"
+                type="Venbhas\GiftCard\Plugin\Quote\Item\ToOrderItemPlugin"
+                sortOrder="100"/>
+    </type>
 </config>

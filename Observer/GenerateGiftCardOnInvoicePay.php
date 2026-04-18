@@ -6,6 +6,7 @@ namespace Venbhas\GiftCard\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\Data\InvoiceInterface;
+use Venbhas\GiftCard\Model\Email\GiftCardRedemptionReceiptSender;
 use Venbhas\GiftCard\Model\Email\GiftCardSender;
 use Venbhas\GiftCard\Model\GiftCardIssuer;
 use Venbhas\GiftCard\Model\GiftCardRedeemer;
@@ -27,14 +28,21 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
      */
     private $redeemer;
 
+    /**
+     * @var GiftCardRedemptionReceiptSender
+     */
+    private $redemptionReceiptSender;
+
     public function __construct(
         GiftCardIssuer $issuer,
         GiftCardSender $sender,
-        GiftCardRedeemer $redeemer
+        GiftCardRedeemer $redeemer,
+        GiftCardRedemptionReceiptSender $redemptionReceiptSender
     ) {
         $this->issuer = $issuer;
         $this->sender = $sender;
         $this->redeemer = $redeemer;
+        $this->redemptionReceiptSender = $redemptionReceiptSender;
     }
 
     public function execute(Observer $observer): void
@@ -50,8 +58,11 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
             return;
         }
 
-        // Redeem applied gift cards (discount) on invoice payment.
+        // Redeem applied gift cards (discount) on invoice payment (skipped if already redeemed at order placement).
         $this->redeemer->redeemOnInvoicePay($order, $invoice);
+
+        // Email customer a summary of gift cards applied to this order (code, amount used, initial, balance).
+        $this->redemptionReceiptSender->sendForOrder($order);
 
         foreach ($invoice->getItems() as $invoiceItem) {
             $orderItem = $invoiceItem->getOrderItem();

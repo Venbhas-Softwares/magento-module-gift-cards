@@ -6,7 +6,8 @@
         <referenceContainer name="content">
             <block class="Venbhas\GiftCard\Block\Account\GiftCardTransactions"
                    name="venbhas.giftcard.account.transactions"
-                   template="Venbhas_GiftCard::account/transactions.phtml"/>
+                   template="Venbhas_GiftCard::account/transactions.phtml"
+                   cacheable="false"/>
         </referenceContainer>
     </body>
 </page>

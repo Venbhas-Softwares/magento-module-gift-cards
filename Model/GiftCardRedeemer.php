@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Model;
 
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Sales\Api\Data\InvoiceInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 
+/**
+ * Deducts gift card balances and writes "redeem" ledger rows when an invoice is paid.
+ * "Applied at checkout" ledger rows are recorded separately at order placement (GiftCardCheckoutTransactionLogger).
+ */
 class GiftCardRedeemer
 {
     /**
@@ -22,25 +27,58 @@ class GiftCardRedeemer
      */
     private $json;
 
+    /**
+     * @var SalesOrderEntityIdResolver
+     */
+    private $salesOrderEntityIdResolver;
+
     public function __construct(
         ResourceConnection $resource,
-        Json $json
+        Json $json,
+        SalesOrderEntityIdResolver $salesOrderEntityIdResolver
     ) {
         $this->resource = $resource;
         $this->json = $json;
+        $this->salesOrderEntityIdResolver = $salesOrderEntityIdResolver;
     }
 
     /**
-     * Deduct balances for gift cards applied to an order; record transactions; lock card to redeemer on first use.
+     * Deduct balances when an invoice is paid.
      */
     public function redeemOnInvoicePay(OrderInterface $order, InvoiceInterface $invoice): void
     {
+        $this->executeRedemption($order, $invoice);
+    }
+
+    private function executeRedemption(OrderInterface $order, InvoiceInterface $invoice): void
+    {
+        $conn = $this->resource->getConnection();
+        $salesOrderTable = $this->resource->getTableName('sales_order');
+        $orderId = $this->salesOrderEntityIdResolver->resolve($order);
+
+        if ($orderId > 0) {
+            $already = (int) $conn->fetchOne(
+                'SELECT venbhas_giftcard_redeemed FROM ' . $salesOrderTable . ' WHERE entity_id = ?',
+                [$orderId]
+            );
+            if ($already === 1) {
+                return;
+            }
+        }
+
         if ((int) $order->getData('venbhas_giftcard_redeemed') === 1) {
             return;
         }
 
         $raw = (string) $order->getData('venbhas_giftcard_applied');
         if ($raw === '') {
+            if ($orderId > 0) {
+                $conn->update(
+                    $salesOrderTable,
+                    ['venbhas_giftcard_redeemed' => 1],
+                    ['entity_id = ?' => $orderId]
+                );
+            }
             $order->setData('venbhas_giftcard_redeemed', 1);
 
             return;
@@ -48,17 +86,27 @@ class GiftCardRedeemer
 
         $applied = $this->decodeApplied($raw);
         if (!$applied) {
+            if ($orderId > 0) {
+                $conn->update(
+                    $salesOrderTable,
+                    ['venbhas_giftcard_redeemed' => 1],
+                    ['entity_id = ?' => $orderId]
+                );
+            }
             $order->setData('venbhas_giftcard_redeemed', 1);
 
             return;
         }
 
-        $conn = $this->resource->getConnection();
         $codeTable = $this->resource->getTableName('venbhas_giftcard_code');
         $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
 
+        $codeColumns = $this->resolveGiftCardSelectColumns($conn, $codeTable);
+
         $orderCustomerId = $order->getCustomerId() ? (int) $order->getCustomerId() : null;
         $orderEmail = strtolower(trim((string) $order->getCustomerEmail()));
+
+        $invoiceId = (int) $invoice->getEntityId();
 
         $conn->beginTransaction();
         try {
@@ -70,15 +118,7 @@ class GiftCardRedeemer
                 }
 
                 $select = $conn->select()
-                    ->from($codeTable, [
-                        'entity_id',
-                        'balance_amount',
-                        'amount',
-                        'balance',
-                        'status',
-                        'redeemer_customer_id',
-                        'redeemer_email',
-                    ])
+                    ->from($codeTable, $codeColumns)
                     ->where('code = ?', $code)
                     ->forUpdate(true);
                 $gc = $conn->fetchRow($select);
@@ -91,13 +131,7 @@ class GiftCardRedeemer
 
                 $this->assertOrderMatchesRedeemerLock($order, $gc);
 
-                $currentAmount = (float) ($gc['balance_amount'] ?? 0);
-                if ($currentAmount <= 0.0001) {
-                    $currentAmount = (float) ($gc['amount'] ?? 0);
-                    if ($currentAmount <= 0.0001) {
-                        $currentAmount = (float) ($gc['balance'] ?? 0);
-                    }
-                }
+                $currentAmount = $this->readBalanceFromGcRow($gc);
                 if ($currentAmount + 0.0001 < $amount) {
                     throw new LocalizedException(__('Gift card code %1 has insufficient balance.', $code));
                 }
@@ -105,8 +139,9 @@ class GiftCardRedeemer
                 $newAmount = max(0.0, $currentAmount - $amount);
                 $newStatus = $newAmount <= 0.0001 ? GiftCardCode::STATUS_INACTIVE : GiftCardCode::STATUS_ACTIVE;
 
+                $balanceAttr = $this->balanceColumnPresentInRow($gc);
                 $update = [
-                    'balance_amount' => $newAmount,
+                    $balanceAttr => $newAmount,
                     'status' => $newStatus,
                 ];
 
@@ -127,15 +162,23 @@ class GiftCardRedeemer
 
                 $conn->insert($trxTable, [
                     'giftcard_id' => (int) $gc['entity_id'],
-                    'action' => 'redeem',
+                    'action' => GiftCardTransaction::ACTION_REDEEM,
                     'amount' => $amount,
                     'balance_after' => $newAmount,
-                    'order_id' => (int) $order->getEntityId() ?: null,
-                    'invoice_id' => (int) $invoice->getEntityId() ?: null,
+                    'order_id' => $orderId > 0 ? $orderId : null,
+                    'invoice_id' => $invoiceId > 0 ? $invoiceId : null,
                     'creditmemo_id' => null,
                     'customer_id' => $orderCustomerId,
                     'customer_email' => $order->getCustomerEmail(),
                 ]);
+            }
+
+            if ($orderId > 0) {
+                $conn->update(
+                    $salesOrderTable,
+                    ['venbhas_giftcard_redeemed' => 1],
+                    ['entity_id = ?' => $orderId]
+                );
             }
 
             $conn->commit();
@@ -145,6 +188,50 @@ class GiftCardRedeemer
         }
 
         $order->setData('venbhas_giftcard_redeemed', 1);
+    }
+
+    /**
+     * @param array<string, mixed> $gc
+     */
+    private function balanceColumnPresentInRow(array $gc): string
+    {
+        foreach (['balance_amount', 'amount', 'balance'] as $key) {
+            if (array_key_exists($key, $gc)) {
+                return $key;
+            }
+        }
+
+        return 'balance_amount';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveGiftCardSelectColumns(AdapterInterface $conn, string $codeTable): array
+    {
+        $cols = ['entity_id', 'status', 'redeemer_customer_id', 'redeemer_email'];
+        $existing = array_keys((array) $conn->describeTable($codeTable));
+        foreach (['balance_amount', 'amount', 'balance'] as $balanceCol) {
+            if (in_array($balanceCol, $existing, true)) {
+                $cols[] = $balanceCol;
+            }
+        }
+
+        return array_values(array_unique($cols));
+    }
+
+    /**
+     * @param array<string, mixed> $gc
+     */
+    private function readBalanceFromGcRow(array $gc): float
+    {
+        foreach (['balance_amount', 'amount', 'balance'] as $key) {
+            if (array_key_exists($key, $gc) && $gc[$key] !== null && $gc[$key] !== '') {
+                return (float) $gc[$key];
+            }
+        }
+
+        return 0.0;
     }
 
     /**

@@ -9,8 +9,8 @@ use Magento\Sales\Api\Data\OrderInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Records venbhas_giftcard_transaction rows when a gift card is applied at checkout (order placed).
- * Financial deduction still happens on invoice pay (see GiftCardRedeemer); this is the usage ledger for checkout.
+ * Records checkout_apply ledger rows when an order is placed (applied at checkout).
+ * Balance deduction and redeem rows occur on invoice payment (GiftCardRedeemer).
  */
 class GiftCardCheckoutTransactionLogger
 {
@@ -29,19 +29,26 @@ class GiftCardCheckoutTransactionLogger
      */
     private $logger;
 
+    /**
+     * @var SalesOrderEntityIdResolver
+     */
+    private $salesOrderEntityIdResolver;
+
     public function __construct(
         ResourceConnection $resource,
         Json $json,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        SalesOrderEntityIdResolver $salesOrderEntityIdResolver
     ) {
         $this->resource = $resource;
         $this->json = $json;
         $this->logger = $logger;
+        $this->salesOrderEntityIdResolver = $salesOrderEntityIdResolver;
     }
 
     public function logForOrder(OrderInterface $order): void
     {
-        $orderId = (int)$order->getEntityId();
+        $orderId = $this->salesOrderEntityIdResolver->resolve($order);
         if ($orderId < 1) {
             return;
         }
@@ -72,6 +79,16 @@ class GiftCardCheckoutTransactionLogger
         $orderEmail = trim((string)$order->getCustomerEmail());
         $customerEmail = $orderEmail !== '' ? $orderEmail : null;
 
+        $codeTableColumns = array_keys((array)$conn->describeTable($codeTable));
+        // Only select columns that exist: requesting `amount`/`balance` on installs that only have
+        // `balance_amount` makes MySQL throw "Unknown column" and the whole log is rolled back.
+        $selectCodeColumns = ['entity_id', 'status'];
+        foreach (['balance_amount', 'amount', 'balance'] as $balanceCol) {
+            if (in_array($balanceCol, $codeTableColumns, true)) {
+                $selectCodeColumns[] = $balanceCol;
+            }
+        }
+
         $conn->beginTransaction();
         try {
             foreach ($applied as $row) {
@@ -82,7 +99,7 @@ class GiftCardCheckoutTransactionLogger
                 }
 
                 $select = $conn->select()
-                    ->from($codeTable, ['entity_id', 'balance_amount', 'amount', 'balance', 'status'])
+                    ->from($codeTable, $selectCodeColumns)
                     ->where('code = ?', $code);
                 $gc = $conn->fetchRow($select);
                 if (!$gc) {
@@ -92,20 +109,15 @@ class GiftCardCheckoutTransactionLogger
                     );
                     continue;
                 }
-                if ((int)$gc['status'] !== GiftCardCode::STATUS_ACTIVE) {
-                    continue;
-                }
 
-                $currentAmount = (float)($gc['balance_amount'] ?? 0);
-                if ($currentAmount <= 0.0001) {
-                    // Backward-compat: older installs may use column name "amount" or "balance".
-                    $currentAmount = (float)($gc['amount'] ?? 0);
-                    if ($currentAmount <= 0.0001) {
-                        $currentAmount = (float)($gc['balance'] ?? 0);
-                    }
+                $currentAmount = $this->readGiftCardBalanceFromRow($gc);
+                if (!$this->rowHasBalanceColumn($gc)) {
+                    $usedAmount = $amount;
+                    $balanceAfter = 0.0;
+                } else {
+                    $usedAmount = min($amount, max(0.0, $currentAmount));
+                    $balanceAfter = max(0.0, $currentAmount - $usedAmount);
                 }
-                $usedAmount = min($amount, $currentAmount);
-                $balanceAfter = max(0.0, $currentAmount - $usedAmount);
 
                 $conn->insert($trxTable, [
                     'giftcard_id' => (int)$gc['entity_id'],
@@ -144,5 +156,33 @@ class GiftCardCheckoutTransactionLogger
         }
 
         return $decoded;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function readGiftCardBalanceFromRow(array $row): float
+    {
+        foreach (['balance_amount', 'amount', 'balance'] as $key) {
+            if (array_key_exists($key, $row) && $row[$key] !== null && $row[$key] !== '') {
+                return (float)$row[$key];
+            }
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function rowHasBalanceColumn(array $row): bool
+    {
+        foreach (['balance_amount', 'amount', 'balance'] as $key) {
+            if (array_key_exists($key, $row)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

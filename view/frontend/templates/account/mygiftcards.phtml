@@ -12,25 +12,37 @@ $cards = $block->getGiftCards();
             <span><?= $block->escapeHtml(__('You have no gift cards yet.')) ?></span>
         </div>
     <?php else: ?>
-        <div class="table-wrapper">
+        <div class="table-wrapper orders-history">
             <table class="data table table-giftcards" id="my-giftcards-table">
+                <caption class="table-caption"><?= $block->escapeHtml(__('Gift cards')) ?></caption>
                 <thead>
                 <tr>
-                    <th scope="col"><?= $block->escapeHtml(__('Code')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Gift card code')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Status')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Amount')) ?></th>
                     <th scope="col"><?= $block->escapeHtml(__('Balance')) ?></th>
-                    <th scope="col"><?= $block->escapeHtml(__('Currency')) ?></th>
-                    <th scope="col"><?= $block->escapeHtml(__('Recipient Email')) ?></th>
-                    <th scope="col"><?= $block->escapeHtml(__('Created')) ?></th>
                 </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($cards as $card): ?>
+                    <?php
+                    $currency = (string) $card->getData('currency_code');
+                    $initial = $block->getInitialValue($card);
+                    $balance = $block->getBalanceValue($card);
+                    ?>
                     <tr>
-                        <td data-th="<?= $block->escapeHtmlAttr(__('Code')) ?>"><?= $block->escapeHtml((string)$card->getData('code')) ?></td>
-                        <td data-th="<?= $block->escapeHtmlAttr(__('Balance')) ?>"><?= $block->escapeHtml((string)$card->getData('balance_amount')) ?></td>
-                        <td data-th="<?= $block->escapeHtmlAttr(__('Currency')) ?>"><?= $block->escapeHtml((string)$card->getData('currency_code')) ?></td>
-                        <td data-th="<?= $block->escapeHtmlAttr(__('Recipient Email')) ?>"><?= $block->escapeHtml((string)$card->getData('recipient_email')) ?></td>
-                        <td data-th="<?= $block->escapeHtmlAttr(__('Created')) ?>"><?= $block->escapeHtml((string)$card->getData('created_at')) ?></td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Gift card code')) ?>">
+                            <?= $block->escapeHtml((string) $card->getData('code')) ?>
+                        </td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Status')) ?>">
+                            <?= $block->escapeHtml((string) $block->getStatusLabel($card)) ?>
+                        </td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Initial amount')) ?>">
+                            <?= $block->escapeHtml($block->formatMoney($initial, $currency)) ?>
+                        </td>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Current balance')) ?>">
+                            <?= $block->escapeHtml($block->formatMoney($balance, $currency)) ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -38,4 +50,3 @@ $cards = $block->getGiftCards();
         </div>
     <?php endif; ?>
 </div>
-

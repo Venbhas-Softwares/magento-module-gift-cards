@@ -8,6 +8,7 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Model\Quote\Item as QuoteItem;
+use Venbhas\GiftCard\Model\Config;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 
@@ -70,9 +71,12 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
                 continue;
             }
             $label = $this->labelForGiftCardOptionKey($k);
+            $displayValue = $k === 'delivery_type'
+                ? $this->formatDeliveryTypeForDisplay((string) $v)
+                : (string) $v;
             $additional[] = [
                 'label' => $label,
-                'value' => $v,
+                'value' => $displayValue,
                 'option_code' => $k,
             ];
         }
@@ -87,6 +91,7 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
     {
         return match ($k) {
             'amount' => (string) __('Amount'),
+            'delivery_type' => (string) __('Gift card delivery'),
             'delivery_street' => (string) __('Delivery street'),
             'delivery_city' => (string) __('Delivery city'),
             'delivery_region' => (string) __('Delivery state / province'),
@@ -94,5 +99,20 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
             'delivery_country' => (string) __('Delivery country'),
             default => ucwords(str_replace('_', ' ', $k)),
         };
+    }
+
+    /**
+     * Human-readable delivery method for order/invoice emails and admin line items.
+     */
+    private function formatDeliveryTypeForDisplay(string $raw): string
+    {
+        switch (strtolower(trim($raw))) {
+            case Config::GIFT_DELIVERY_PHYSICAL:
+                return (string) __('Physical delivery (card shipped — no email with code)');
+            case Config::GIFT_DELIVERY_VIRTUAL:
+                return (string) __('Virtual delivery (code sent by email when invoiced)');
+            default:
+                return $raw;
+        }
     }
 }
