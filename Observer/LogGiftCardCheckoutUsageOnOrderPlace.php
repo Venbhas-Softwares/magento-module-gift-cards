@@ -8,12 +8,34 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Venbhas\GiftCard\Model\GiftCardCheckoutTransactionLogger;
 
+/**
+ * Observer to log gift card usage transactions when an order is placed.
+ */
 class LogGiftCardCheckoutUsageOnOrderPlace implements ObserverInterface
 {
-    public function __construct(
-        private readonly GiftCardCheckoutTransactionLogger $checkoutTransactionLogger
-    ) {}
+    /**
+     * @var GiftCardCheckoutTransactionLogger
+     */
+    private GiftCardCheckoutTransactionLogger $_checkoutTransactionLogger;
 
+    /**
+     * Initialize observer.
+     *
+     * @param GiftCardCheckoutTransactionLogger $checkoutTransactionLogger Checkout transaction logger
+     */
+    public function __construct(
+        GiftCardCheckoutTransactionLogger $checkoutTransactionLogger
+    ) {
+        $this->_checkoutTransactionLogger = $checkoutTransactionLogger;
+    }
+
+    /**
+     * Execute observer.
+     *
+     * @param Observer $observer Observer
+     *
+     * @return void
+     */
     public function execute(Observer $observer): void
     {
         $order = $observer->getData('order');
@@ -24,6 +46,6 @@ class LogGiftCardCheckoutUsageOnOrderPlace implements ObserverInterface
             return;
         }
 
-        $this->checkoutTransactionLogger->logForOrder($order);
+        $this->_checkoutTransactionLogger->logForOrder($order);
     }
 }

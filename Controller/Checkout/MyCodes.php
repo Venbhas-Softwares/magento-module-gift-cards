@@ -9,6 +9,9 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Venbhas\GiftCard\Model\GiftCardCode;
 
+/**
+ * Checkout controller to fetch active gift card codes for the logged-in customer.
+ */
 class MyCodes implements HttpGetActionInterface
 {
     /**
@@ -26,6 +29,13 @@ class MyCodes implements HttpGetActionInterface
      */
     private $resource;
 
+    /**
+     * Initialize controller.
+     *
+     * @param JsonFactory $jsonFactory JSON result factory
+     * @param CustomerSession $customerSession Customer session
+     * @param ResourceConnection $resource Resource connection
+     */
     public function __construct(
         JsonFactory $jsonFactory,
         CustomerSession $customerSession,
@@ -36,6 +46,11 @@ class MyCodes implements HttpGetActionInterface
         $this->resource = $resource;
     }
 
+    /**
+     * Execute action.
+     *
+     * @return \Magento\Framework\Controller\Result\Json
+     */
     public function execute()
     {
         $result = $this->jsonFactory->create();
@@ -73,4 +88,3 @@ class MyCodes implements HttpGetActionInterface
         return $result->setData(['success' => true, 'codes' => $rows]);
     }
 }
-

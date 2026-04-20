@@ -18,6 +18,11 @@ class CustomerGiftCardTransactionsLoader
      */
     private $collectionFactory;
 
+    /**
+     * Initialize loader.
+     *
+     * @param CollectionFactory $collectionFactory Transaction collection factory
+     */
     public function __construct(
         CollectionFactory $collectionFactory
     ) {
@@ -25,7 +30,13 @@ class CustomerGiftCardTransactionsLoader
     }
 
     /**
+     * Create a transaction collection for a customer.
+     *
+     * @param int $customerId Customer ID
+     * @param string|null $customerEmail Customer email
      * @param int|null $pageSize Limit rows; omit or null for no explicit limit beyond collection default.
+     *
+     * @return Collection
      */
     public function createCollection(int $customerId, ?string $customerEmail = null, ?int $pageSize = 200): Collection
     {

@@ -17,6 +17,9 @@ use Magento\MediaStorage\Helper\File\Storage\Database;
 use Psr\Log\LoggerInterface;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 
+/**
+ * Gift card product type.
+ */
 class GiftCard extends \Magento\Catalog\Model\Product\Type\Simple
 {
     public const TYPE_CODE = 'giftcard';
@@ -26,6 +29,22 @@ class GiftCard extends \Magento\Catalog\Model\Product\Type\Simple
      */
     private ?GiftOptionsResolver $giftOptionsResolver = null;
 
+    /**
+     * Initialize product type.
+     *
+     * @param Option $catalogProductOption Product option instance
+     * @param EavConfig $eavConfig EAV config
+     * @param Type $catalogProductType Product type instance
+     * @param ManagerInterface $eventManager Event manager
+     * @param Database $fileStorageDb File storage DB helper
+     * @param Filesystem $filesystem Filesystem
+     * @param Registry $coreRegistry Core registry
+     * @param LoggerInterface $logger Logger
+     * @param ProductRepositoryInterface $productRepository Product repository
+     * @param Json|null $serializer Serializer
+     * @param UploaderFactory|null $uploaderFactory Uploader factory
+     * @param GiftOptionsResolver|null $giftOptionsResolver Gift options resolver
+     */
     public function __construct(
         Option $catalogProductOption,
         EavConfig $eavConfig,
@@ -56,6 +75,11 @@ class GiftCard extends \Magento\Catalog\Model\Product\Type\Simple
         $this->giftOptionsResolver = $giftOptionsResolver;
     }
 
+    /**
+     * Get product type code.
+     *
+     * @return string
+     */
     public function getCode(): string
     {
         return self::TYPE_CODE;
@@ -63,6 +87,10 @@ class GiftCard extends \Magento\Catalog\Model\Product\Type\Simple
 
     /**
      * Physical delivery (product or store scope) makes the line item shippable.
+     *
+     * @param mixed $product Product
+     *
+     * @return bool
      */
     public function isVirtual($product)
     {
@@ -76,13 +104,11 @@ class GiftCard extends \Magento\Catalog\Model\Product\Type\Simple
         return true;
     }
 
-    public function hasRequiredOptions($product)
-    {
-        return parent::hasRequiredOptions($product);
-    }
-
     /**
+     * Gift card products always have configurable options.
+     *
      * @param mixed $product
+     *
      * @return bool
      */
     public function canConfigure($product)

@@ -13,6 +13,9 @@ use Venbhas\GiftCard\Model\Config;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 
+/**
+ * Product view block for rendering gift card option fields.
+ */
 class Fields extends Template
 {
     /**
@@ -35,6 +38,16 @@ class Fields extends Template
      */
     private PriceCurrencyInterface $priceCurrency;
 
+    /**
+     * Initialize block.
+     *
+     * @param Context $context Block context
+     * @param Registry $registry Core registry
+     * @param Config $config Module config
+     * @param GiftOptionsResolver $giftOptionsResolver Gift options resolver
+     * @param PriceCurrencyInterface $priceCurrency Price currency formatter
+     * @param array $data Additional data
+     */
     public function __construct(
         Context $context,
         Registry $registry,
@@ -50,12 +63,22 @@ class Fields extends Template
         $this->priceCurrency = $priceCurrency;
     }
 
+    /**
+     * Get the current product from registry.
+     *
+     * @return Product|null
+     */
     public function getProduct(): ?Product
     {
         $product = $this->registry->registry('current_product');
         return $product instanceof Product ? $product : null;
     }
 
+    /**
+     * Check whether gift card fields should be rendered.
+     *
+     * @return bool
+     */
     public function shouldRender(): bool
     {
         if (!$this->config->isEnabled((int) $this->_storeManager->getStore()->getId())) {
@@ -65,6 +88,11 @@ class Fields extends Template
         return $p && (string) $p->getTypeId() === GiftCard::TYPE_CODE;
     }
 
+    /**
+     * Check whether custom amount is allowed.
+     *
+     * @return bool
+     */
     public function isCustomAmountAllowed(): bool
     {
         $p = $this->getProduct();
@@ -74,6 +102,11 @@ class Fields extends Template
         return $this->giftOptionsResolver->isCustomAmountAllowed($p, (int) $this->_storeManager->getStore()->getId());
     }
 
+    /**
+     * Check whether custom message is allowed.
+     *
+     * @return bool
+     */
     public function isCustomMessageAllowed(): bool
     {
         $p = $this->getProduct();
@@ -84,6 +117,11 @@ class Fields extends Template
         return $this->giftOptionsResolver->isCustomMessageAllowed($p, $storeId);
     }
 
+    /**
+     * Get gift delivery type.
+     *
+     * @return string
+     */
     public function getGiftDeliveryType(): string
     {
         $p = $this->getProduct();
@@ -94,6 +132,11 @@ class Fields extends Template
         return $this->giftOptionsResolver->getDeliveryType($p, $storeId);
     }
 
+    /**
+     * Check whether delivery choice is shown on storefront.
+     *
+     * @return bool
+     */
     public function isDeliveryChoiceOnStorefront(): bool
     {
         $p = $this->getProduct();
@@ -104,6 +147,11 @@ class Fields extends Template
         return $this->giftOptionsResolver->isDeliveryChoiceOnStorefront($p, $storeId);
     }
 
+    /**
+     * Check whether physical delivery is offered.
+     *
+     * @return bool
+     */
     public function isPhysicalDeliveryOffered(): bool
     {
         $p = $this->getProduct();
@@ -116,6 +164,8 @@ class Fields extends Template
     }
 
     /**
+     * Get gift card amount presets.
+     *
      * @return float[]
      */
     public function getAmountPresets(): array
@@ -128,6 +178,11 @@ class Fields extends Template
         return $this->giftOptionsResolver->getAmountPresets($p, $storeId);
     }
 
+    /**
+     * Get minimum gift card amount.
+     *
+     * @return float
+     */
     public function getMinAmount(): float
     {
         $p = $this->getProduct();
@@ -138,6 +193,11 @@ class Fields extends Template
         return $this->giftOptionsResolver->getMinAmount($p, $storeId);
     }
 
+    /**
+     * Get maximum gift card amount.
+     *
+     * @return float
+     */
     public function getMaxAmount(): float
     {
         $p = $this->getProduct();
@@ -148,6 +208,11 @@ class Fields extends Template
         return $this->giftOptionsResolver->getMaxAmount($p, $storeId);
     }
 
+    /**
+     * Get current currency symbol for storefront.
+     *
+     * @return string
+     */
     public function getCurrencySymbol(): string
     {
         return (string) $this->priceCurrency->getCurrencySymbol(
@@ -156,6 +221,13 @@ class Fields extends Template
         );
     }
 
+    /**
+     * Format an amount for storefront display.
+     *
+     * @param float $amount Amount
+     *
+     * @return string
+     */
     public function formatAmount(float $amount): string
     {
         return $this->priceCurrency->format(

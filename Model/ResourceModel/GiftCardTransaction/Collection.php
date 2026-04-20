@@ -8,14 +8,24 @@ use Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction as GiftCardTransactionResource;
 
+/**
+ * Gift card transaction collection.
+ */
 class Collection extends AbstractCollection
 {
+    /**
+     * Initialize collection.
+     *
+     * @return void
+     */
     protected function _construct(): void
     {
         $this->_init(GiftCardTransaction::class, GiftCardTransactionResource::class);
     }
 
     /**
+     * Join gift card code information (code and currency).
+     *
      * @return $this
      */
     public function joinGiftCardCode(): self
@@ -31,6 +41,8 @@ class Collection extends AbstractCollection
     }
 
     /**
+     * Join sales order increment id.
+     *
      * @return $this
      */
     public function joinSalesOrder(): self

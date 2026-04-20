@@ -10,19 +10,43 @@ use Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult;
 use Psr\Log\LoggerInterface as Logger;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction as ResourceModel;
 
+/**
+ * Admin grid collection for gift card transactions.
+ */
 class Collection extends SearchResult
 {
+    /**
+     * Initialize grid collection with default table mapping.
+     *
+     * Some UI data providers instantiate this collection without passing `$mainTable` /
+     * `$resourceModel`. Provide defaults to avoid empty table names at runtime.
+     *
+     * @param EntityFactory $entityFactory Entity factory
+     * @param Logger $logger Logger
+     * @param FetchStrategy $fetchStrategy Fetch strategy
+     * @param EventManager $eventManager Event manager
+     * @param string|null $mainTable Main table
+     * @param string|null $resourceModel Resource model
+     */
     public function __construct(
         EntityFactory $entityFactory,
         Logger $logger,
         FetchStrategy $fetchStrategy,
         EventManager $eventManager,
-        $mainTable = 'venbhas_giftcard_transaction',
-        $resourceModel = ResourceModel::class
+        ?string $mainTable = null,
+        ?string $resourceModel = null
     ) {
+        $mainTable = $mainTable ?: 'venbhas_giftcard_transaction';
+        $resourceModel = $resourceModel ?: ResourceModel::class;
+
         parent::__construct($entityFactory, $logger, $fetchStrategy, $eventManager, $mainTable, $resourceModel);
     }
 
+    /**
+     * Initialize select with joins.
+     *
+     * @return $this
+     */
     protected function _initSelect()
     {
         parent::_initSelect();
@@ -44,4 +68,3 @@ class Collection extends SearchResult
         return $this;
     }
 }
-

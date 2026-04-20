@@ -15,28 +15,64 @@ use Venbhas\GiftCard\Model\Config\Source\Product\NullableYesNo;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 
+/**
+ * Data patch to add gift card product attributes.
+ */
 class AddGiftOptionsProductAttributes implements DataPatchInterface
 {
+    /**
+     * @var ModuleDataSetupInterface
+     */
+    private ModuleDataSetupInterface $_moduleDataSetup;
+
+    /**
+     * @var CategorySetupFactory
+     */
+    private CategorySetupFactory $_categorySetupFactory;
+
+    /**
+     * Initialize patch.
+     *
+     * @param ModuleDataSetupInterface $moduleDataSetup Module data setup
+     * @param CategorySetupFactory $categorySetupFactory Category setup factory
+     */
     public function __construct(
-        private readonly ModuleDataSetupInterface $moduleDataSetup,
-        private readonly CategorySetupFactory $categorySetupFactory
+        ModuleDataSetupInterface $moduleDataSetup,
+        CategorySetupFactory $categorySetupFactory
     ) {
+        $this->_moduleDataSetup = $moduleDataSetup;
+        $this->_categorySetupFactory = $categorySetupFactory;
     }
 
+    /**
+     * Get patch dependencies.
+     *
+     * @return array
+     */
     public static function getDependencies(): array
     {
         return [];
     }
 
+    /**
+     * Get patch aliases.
+     *
+     * @return array
+     */
     public function getAliases(): array
     {
         return [];
     }
 
+    /**
+     * Apply patch.
+     *
+     * @return void
+     */
     public function apply(): void
     {
         /** @var CategorySetup $setup */
-        $setup = $this->categorySetupFactory->create(['setup' => $this->moduleDataSetup]);
+        $setup = $this->_categorySetupFactory->create(['setup' => $this->_moduleDataSetup]);
         $entity = Product::ENTITY;
         if ($setup->getAttribute($entity, GiftOptionsResolver::ATTR_DELIVERY_TYPE)) {
             return;
@@ -116,7 +152,8 @@ class AddGiftOptionsProductAttributes implements DataPatchInterface
                 'apply_to' => GiftCard::TYPE_CODE,
                 'group' => 'Gift Options',
                 'sort_order' => 30,
-                'note' => 'Comma-separated preset amounts for this product (e.g. 25,50,100). Leave empty to use configuration defaults.',
+                'note' => 'Comma-separated preset amounts for this product (e.g. 25,50,100). '
+                    . 'Leave empty to use configuration defaults.',
             ]
         );
 

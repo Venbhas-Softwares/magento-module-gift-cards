@@ -36,12 +36,24 @@ class Config
      */
     private ScopeConfigInterface $scopeConfig;
 
+    /**
+     * Initialize config.
+     *
+     * @param ScopeConfigInterface $scopeConfig Scope config
+     */
     public function __construct(
         ScopeConfigInterface $scopeConfig
     ) {
         $this->scopeConfig = $scopeConfig;
     }
 
+    /**
+     * Check whether the module is enabled.
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return bool
+     */
     public function isEnabled(?int $storeId = null): bool
     {
         return $this->scopeConfig->isSetFlag(
@@ -53,6 +65,10 @@ class Config
 
     /**
      * Store default for whether the gift message field is shown (product can override).
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return bool
      */
     public function isCustomMessageAllowedByDefault(?int $storeId = null): bool
     {
@@ -65,6 +81,10 @@ class Config
 
     /**
      * When false, shoppers may only pick a preset amount (no “Other amount”).
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return bool
      */
     public function isCustomAmountAllowed(?int $storeId = null): bool
     {
@@ -77,6 +97,10 @@ class Config
 
     /**
      * Used as layout helper (checkout summary title); $store may be null|int|store object.
+     *
+     * @param mixed $store Store
+     *
+     * @return string
      */
     public function getTotalTitle($store = null): string
     {
@@ -89,6 +113,13 @@ class Config
         return $title !== '' ? $title : (string) __('Gift Card');
     }
 
+    /**
+     * Resolve a store ID from a mixed store reference.
+     *
+     * @param mixed $store Store
+     *
+     * @return int|null
+     */
     private function resolveStoreId($store): ?int
     {
         if ($store === null) {
@@ -105,6 +136,10 @@ class Config
 
     /**
      * Store-level gift delivery mode: virtual, physical, or both (shopper selects).
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return string
      */
     public function getGiftDeliveryType(?int $storeId = null): string
     {
@@ -119,22 +154,47 @@ class Config
         return self::GIFT_DELIVERY_BOTH;
     }
 
+    /**
+     * Check whether the store is virtual delivery only.
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return bool
+     */
     public function isVirtualDeliveryOnly(?int $storeId = null): bool
     {
         return $this->getGiftDeliveryType($storeId) === self::GIFT_DELIVERY_VIRTUAL;
     }
 
+    /**
+     * Check whether the store is physical delivery only.
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return bool
+     */
     public function isPhysicalDeliveryOnly(?int $storeId = null): bool
     {
         return $this->getGiftDeliveryType($storeId) === self::GIFT_DELIVERY_PHYSICAL;
     }
 
+    /**
+     * Check whether the delivery choice is shown on storefront.
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return bool
+     */
     public function isDeliveryChoiceOnStorefront(?int $storeId = null): bool
     {
         return $this->getGiftDeliveryType($storeId) === self::GIFT_DELIVERY_BOTH;
     }
 
     /**
+     * Get configured preset amounts.
+     *
+     * @param int|null $storeId Store ID
+     *
      * @return float[]
      */
     public function getAmountPresets(?int $storeId = null): array
@@ -154,6 +214,13 @@ class Config
         return $out;
     }
 
+    /**
+     * Get minimum allowed amount.
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return float
+     */
     public function getMinAmount(?int $storeId = null): float
     {
         return (float) $this->scopeConfig->getValue(
@@ -163,6 +230,13 @@ class Config
         ) ?: 1.0;
     }
 
+    /**
+     * Get maximum allowed amount.
+     *
+     * @param int|null $storeId Store ID
+     *
+     * @return float
+     */
     public function getMaxAmount(?int $storeId = null): float
     {
         $v = (float) $this->scopeConfig->getValue(

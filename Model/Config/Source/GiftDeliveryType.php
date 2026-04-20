@@ -7,8 +7,16 @@ namespace Venbhas\GiftCard\Model\Config\Source;
 use Magento\Framework\Data\OptionSourceInterface;
 use Venbhas\GiftCard\Model\Config;
 
+/**
+ * Option source for gift delivery type configuration.
+ */
 class GiftDeliveryType implements OptionSourceInterface
 {
+    /**
+     * Get available options.
+     *
+     * @return array<int, array{value: string, label: \Magento\Framework\Phrase|string}>
+     */
     public function toOptionArray(): array
     {
         return [

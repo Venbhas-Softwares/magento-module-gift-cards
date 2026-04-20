@@ -23,13 +23,25 @@ class ToOrderItemPlugin
      */
     private $json;
 
+    /**
+     * Initialize plugin.
+     *
+     * @param Json $json JSON serializer
+     */
     public function __construct(Json $json)
     {
         $this->json = $json;
     }
 
     /**
-     * @param mixed[] $data
+     * Copy gift card additional options to the converted order item.
+     *
+     * @param ToOrderItem $subject Subject
+     * @param OrderItemInterface $result Order item
+     * @param AbstractItem $item Quote item
+     * @param mixed[] $data Data
+     *
+     * @return OrderItemInterface
      */
     public function afterConvert(
         ToOrderItem $subject,
@@ -62,6 +74,10 @@ class ToOrderItemPlugin
     }
 
     /**
+     * Extract gift card additional options from quote item.
+     *
+     * @param QuoteItem $item Quote item
+     *
      * @return array<int, array<string, mixed>>
      */
     private function extractAdditionalOptions(QuoteItem $item): array

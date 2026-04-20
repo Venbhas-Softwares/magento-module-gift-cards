@@ -6,7 +6,8 @@
 "var giftcard_currency":"Gift Card Currency",
 "var sender_name":"Sender Name",
 "var recipient_name":"Recipient Name",
-"var message":"Message"
+"var message":"Message",
+"var message|escape|nl2br":"Message (formatted)"
 } @-->
 
 {{template config_path="design/email/header_template"}}
@@ -21,7 +22,7 @@
 <p><strong>{{trans "Amount:"}}</strong> {{var giftcard_value_formatted}}</p>
 
 {{depend message}}
-<p><strong>{{trans "Message:"}}</strong><br/>{{var message|escape|nl2br}}</p>
+<p><strong>{{trans "Message:"}}</strong><br>{{var message|escape|nl2br}}</p>
 {{/depend}}
 
 <p>{{trans "You can apply this code in the cart/checkout."}}</p>

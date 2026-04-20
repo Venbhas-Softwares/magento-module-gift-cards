@@ -9,12 +9,34 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Quote\Model\Quote\Item as QuoteItem;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 
+/**
+ * Observer to apply selected gift card amount as custom price on quote item.
+ */
 class ApplyGiftCardAmountToQuoteItem implements ObserverInterface
 {
-    public function __construct(
-        private readonly RequestInterface $request
-    ) {}
+    /**
+     * @var RequestInterface
+     */
+    private RequestInterface $_request;
 
+    /**
+     * Initialize observer.
+     *
+     * @param RequestInterface $request Request
+     */
+    public function __construct(
+        RequestInterface $request
+    ) {
+        $this->_request = $request;
+    }
+
+    /**
+     * Execute observer.
+     *
+     * @param Observer $observer Observer
+     *
+     * @return void
+     */
     public function execute(Observer $observer): void
     {
         /** @var QuoteItem|null $quoteItem */
@@ -24,7 +46,7 @@ class ApplyGiftCardAmountToQuoteItem implements ObserverInterface
             return;
         }
 
-        $data = (array)$this->request->getParam('venbhas_giftcard', []);
+        $data = (array)$this->_request->getParam('venbhas_giftcard', []);
         $amount = isset($data['amount']) ? (float)$data['amount'] : 0.0;
         if ($amount <= 0.0001) {
             return;

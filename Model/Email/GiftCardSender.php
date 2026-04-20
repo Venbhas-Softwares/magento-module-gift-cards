@@ -13,6 +13,9 @@ use Psr\Log\LoggerInterface;
 use Venbhas\GiftCard\Model\Config;
 use Venbhas\GiftCard\Model\GiftCardCode;
 
+/**
+ * Sends gift card email to the recipient.
+ */
 class GiftCardSender
 {
     /**
@@ -35,6 +38,14 @@ class GiftCardSender
      */
     private $priceCurrency;
 
+    /**
+     * Initialize sender.
+     *
+     * @param TransportBuilder $transportBuilder Transport builder
+     * @param StoreManagerInterface $storeManager Store manager
+     * @param LoggerInterface $logger Logger
+     * @param PriceCurrencyInterface $priceCurrency Price currency formatter
+     */
     public function __construct(
         TransportBuilder $transportBuilder,
         StoreManagerInterface $storeManager,
@@ -47,6 +58,13 @@ class GiftCardSender
         $this->priceCurrency = $priceCurrency;
     }
 
+    /**
+     * Send gift card email for a gift card code entity.
+     *
+     * @param GiftCardCode $giftCard Gift card code
+     *
+     * @return void
+     */
     public function send(GiftCardCode $giftCard): void
     {
         // Physical shipment: do not email the gift card code (customer receives physical card).

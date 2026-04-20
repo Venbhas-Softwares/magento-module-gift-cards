@@ -9,11 +9,14 @@ use Venbhas\GiftCard\Model\Config;
 
 /**
  * Product attribute: empty = inherit Stores → Configuration; otherwise override.
- * Must extend AbstractSource so EAV can call {@see \Magento\Eav\Model\Entity\Attribute\Source\AbstractSource::setAttribute()}.
+ * Must extend AbstractSource so EAV can call
+ * {@see \Magento\Eav\Model\Entity\Attribute\Source\AbstractSource::setAttribute()}.
  */
 class GiftDeliveryTypeWithConfig extends AbstractSource
 {
     /**
+     * Get all available options.
+     *
      * @return array<int, array{value: string, label: \Magento\Framework\Phrase|string}>
      */
     public function getAllOptions(): array

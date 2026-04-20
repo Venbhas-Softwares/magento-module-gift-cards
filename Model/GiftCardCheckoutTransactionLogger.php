@@ -34,6 +34,14 @@ class GiftCardCheckoutTransactionLogger
      */
     private $salesOrderEntityIdResolver;
 
+    /**
+     * Initialize logger.
+     *
+     * @param ResourceConnection $resource Resource connection
+     * @param Json $json JSON serializer
+     * @param LoggerInterface $logger Logger
+     * @param SalesOrderEntityIdResolver $salesOrderEntityIdResolver Order ID resolver
+     */
     public function __construct(
         ResourceConnection $resource,
         Json $json,
@@ -46,6 +54,13 @@ class GiftCardCheckoutTransactionLogger
         $this->salesOrderEntityIdResolver = $salesOrderEntityIdResolver;
     }
 
+    /**
+     * Log checkout apply transactions for an order.
+     *
+     * @param OrderInterface $order Order
+     *
+     * @return void
+     */
     public function logForOrder(OrderInterface $order): void
     {
         $orderId = $this->salesOrderEntityIdResolver->resolve($order);
@@ -142,6 +157,10 @@ class GiftCardCheckoutTransactionLogger
     }
 
     /**
+     * Decode applied gift card JSON.
+     *
+     * @param string $raw JSON string
+     *
      * @return array<int, array<string, mixed>>
      */
     private function decodeApplied(string $raw): array
@@ -159,7 +178,11 @@ class GiftCardCheckoutTransactionLogger
     }
 
     /**
-     * @param array<string, mixed> $row
+     * Read the current balance from a gift card DB row.
+     *
+     * @param array $row Gift card DB row
+     *
+     * @return float
      */
     private function readGiftCardBalanceFromRow(array $row): float
     {
@@ -173,7 +196,11 @@ class GiftCardCheckoutTransactionLogger
     }
 
     /**
-     * @param array<string, mixed> $row
+     * Check whether the DB row includes any balance column.
+     *
+     * @param array $row Gift card DB row
+     *
+     * @return bool
      */
     private function rowHasBalanceColumn(array $row): bool
     {

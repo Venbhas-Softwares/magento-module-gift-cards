@@ -39,6 +39,16 @@ class MyGiftCards extends Template
      */
     private $storeManager;
 
+    /**
+     * Initialize block.
+     *
+     * @param Context $context Block context
+     * @param CustomerSession $customerSession Customer session
+     * @param CodeCollectionFactory $collectionFactory Gift card code collection factory
+     * @param PriceCurrencyInterface $priceCurrency Price currency formatter
+     * @param StoreManagerInterface $storeManager Store manager
+     * @param array $data Additional data
+     */
     public function __construct(
         Context $context,
         CustomerSession $customerSession,
@@ -105,6 +115,12 @@ class MyGiftCards extends Template
         return $collection;
     }
 
+    /**
+     * Get a human-readable status label for a gift card.
+     *
+     * @param GiftCardCode|\Magento\Framework\DataObject $card Gift card
+     * @return Phrase
+     */
     public function getStatusLabel($card): Phrase
     {
         $status = (int) $card->getData('status');
@@ -124,6 +140,13 @@ class MyGiftCards extends Template
         }
     }
 
+    /**
+     * Format a gift card amount for display.
+     *
+     * @param float $amount Amount
+     * @param string|null $currencyCode Currency code (optional)
+     * @return string
+     */
     public function formatMoney(float $amount, ?string $currencyCode): string
     {
         $currencyCode = ($currencyCode !== null && $currencyCode !== '')
@@ -157,7 +180,11 @@ class MyGiftCards extends Template
     }
 
     /**
+     * Get the initial value for a gift card.
+     *
      * @param GiftCardCode|\Magento\Framework\DataObject $card
+     *
+     * @return float
      */
     public function getInitialValue($card): float
     {

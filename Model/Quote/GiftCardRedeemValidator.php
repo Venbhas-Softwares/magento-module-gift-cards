@@ -10,6 +10,9 @@ use Magento\Quote\Model\Quote;
 use Venbhas\GiftCard\Model\GiftCardCode;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\CollectionFactory as CodeCollectionFactory;
 
+/**
+ * Validates whether a gift card code can be applied to a quote.
+ */
 class GiftCardRedeemValidator
 {
     /**
@@ -22,6 +25,12 @@ class GiftCardRedeemValidator
      */
     private $resource;
 
+    /**
+     * Initialize validator.
+     *
+     * @param CodeCollectionFactory $codeCollectionFactory Gift card code collection factory
+     * @param ResourceConnection $resource Resource connection
+     */
     public function __construct(
         CodeCollectionFactory $codeCollectionFactory,
         ResourceConnection $resource
@@ -32,6 +41,11 @@ class GiftCardRedeemValidator
 
     /**
      * Validates code for apply; throws on failure.
+     *
+     * @param Quote $quote Quote
+     * @param string $code Gift card code
+     *
+     * @return void
      */
     public function assertMayApply(Quote $quote, string $code): void
     {
@@ -51,7 +65,7 @@ class GiftCardRedeemValidator
             throw new LocalizedException(__('Gift card code is not active.'));
         }
         $available = (float) ($gc->getData('balance_amount') ?? 0);
-        
+
         if ($available <= 0.0001) {
             throw new LocalizedException(__('Gift card has no remaining balance.'));
         }
@@ -64,6 +78,11 @@ class GiftCardRedeemValidator
 
     /**
      * Whether quote may use this card (active balance and lock rules).
+     *
+     * @param Quote $quote Quote
+     * @param GiftCardCode $gc Gift card code
+     *
+     * @return bool
      */
     public function canQuoteUseGiftCard(Quote $quote, GiftCardCode $gc): bool
     {
@@ -77,6 +96,14 @@ class GiftCardRedeemValidator
         return $this->quoteMatchesRedeemerLock($quote, $gc);
     }
 
+    /**
+     * Check if a quote matches the redeemer lock.
+     *
+     * @param Quote $quote Quote
+     * @param GiftCardCode $gc Gift card code
+     *
+     * @return bool
+     */
     public function quoteMatchesRedeemerLock(Quote $quote, GiftCardCode $gc): bool
     {
         $lockedCustomerId = (int) $gc->getData('redeemer_customer_id');
@@ -92,6 +119,14 @@ class GiftCardRedeemValidator
         return $quoteEmail !== '' && $quoteEmail === $lockedEmail;
     }
 
+    /**
+     * Assert that the quote matches redeemer lock rules.
+     *
+     * @param Quote $quote Quote
+     * @param GiftCardCode $gc Gift card code
+     *
+     * @return void
+     */
     private function assertQuoteMatchesRedeemerLock(Quote $quote, GiftCardCode $gc): void
     {
         $lockedCustomerId = (int) $gc->getData('redeemer_customer_id');
@@ -116,6 +151,14 @@ class GiftCardRedeemValidator
         }
     }
 
+    /**
+     * Lock the gift card to the quote's customer or email if needed.
+     *
+     * @param Quote $quote Quote
+     * @param GiftCardCode $gc Gift card code
+     *
+     * @return void
+     */
     private function lockCardToQuoteIfNeeded(Quote $quote, GiftCardCode $gc): void
     {
         $hasLock = (int) $gc->getData('redeemer_customer_id') > 0

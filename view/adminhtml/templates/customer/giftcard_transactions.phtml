@@ -4,17 +4,17 @@ $rows = $block->getTransactions();
 ?>
 <div class="admin__data-grid-wrap">
     <?php if (!$rows): ?>
-        <p><?= $block->escapeHtml(__('No gift card transactions recorded for this customer.')) ?></p>
+        <p><?= $escaper->escapeHtml(__('No gift card transactions recorded for this customer.')) ?></p>
     <?php else: ?>
         <table class="admin__table-secondary">
             <thead>
             <tr>
-                <th><?= $block->escapeHtml(__('Date')) ?></th>
-                <th><?= $block->escapeHtml(__('Type')) ?></th>
-                <th><?= $block->escapeHtml(__('Order')) ?></th>
-                <th><?= $block->escapeHtml(__('Gift card code')) ?></th>
-                <th><?= $block->escapeHtml(__('Amount used')) ?></th>
-                <th><?= $block->escapeHtml(__('Balance after')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Date')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Type')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Order')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Gift card code')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Amount used')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Balance after')) ?></th>
             </tr>
             </thead>
             <tbody>
@@ -26,20 +26,27 @@ $rows = $block->getTransactions();
                 $currency = (string) $trx->getData('gc_currency');
                 ?>
                 <tr>
-                    <td><?= $block->escapeHtml($trx->getData('created_at')) ?></td>
-                    <td><?= $block->escapeHtml($block->getActionLabel($trx)) ?></td>
+                    <td><?= $escaper->escapeHtml($trx->getData('created_at')) ?></td>
+                    <td><?= $escaper->escapeHtml($block->getActionLabel($trx)) ?></td>
                     <td>
                         <?php if ($orderId && $incrementId !== ''): ?>
-                            <a href="<?= $block->escapeUrl($block->getAdminOrderUrl($orderId)) ?>">
-                                <?= $block->escapeHtml($incrementId) ?>
+                            <a href="<?= $escaper->escapeUrl($block->getAdminOrderUrl($orderId)) ?>">
+                                <?= $escaper->escapeHtml($incrementId) ?>
                             </a>
                         <?php else: ?>
-                            <?= $block->escapeHtml(__('—')) ?>
+                            <?= $escaper->escapeHtml(__('—')) ?>
                         <?php endif; ?>
                     </td>
-                    <td><?= $block->escapeHtml($code) ?></td>
-                    <td><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('amount'), $currency)) ?></td>
-                    <td><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('balance_after'), $currency)) ?></td>
+                    <td><?= $escaper->escapeHtml($code) ?></td>
+                    <td>
+                        <?= $escaper->escapeHtml($block->formatAmount((float) $trx->getData('amount'), $currency)) ?>
+                    </td>
+                    <td>
+                        <?php
+                        $balanceAfter = $block->formatAmount((float) $trx->getData('balance_after'), $currency);
+                        ?>
+                        <?= $escaper->escapeHtml($balanceAfter) ?>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

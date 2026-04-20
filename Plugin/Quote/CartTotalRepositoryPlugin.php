@@ -9,6 +9,9 @@ use Magento\Quote\Api\CartTotalRepositoryInterface;
 use Magento\Quote\Api\Data\TotalsExtensionFactory;
 use Magento\Quote\Api\Data\TotalsInterface;
 
+/**
+ * Plugin to expose gift card data on cart totals.
+ */
 class CartTotalRepositoryPlugin
 {
     /**
@@ -21,6 +24,12 @@ class CartTotalRepositoryPlugin
      */
     private $totalsExtensionFactory;
 
+    /**
+     * Initialize plugin.
+     *
+     * @param CartRepositoryInterface $quoteRepository Quote repository
+     * @param TotalsExtensionFactory $totalsExtensionFactory Totals extension factory
+     */
     public function __construct(
         CartRepositoryInterface $quoteRepository,
         TotalsExtensionFactory $totalsExtensionFactory
@@ -31,6 +40,11 @@ class CartTotalRepositoryPlugin
 
     /**
      * Ensure totals are collected so gift card amounts and balance JSON exist on the quote.
+     *
+     * @param CartTotalRepositoryInterface $subject Subject
+     * @param int|string $cartId Cart ID
+     *
+     * @return array
      */
     public function beforeGet(CartTotalRepositoryInterface $subject, $cartId): array
     {
@@ -42,6 +56,12 @@ class CartTotalRepositoryPlugin
 
     /**
      * Expose gift card codes and balance details on totals (checkout reads extension_attributes on root).
+     *
+     * @param CartTotalRepositoryInterface $subject Subject
+     * @param TotalsInterface $result Totals result
+     * @param int|string $cartId Cart ID
+     *
+     * @return TotalsInterface
      */
     public function afterGet(
         CartTotalRepositoryInterface $subject,

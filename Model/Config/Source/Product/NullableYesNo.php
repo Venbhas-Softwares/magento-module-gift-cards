@@ -13,6 +13,8 @@ use Magento\Eav\Model\Entity\Attribute\Source\AbstractSource;
 class NullableYesNo extends AbstractSource
 {
     /**
+     * Get all available options.
+     *
      * @return array<int, array{value: string, label: \Magento\Framework\Phrase|string}>
      */
     public function getAllOptions(): array

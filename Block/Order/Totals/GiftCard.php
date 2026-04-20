@@ -9,6 +9,9 @@ use Magento\Framework\View\Element\AbstractBlock;
 use Magento\Framework\View\Element\Template;
 use Venbhas\GiftCard\Model\Config;
 
+/**
+ * Order totals block for displaying the gift card discount total.
+ */
 class GiftCard extends Template
 {
     /**
@@ -16,6 +19,13 @@ class GiftCard extends Template
      */
     private $config;
 
+    /**
+     * Initialize block.
+     *
+     * @param Template\Context $context Block context
+     * @param Config $config Module config
+     * @param array $data Additional data
+     */
     public function __construct(
         Template\Context $context,
         Config $config,
@@ -26,6 +36,8 @@ class GiftCard extends Template
     }
 
     /**
+     * Add gift card total to order totals.
+     *
      * @return AbstractBlock
      */
     public function initTotals()
@@ -61,4 +73,3 @@ class GiftCard extends Template
         return $this;
     }
 }
-

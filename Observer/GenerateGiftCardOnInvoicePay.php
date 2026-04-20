@@ -11,6 +11,9 @@ use Venbhas\GiftCard\Model\Email\GiftCardSender;
 use Venbhas\GiftCard\Model\GiftCardIssuer;
 use Venbhas\GiftCard\Model\GiftCardRedeemer;
 
+/**
+ * Observer to issue gift cards and redeem applied gift cards when an invoice is paid.
+ */
 class GenerateGiftCardOnInvoicePay implements ObserverInterface
 {
     /**
@@ -33,6 +36,14 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
      */
     private $redemptionReceiptSender;
 
+    /**
+     * Initialize observer.
+     *
+     * @param GiftCardIssuer $issuer Gift card issuer
+     * @param GiftCardSender $sender Gift card email sender
+     * @param GiftCardRedeemer $redeemer Gift card redeemer
+     * @param GiftCardRedemptionReceiptSender $redemptionReceiptSender Redemption receipt sender
+     */
     public function __construct(
         GiftCardIssuer $issuer,
         GiftCardSender $sender,
@@ -45,6 +56,13 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
         $this->redemptionReceiptSender = $redemptionReceiptSender;
     }
 
+    /**
+     * Execute observer.
+     *
+     * @param Observer $observer Observer
+     *
+     * @return void
+     */
     public function execute(Observer $observer): void
     {
         /** @var InvoiceInterface|null $invoice */
@@ -81,4 +99,3 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
         }
     }
 }
-

@@ -15,10 +15,29 @@ use Venbhas\GiftCard\Model\GiftCardIssuer;
  */
 class ReserveGiftCardDetailsOnOrderPlace implements ObserverInterface
 {
-    public function __construct(
-        private readonly GiftCardIssuer $giftCardIssuer
-    ) {}
+    /**
+     * @var GiftCardIssuer
+     */
+    private GiftCardIssuer $_giftCardIssuer;
 
+    /**
+     * Initialize observer.
+     *
+     * @param GiftCardIssuer $giftCardIssuer Gift card issuer
+     */
+    public function __construct(
+        GiftCardIssuer $giftCardIssuer
+    ) {
+        $this->_giftCardIssuer = $giftCardIssuer;
+    }
+
+    /**
+     * Execute observer.
+     *
+     * @param Observer $observer Observer
+     *
+     * @return void
+     */
     public function execute(Observer $observer): void
     {
         /** @var OrderInterface|null $order */
@@ -30,11 +49,6 @@ class ReserveGiftCardDetailsOnOrderPlace implements ObserverInterface
             return;
         }
 
-        // Quote submit success can pass a concrete Order model; normalize.
-        if ($order instanceof Order) {
-            // ok
-        }
-
-        $this->giftCardIssuer->reservePendingForOrder($order);
+        $this->_giftCardIssuer->reservePendingForOrder($order);
     }
 }

@@ -23,6 +23,13 @@ class ConvertQuoteToOrder implements ObserverInterface
         'venbhas_giftcard_applied',
     ];
 
+    /**
+     * Execute observer.
+     *
+     * @param Observer $observer Observer
+     *
+     * @return void
+     */
     public function execute(Observer $observer): void
     {
         $order = $observer->getEvent()->getOrder();
@@ -51,6 +58,14 @@ class ConvertQuoteToOrder implements ObserverInterface
         }
     }
 
+    /**
+     * Check whether a value should be treated as empty for copying to order.
+     *
+     * @param string $field Field name
+     * @param mixed $value Value
+     *
+     * @return bool
+     */
     private function isEmptyForCopy(string $field, mixed $value): bool
     {
         if ($value === null) {

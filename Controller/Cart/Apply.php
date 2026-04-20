@@ -10,32 +10,79 @@ use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Message\ManagerInterface;
 use Venbhas\GiftCard\Model\Quote\GiftCardManager;
 
+/**
+ * Controller action to apply a gift card code on cart.
+ */
 class Apply implements HttpPostActionInterface
 {
-    public function __construct(
-        private readonly RequestInterface $request,
-        private readonly RedirectFactory $redirectFactory,
-        private readonly ManagerInterface $messageManager,
-        private readonly CheckoutSession $checkoutSession,
-        private readonly GiftCardManager $giftCardManager
-    ) {}
+    /**
+     * @var RequestInterface
+     */
+    private RequestInterface $_request;
 
+    /**
+     * @var RedirectFactory
+     */
+    private RedirectFactory $_redirectFactory;
+
+    /**
+     * @var ManagerInterface
+     */
+    private ManagerInterface $_messageManager;
+
+    /**
+     * @var CheckoutSession
+     */
+    private CheckoutSession $_checkoutSession;
+
+    /**
+     * @var GiftCardManager
+     */
+    private GiftCardManager $_giftCardManager;
+
+    /**
+     * Initialize controller.
+     *
+     * @param RequestInterface $request Request
+     * @param RedirectFactory $redirectFactory Redirect factory
+     * @param ManagerInterface $messageManager Message manager
+     * @param CheckoutSession $checkoutSession Checkout session
+     * @param GiftCardManager $giftCardManager Gift card manager
+     */
+    public function __construct(
+        RequestInterface $request,
+        RedirectFactory $redirectFactory,
+        ManagerInterface $messageManager,
+        CheckoutSession $checkoutSession,
+        GiftCardManager $giftCardManager
+    ) {
+        $this->_request = $request;
+        $this->_redirectFactory = $redirectFactory;
+        $this->_messageManager = $messageManager;
+        $this->_checkoutSession = $checkoutSession;
+        $this->_giftCardManager = $giftCardManager;
+    }
+
+    /**
+     * Execute action.
+     *
+     * @return \Magento\Framework\Controller\Result\Redirect
+     */
     public function execute()
     {
-        $result = $this->redirectFactory->create();
+        $result = $this->_redirectFactory->create();
         $result->setPath('checkout/cart');
 
-        $code = (string)$this->request->getParam('giftcard_code');
+        $code = (string)$this->_request->getParam('giftcard_code');
         $code = strtoupper(trim($code));
         if ($code === '') {
-            $this->messageManager->addErrorMessage(__('Please enter a gift card code.'));
+            $this->_messageManager->addErrorMessage(__('Please enter a gift card code.'));
             return $result;
         }
 
-        $quote = $this->checkoutSession->getQuote();
-        $this->giftCardManager->addCode($quote, $code);
-        $this->messageManager->addSuccessMessage(__('Gift card code applied.'));
+        $quote = $this->_checkoutSession->getQuote();
+        $this->_giftCardManager->addCode($quote, $code);
+        $this->_messageManager->addSuccessMessage(__('Gift card code applied.'));
         return $result;
     }
 }
-

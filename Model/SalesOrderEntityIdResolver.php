@@ -17,11 +17,23 @@ class SalesOrderEntityIdResolver
      */
     private $resource;
 
+    /**
+     * Initialize resolver.
+     *
+     * @param ResourceConnection $resource Resource connection
+     */
     public function __construct(ResourceConnection $resource)
     {
         $this->resource = $resource;
     }
 
+    /**
+     * Resolve numeric order entity ID.
+     *
+     * @param OrderInterface $order Order
+     *
+     * @return int
+     */
     public function resolve(OrderInterface $order): int
     {
         $conn = $this->resource->getConnection();

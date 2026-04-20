@@ -8,6 +8,9 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\CollectionFactory as CodeCollectionFactory;
 
+/**
+ * Balance lookup controller for gift card codes.
+ */
 class Index implements HttpGetActionInterface
 {
     /**
@@ -25,6 +28,13 @@ class Index implements HttpGetActionInterface
      */
     private $codeCollectionFactory;
 
+    /**
+     * Initialize controller.
+     *
+     * @param RequestInterface $request Request
+     * @param JsonFactory $jsonFactory JSON result factory
+     * @param CodeCollectionFactory $codeCollectionFactory Gift card code collection factory
+     */
     public function __construct(
         RequestInterface $request,
         JsonFactory $jsonFactory,
@@ -35,6 +45,11 @@ class Index implements HttpGetActionInterface
         $this->codeCollectionFactory = $codeCollectionFactory;
     }
 
+    /**
+     * Execute action.
+     *
+     * @return \Magento\Framework\Controller\Result\Json
+     */
     public function execute()
     {
         $code = strtoupper(trim((string)$this->request->getParam('code')));
@@ -56,10 +71,12 @@ class Index implements HttpGetActionInterface
             'code' => $code,
             'status' => (int)$giftCard->getData('status'),
             // Keep API key 'balance' for backward compatibility with existing JS.
-            'balance' => (float)($giftCard->getData('balance_amount') ?? $giftCard->getData('amount') ?? $giftCard->getData('balance') ?? 0),
+            'balance' => (float) ($giftCard->getData('balance_amount')
+                ?? $giftCard->getData('amount')
+                ?? $giftCard->getData('balance')
+                ?? 0),
             'currency' => (string)$giftCard->getData('currency_code'),
             'expires_at' => $giftCard->getData('expires_at'),
         ]);
     }
 }
-

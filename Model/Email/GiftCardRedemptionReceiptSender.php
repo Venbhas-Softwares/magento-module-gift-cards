@@ -55,6 +55,17 @@ class GiftCardRedemptionReceiptSender
      */
     private $escaper;
 
+    /**
+     * Initialize sender.
+     *
+     * @param TransportBuilder $transportBuilder Transport builder
+     * @param StoreManagerInterface $storeManager Store manager
+     * @param LoggerInterface $logger Logger
+     * @param PriceCurrencyInterface $priceCurrency Price currency formatter
+     * @param Json $json JSON serializer
+     * @param GiftCardCodeCollectionFactory $codeCollectionFactory Gift card code collection factory
+     * @param Escaper $escaper Escaper
+     */
     public function __construct(
         TransportBuilder $transportBuilder,
         StoreManagerInterface $storeManager,
@@ -73,6 +84,13 @@ class GiftCardRedemptionReceiptSender
         $this->escaper = $escaper;
     }
 
+    /**
+     * Send receipt email for an order.
+     *
+     * @param OrderInterface $order Order
+     *
+     * @return void
+     */
     public function sendForOrder(OrderInterface $order): void
     {
         $toEmail = trim((string) $order->getCustomerEmail());
@@ -222,7 +240,11 @@ class GiftCardRedemptionReceiptSender
     }
 
     /**
+     * Read gift card balance amount from a gift card entity.
+     *
      * @param \Magento\Framework\DataObject $gc
+     *
+     * @return float
      */
     private function readBalanceAmount($gc): float
     {

@@ -12,14 +12,50 @@ use Venbhas\GiftCard\Model\Config;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 
+/**
+ * Observer to persist gift card form fields onto quote item additional options.
+ */
 class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
 {
-    public function __construct(
-        private readonly Json $json,
-        private readonly RequestInterface $request,
-        private readonly GiftOptionsResolver $giftOptionsResolver
-    ) {}
+    /**
+     * @var Json
+     */
+    private Json $_json;
 
+    /**
+     * @var RequestInterface
+     */
+    private RequestInterface $_request;
+
+    /**
+     * @var GiftOptionsResolver
+     */
+    private GiftOptionsResolver $_giftOptionsResolver;
+
+    /**
+     * Initialize observer.
+     *
+     * @param Json $json JSON serializer
+     * @param RequestInterface $request Request
+     * @param GiftOptionsResolver $giftOptionsResolver Gift options resolver
+     */
+    public function __construct(
+        Json $json,
+        RequestInterface $request,
+        GiftOptionsResolver $giftOptionsResolver
+    ) {
+        $this->_json = $json;
+        $this->_request = $request;
+        $this->_giftOptionsResolver = $giftOptionsResolver;
+    }
+
+    /**
+     * Execute observer.
+     *
+     * @param Observer $observer Observer
+     *
+     * @return void
+     */
     public function execute(Observer $observer): void
     {
         /** @var QuoteItem|null $quoteItem */
@@ -33,7 +69,7 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
             return;
         }
 
-        $data = (array)$this->request->getParam('venbhas_giftcard', []);
+        $data = (array)$this->_request->getParam('venbhas_giftcard', []);
 
         $mapped = [
             'amount' => isset($data['amount']) ? (string)(float)$data['amount'] : '',
@@ -45,7 +81,7 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
             'delivery_type' => trim((string)($data['delivery_type'] ?? '')),
         ];
 
-        if ($this->giftOptionsResolver->isPhysicalDeliverySelected($data, $product, (int) $product->getStoreId())) {
+        if ($this->_giftOptionsResolver->isPhysicalDeliverySelected($data, $product, (int) $product->getStoreId())) {
             $mapped['delivery_street'] = trim((string) ($data['delivery_street'] ?? ''));
             $mapped['delivery_city'] = trim((string) ($data['delivery_city'] ?? ''));
             $mapped['delivery_region'] = trim((string) ($data['delivery_region'] ?? ''));
@@ -57,7 +93,7 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
         $existing = $quoteItem->getOptionByCode('additional_options');
         if ($existing && $existing->getValue()) {
             try {
-                $decoded = $this->json->unserialize((string)$existing->getValue());
+                $decoded = $this->_json->unserialize((string)$existing->getValue());
                 if (is_array($decoded)) {
                     $additional = $decoded;
                 }
@@ -83,10 +119,17 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
 
         $quoteItem->addOption([
             'code' => 'additional_options',
-            'value' => $this->json->serialize($additional),
+            'value' => $this->_json->serialize($additional),
         ]);
     }
 
+    /**
+     * Resolve a display label for a gift card option key.
+     *
+     * @param string $k Option key
+     *
+     * @return string
+     */
     private function labelForGiftCardOptionKey(string $k): string
     {
         return match ($k) {
@@ -103,6 +146,10 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
 
     /**
      * Human-readable delivery method for order/invoice emails and admin line items.
+     *
+     * @param string $raw Raw delivery type
+     *
+     * @return string
      */
     private function formatDeliveryTypeForDisplay(string $raw): string
     {

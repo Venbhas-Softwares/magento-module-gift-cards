@@ -32,6 +32,13 @@ class GiftCardRedeemer
      */
     private $salesOrderEntityIdResolver;
 
+    /**
+     * Initialize redeemer.
+     *
+     * @param ResourceConnection $resource Resource connection
+     * @param Json $json JSON serializer
+     * @param SalesOrderEntityIdResolver $salesOrderEntityIdResolver Order ID resolver
+     */
     public function __construct(
         ResourceConnection $resource,
         Json $json,
@@ -44,12 +51,25 @@ class GiftCardRedeemer
 
     /**
      * Deduct balances when an invoice is paid.
+     *
+     * @param OrderInterface $order Order
+     * @param InvoiceInterface $invoice Invoice
+     *
+     * @return void
      */
     public function redeemOnInvoicePay(OrderInterface $order, InvoiceInterface $invoice): void
     {
         $this->executeRedemption($order, $invoice);
     }
 
+    /**
+     * Execute gift card redemption for an invoice.
+     *
+     * @param OrderInterface $order Order
+     * @param InvoiceInterface $invoice Invoice
+     *
+     * @return void
+     */
     private function executeRedemption(OrderInterface $order, InvoiceInterface $invoice): void
     {
         $conn = $this->resource->getConnection();
@@ -191,7 +211,11 @@ class GiftCardRedeemer
     }
 
     /**
-     * @param array<string, mixed> $gc
+     * Detect which balance column exists in a gift card DB row.
+     *
+     * @param array $gc Gift card DB row
+     *
+     * @return string
      */
     private function balanceColumnPresentInRow(array $gc): string
     {
@@ -205,6 +229,11 @@ class GiftCardRedeemer
     }
 
     /**
+     * Resolve columns to select from gift card code table.
+     *
+     * @param AdapterInterface $conn DB adapter
+     * @param string $codeTable Gift card code table
+     *
      * @return array<int, string>
      */
     private function resolveGiftCardSelectColumns(AdapterInterface $conn, string $codeTable): array
@@ -221,7 +250,11 @@ class GiftCardRedeemer
     }
 
     /**
-     * @param array<string, mixed> $gc
+     * Read current balance from a gift card DB row.
+     *
+     * @param array $gc Gift card DB row
+     *
+     * @return float
      */
     private function readBalanceFromGcRow(array $gc): float
     {
@@ -235,7 +268,12 @@ class GiftCardRedeemer
     }
 
     /**
-     * @param array<string, mixed> $gc
+     * Assert that the order matches any redeemer lock on the gift card.
+     *
+     * @param OrderInterface $order Order
+     * @param array $gc Gift card DB row
+     *
+     * @return void
      */
     private function assertOrderMatchesRedeemerLock(OrderInterface $order, array $gc): void
     {
@@ -264,6 +302,10 @@ class GiftCardRedeemer
     }
 
     /**
+     * Decode gift card usage JSON from the order.
+     *
+     * @param string $raw JSON string
+     *
      * @return array<int, array{code: string, base_amount: float}>
      */
     private function decodeApplied(string $raw): array

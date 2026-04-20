@@ -14,6 +14,9 @@ use Magento\Framework\View\Element\Template\Context;
 use Magento\Sales\Api\Data\OrderInterface;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
 
+/**
+ * Order view block for displaying gift card usage details.
+ */
 class GiftCardUsage extends Template
 {
     /**
@@ -41,6 +44,17 @@ class GiftCardUsage extends Template
      */
     private $resource;
 
+    /**
+     * Initialize block.
+     *
+     * @param Context $context Block context
+     * @param Registry $registry Core registry
+     * @param Json $json JSON serializer
+     * @param PriceCurrencyInterface $priceCurrency Price currency formatter
+     * @param State $appState Application state
+     * @param ResourceConnection $resource Resource connection
+     * @param array $data Additional data
+     */
     public function __construct(
         Context $context,
         Registry $registry,
@@ -58,6 +72,11 @@ class GiftCardUsage extends Template
         parent::__construct($context, $data);
     }
 
+    /**
+     * Get the current order from registry.
+     *
+     * @return OrderInterface|null
+     */
     public function getOrder(): ?OrderInterface
     {
         $order = $this->registry->registry('current_order');
@@ -65,6 +84,8 @@ class GiftCardUsage extends Template
     }
 
     /**
+     * Get gift card usage rows for the order.
+     *
      * @return array<int, array{code: string, amount: float}>
      */
     public function getUsageRows(): array
@@ -111,6 +132,8 @@ class GiftCardUsage extends Template
     /**
      * Fallback when order JSON is empty: read from venbhas_giftcard_transaction ledger.
      *
+     * @param OrderInterface $order Order
+     *
      * @return array<int, array{code: string, amount: float}>
      */
     private function getUsageRowsFromTransactions(OrderInterface $order): array
@@ -149,6 +172,13 @@ class GiftCardUsage extends Template
         return $rows;
     }
 
+    /**
+     * Format a base amount using the order currency.
+     *
+     * @param float $amount Amount
+     *
+     * @return string
+     */
     public function formatAmount(float $amount): string
     {
         $order = $this->getOrder();
@@ -163,6 +193,11 @@ class GiftCardUsage extends Template
         );
     }
 
+    /**
+     * Get total gift card amount applied to the order.
+     *
+     * @return float
+     */
     public function getTotalGiftAmount(): float
     {
         $sum = 0.0;
@@ -173,6 +208,11 @@ class GiftCardUsage extends Template
         return $sum;
     }
 
+    /**
+     * Check whether current area is adminhtml.
+     *
+     * @return bool
+     */
     public function isAdminArea(): bool
     {
         try {
@@ -182,6 +222,11 @@ class GiftCardUsage extends Template
         }
     }
 
+    /**
+     * Check whether the usage block should be displayed.
+     *
+     * @return bool
+     */
     public function shouldDisplay(): bool
     {
         $order = $this->getOrder();

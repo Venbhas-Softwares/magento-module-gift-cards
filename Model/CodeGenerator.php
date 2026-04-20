@@ -3,8 +3,19 @@ declare(strict_types=1);
 
 namespace Venbhas\GiftCard\Model;
 
+/**
+ * Generates human-friendly gift card codes.
+ */
 class CodeGenerator
 {
+    /**
+     * Generate a new code.
+     *
+     * @param int $length Random characters length (before grouping)
+     *
+     * @return string
+     * @throws \Exception
+     */
     public function generate(int $length = 16): string
     {
         // Human-friendly, avoids 0/O and 1/I confusion.
@@ -20,4 +31,3 @@ class CodeGenerator
         return trim(chunk_split($out, 4, '-'), '-');
     }
 }
-

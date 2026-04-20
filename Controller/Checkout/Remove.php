@@ -10,6 +10,9 @@ use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Venbhas\GiftCard\Model\Quote\GiftCardManager;
 
+/**
+ * Checkout controller to remove a gift card code via AJAX.
+ */
 class Remove implements HttpPostActionInterface
 {
     /**
@@ -32,6 +35,14 @@ class Remove implements HttpPostActionInterface
      */
     private $giftCardManager;
 
+    /**
+     * Initialize controller.
+     *
+     * @param RequestInterface $request Request
+     * @param JsonFactory $jsonFactory JSON result factory
+     * @param CheckoutSession $checkoutSession Checkout session
+     * @param GiftCardManager $giftCardManager Gift card manager
+     */
     public function __construct(
         RequestInterface $request,
         JsonFactory $jsonFactory,
@@ -44,6 +55,11 @@ class Remove implements HttpPostActionInterface
         $this->giftCardManager = $giftCardManager;
     }
 
+    /**
+     * Execute action.
+     *
+     * @return \Magento\Framework\Controller\Result\Json
+     */
     public function execute()
     {
         $result = $this->jsonFactory->create();
@@ -67,6 +83,8 @@ class Remove implements HttpPostActionInterface
     }
 
     /**
+     * Read request JSON body as array.
+     *
      * @return array<string,mixed>
      */
     private function readJsonBody(): array
@@ -83,4 +101,3 @@ class Remove implements HttpPostActionInterface
         }
     }
 }
-

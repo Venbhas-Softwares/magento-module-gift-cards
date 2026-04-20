@@ -15,6 +15,9 @@ use Venbhas\GiftCard\Model\Quote\GiftCardManager;
 use Venbhas\GiftCard\Model\Quote\GiftCardRedeemValidator;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\CollectionFactory as CodeCollectionFactory;
 
+/**
+ * Quote total collector for gift card discount.
+ */
 class GiftCard extends AbstractTotal
 {
     public const CODE = 'venbhas_giftcard';
@@ -44,6 +47,15 @@ class GiftCard extends AbstractTotal
      */
     private $redeemValidator;
 
+    /**
+     * Initialize total collector.
+     *
+     * @param GiftCardManager $giftCardManager Gift card manager
+     * @param CodeCollectionFactory $codeCollectionFactory Gift card code collection factory
+     * @param Config $config Module config
+     * @param Json $json JSON serializer
+     * @param GiftCardRedeemValidator $redeemValidator Redeem validator
+     */
     public function __construct(
         GiftCardManager $giftCardManager,
         CodeCollectionFactory $codeCollectionFactory,
@@ -59,6 +71,15 @@ class GiftCard extends AbstractTotal
         $this->setCode(self::CODE);
     }
 
+    /**
+     * Collect gift card total for the quote.
+     *
+     * @param Quote $quote Quote
+     * @param ShippingAssignmentInterface $shippingAssignment Shipping assignment
+     * @param Total $total Total
+     *
+     * @return $this
+     */
     public function collect(
         Quote $quote,
         ShippingAssignmentInterface $shippingAssignment,
@@ -186,7 +207,9 @@ class GiftCard extends AbstractTotal
     /**
      * Drop codes that are invalid for this quote (wrong redeemer lock, etc.).
      *
+     * @param Quote $quote Quote
      * @param string[] $codes
+     *
      * @return string[]
      */
     private function filterCodesForQuote(Quote $quote, array $codes): array
@@ -217,7 +240,10 @@ class GiftCard extends AbstractTotal
     /**
      * Show current balances for applied codes on checkout (even before any amount is used this order).
      *
+     * @param Quote $quote Quote
      * @param string[] $codes
+     *
+     * @return void
      */
     private function attachBalanceDetailsForDisplay(Quote $quote, array $codes): void
     {
@@ -250,6 +276,14 @@ class GiftCard extends AbstractTotal
         $quote->setData('venbhas_giftcard_balance_details', $this->json->serialize($rows));
     }
 
+    /**
+     * Fetch total row data for display.
+     *
+     * @param Quote $quote Quote
+     * @param Total $total Total
+     *
+     * @return array<string, mixed>
+     */
     public function fetch(Quote $quote, Total $total)
     {
         $amount = (float) $quote->getData('venbhas_giftcard_amount');
