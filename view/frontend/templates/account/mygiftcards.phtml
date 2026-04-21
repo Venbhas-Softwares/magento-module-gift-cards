@@ -3,24 +3,33 @@
 $cards = $block->getGiftCards();
 ?>
 <div class="venbhas-giftcards-account">
+    <style>
+        /* Scoped fallback styles for themes without Luma table CSS (e.g. Hyvä). */
+        .venbhas-giftcards-account .table-wrapper { overflow-x: auto; }
+        .venbhas-giftcards-account table.table-giftcards { width: 100%; border-collapse: collapse; }
+        .venbhas-giftcards-account table.table-giftcards caption { text-align: left; font-weight: 600; padding: .5rem 0; }
+        .venbhas-giftcards-account table.table-giftcards th,
+        .venbhas-giftcards-account table.table-giftcards td { padding: .75rem .5rem; border-bottom: 1px solid rgba(0,0,0,.08); text-align: left; vertical-align: top; }
+        .venbhas-giftcards-account table.table-giftcards thead th { white-space: nowrap; }
+    </style>
     <div class="page-title-wrapper">
-        <h1 class="page-title"><span class="base"><?= $escaper->escapeHtml(__('My Gift Cards')) ?></span></h1>
+        <h1 class="page-title"><span class="base"><?= $block->escapeHtml(__('My Gift Cards')) ?></span></h1>
     </div>
 
     <?php if (!$cards->getSize()): ?>
         <div class="message info empty">
-            <span><?= $escaper->escapeHtml(__('You have no gift cards yet.')) ?></span>
+            <span><?= $block->escapeHtml(__('You have no gift cards yet.')) ?></span>
         </div>
     <?php else: ?>
         <div class="table-wrapper orders-history">
             <table class="data table table-giftcards" id="my-giftcards-table">
-                <caption class="table-caption"><?= $escaper->escapeHtml(__('Gift cards')) ?></caption>
+                <caption class="table-caption"><?= $block->escapeHtml(__('Gift cards')) ?></caption>
                 <thead>
                 <tr>
-                    <th scope="col"><?= $escaper->escapeHtml(__('Gift card code')) ?></th>
-                    <th scope="col"><?= $escaper->escapeHtml(__('Status')) ?></th>
-                    <th scope="col"><?= $escaper->escapeHtml(__('Amount')) ?></th>
-                    <th scope="col"><?= $escaper->escapeHtml(__('Balance')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Gift card code')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Status')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Amount')) ?></th>
+                    <th scope="col"><?= $block->escapeHtml(__('Balance')) ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -31,17 +40,17 @@ $cards = $block->getGiftCards();
                     $balance = $block->getBalanceValue($card);
                     ?>
                     <tr>
-                        <td data-th="<?= $escaper->escapeHtmlAttr(__('Gift card code')) ?>">
-                            <?= $escaper->escapeHtml((string) $card->getData('code')) ?>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Gift card code')) ?>">
+                            <?= $block->escapeHtml((string) $card->getData('code')) ?>
                         </td>
-                        <td data-th="<?= $escaper->escapeHtmlAttr(__('Status')) ?>">
-                            <?= $escaper->escapeHtml((string) $block->getStatusLabel($card)) ?>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Status')) ?>">
+                            <?= $block->escapeHtml((string) $block->getStatusLabel($card)) ?>
                         </td>
-                        <td data-th="<?= $escaper->escapeHtmlAttr(__('Initial amount')) ?>">
-                            <?= $escaper->escapeHtml($block->formatMoney($initial, $currency)) ?>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Initial amount')) ?>">
+                            <?= $block->escapeHtml($block->formatMoney($initial, $currency)) ?>
                         </td>
-                        <td data-th="<?= $escaper->escapeHtmlAttr(__('Current balance')) ?>">
-                            <?= $escaper->escapeHtml($block->formatMoney($balance, $currency)) ?>
+                        <td data-th="<?= $block->escapeHtmlAttr(__('Current balance')) ?>">
+                            <?= $block->escapeHtml($block->formatMoney($balance, $currency)) ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
