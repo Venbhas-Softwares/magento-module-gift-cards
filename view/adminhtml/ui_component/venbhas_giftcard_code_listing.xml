@@ -32,11 +32,54 @@
     </dataSource>
 
     <listingToolbar name="listing_top">
+        <massaction name="listing_massaction">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="selectProvider" xsi:type="string">venbhas_giftcard_code_listing.venbhas_giftcard_code_listing.listing_columns.ids</item>
+                    <item name="indexField" xsi:type="string">entity_id</item>
+                </item>
+            </argument>
+            <action name="activate">
+                <argument name="data" xsi:type="array">
+                    <item name="config" xsi:type="array">
+                        <item name="type" xsi:type="string">activate</item>
+                        <item name="label" xsi:type="string" translate="true">Activate</item>
+                        <item name="url" xsi:type="url" path="venbhas_giftcard/code/massStatus">
+                            <param name="status">1</param>
+                        </item>
+                        <item name="confirm" xsi:type="array">
+                            <item name="title" xsi:type="string" translate="true">Activate</item>
+                            <item name="message" xsi:type="string" translate="true">Activate selected gift card codes?</item>
+                        </item>
+                    </item>
+                </argument>
+            </action>
+            <action name="deactivate">
+                <argument name="data" xsi:type="array">
+                    <item name="config" xsi:type="array">
+                        <item name="type" xsi:type="string">deactivate</item>
+                        <item name="label" xsi:type="string" translate="true">Deactivate</item>
+                        <item name="url" xsi:type="url" path="venbhas_giftcard/code/massStatus">
+                            <param name="status">0</param>
+                        </item>
+                        <item name="confirm" xsi:type="array">
+                            <item name="title" xsi:type="string" translate="true">Deactivate</item>
+                            <item name="message" xsi:type="string" translate="true">Deactivate selected gift card codes?</item>
+                        </item>
+                    </item>
+                </argument>
+            </action>
+        </massaction>
         <paging name="listing_paging"/>
         <filters name="listing_filters"/>
     </listingToolbar>
 
     <columns name="listing_columns">
+        <selectionsColumn name="ids">
+            <settings>
+                <indexField>entity_id</indexField>
+            </settings>
+        </selectionsColumn>
         <column name="entity_id">
             <settings>
                 <filter>textRange</filter>
@@ -48,6 +91,14 @@
             <settings>
                 <filter>text</filter>
                 <label translate="true">Code</label>
+            </settings>
+        </column>
+        <column name="status" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Status</label>
+                <options class="Venbhas\GiftCard\Model\Source\GiftCardStatus"/>
             </settings>
         </column>
         <column name="balance_amount">
