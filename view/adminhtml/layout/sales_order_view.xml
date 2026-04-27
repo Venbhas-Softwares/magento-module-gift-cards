@@ -5,11 +5,7 @@
         <referenceBlock name="order_totals">
             <block class="Venbhas\GiftCard\Block\Order\Totals\GiftCard" name="venbhas.giftcard.order.totals.admin" />
         </referenceBlock>
-        <referenceContainer name="order_additional_info">
-            <block class="Venbhas\GiftCard\Block\Order\GiftCardUsage"
-                   name="venbhas.giftcard.order.usage.admin"
-                   template="Venbhas_GiftCard::order/giftcard_usage.phtml"/>
-        </referenceContainer>
+        
     </body>
 </page>
 

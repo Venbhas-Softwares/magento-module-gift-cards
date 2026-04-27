@@ -79,8 +79,8 @@ class GiftCardSender
         }
 
         $storeId = (int) $giftCard->getData('store_id') ?: (int) $this->storeManager->getStore()->getId();
-        $amount = (float) ($giftCard->getData('initial_value') ?? 0);
-        $currency = (string) $giftCard->getData('currency_code');
+        $amount = (float) ($giftCard->getData('amount') ?? 0);
+        $currency = '';
         $formattedValue = $this->priceCurrency->format(
             $amount,
             false,
@@ -94,9 +94,9 @@ class GiftCardSender
             ->setTemplateOptions(['area' => Area::AREA_FRONTEND, 'store' => $storeId])
             ->setTemplateVars([
                 'giftcard_code' => (string) $giftCard->getData('code'),
-                'giftcard_value' => (string) $giftCard->getData('initial_value'),
+                'giftcard_value' => (string) $giftCard->getData('amount'),
                 'giftcard_value_formatted' => $formattedValue,
-                'giftcard_currency' => (string) $giftCard->getData('currency_code'),
+                'giftcard_currency' => '',
                 'sender_name' => (string) $giftCard->getData('sender_name'),
                 'recipient_name' => (string) $giftCard->getData('recipient_name'),
                 'message' => (string) $giftCard->getData('message'),

@@ -9,13 +9,13 @@ define([
 ], function ($, storage, $t, getPaymentInformationAction, totals, fullScreenLoader, messageContainer) {
     'use strict';
 
-    return function (code) {
+    return function (amount) {
         fullScreenLoader.startLoader();
         totals.isLoading(true);
 
         return storage.post(
             'venbhas_giftcard/checkout/apply',
-            JSON.stringify({giftcard_code: code}),
+            JSON.stringify({amount: amount}),
             false
         ).done(function (response) {
             var deferred = $.Deferred();
@@ -25,14 +25,14 @@ define([
                 totals.isLoading(false);
             });
             if (response && response.success) {
-                messageContainer.addSuccessMessage({message: response.message || $t('Gift card applied.')});
+                messageContainer.addSuccessMessage({message: response.message || $t('Gift amount applied.')});
             } else {
-                messageContainer.addErrorMessage({message: (response && response.message) || $t('Could not apply gift card.')});
+                messageContainer.addErrorMessage({message: (response && response.message) || $t('Could not apply gift amount.')});
             }
         }).fail(function () {
             fullScreenLoader.stopLoader();
             totals.isLoading(false);
-            messageContainer.addErrorMessage({message: $t('Could not apply gift card.')});
+            messageContainer.addErrorMessage({message: $t('Could not apply gift amount.')});
         });
     };
 });

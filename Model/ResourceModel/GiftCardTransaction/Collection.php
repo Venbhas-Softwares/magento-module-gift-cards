@@ -31,10 +31,10 @@ class Collection extends AbstractCollection
     public function joinGiftCardCode(): self
     {
         $gcTable = $this->getTable('venbhas_giftcard_code');
-        $this->getSelect()->join(
+        $this->getSelect()->joinLeft(
             ['gc' => $gcTable],
             'main_table.giftcard_id = gc.entity_id',
-            ['giftcard_code' => 'gc.code', 'gc_currency' => 'gc.currency_code']
+            ['giftcard_code' => 'gc.code']
         );
 
         return $this;

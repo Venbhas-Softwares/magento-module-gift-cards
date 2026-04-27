@@ -11,7 +11,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Venbhas\GiftCard\Model\Quote\GiftCardManager;
 
 /**
- * Checkout controller to apply a gift card code via AJAX.
+ * Checkout controller to apply gift amount (wallet) via AJAX.
  */
 class Apply implements HttpPostActionInterface
 {
@@ -31,10 +31,6 @@ class Apply implements HttpPostActionInterface
     private $checkoutSession;
 
     /**
-     * @var GiftCardManager
-     */
-    private $giftCardManager;
-
     /**
      * Initialize controller.
      *
@@ -46,13 +42,11 @@ class Apply implements HttpPostActionInterface
     public function __construct(
         RequestInterface $request,
         JsonFactory $jsonFactory,
-        CheckoutSession $checkoutSession,
-        GiftCardManager $giftCardManager
+        CheckoutSession $checkoutSession
     ) {
         $this->request = $request;
         $this->jsonFactory = $jsonFactory;
         $this->checkoutSession = $checkoutSession;
-        $this->giftCardManager = $giftCardManager;
     }
 
     /**
@@ -65,18 +59,23 @@ class Apply implements HttpPostActionInterface
         $result = $this->jsonFactory->create();
 
         try {
-            $code = (string)$this->request->getParam('giftcard_code');
-            if (trim($code) === '') {
-                $payload = $this->readJsonBody();
-                $code = (string)($payload['giftcard_code'] ?? '');
-            }
-            $code = strtoupper(trim($code));
-            if ($code === '') {
-                throw new LocalizedException(__('Please enter a gift card code.'));
-            }
             $quote = $this->checkoutSession->getQuote();
-            $this->giftCardManager->addCode($quote, $code);
-            return $result->setData(['success' => true, 'message' => (string)__('Gift card code applied.')]);
+            $amount = (float) $this->request->getParam('amount');
+            if ($amount <= 0.0001) {
+                $payload = $this->readJsonBody();
+                $amount = (float) ($payload['amount'] ?? 0);
+            }
+            if ($amount <= 0.0001) {
+                throw new LocalizedException(__('Please enter a gift amount.'));
+            }
+
+            $quote->setData('venbhas_giftcard_amount', $amount);
+            $quote->setData('base_venbhas_giftcard_amount', $amount);
+            $quote->setTotalsCollectedFlag(false);
+            $quote->collectTotals();
+            $quote->save();
+
+            return $result->setData(['success' => true, 'message' => (string)__('Gift amount applied.')]);
         } catch (\Throwable $e) {
             return $result->setData(['success' => false, 'message' => $e->getMessage()]);
         }

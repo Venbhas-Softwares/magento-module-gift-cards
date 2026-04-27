@@ -3,20 +3,15 @@
     "column": {
       "entity_id": true,
       "code": true,
-      "status": true,
-      "balance_amount": true,
-      "initial_value": true,
-      "currency_code": true,
-      "website_id": true,
       "store_id": true,
-      "customer_id": true,
-      "redeemer_customer_id": true,
-      "redeemer_email": true,
+      "purchased_by": true,
+      "purchased_by_email": true,
+      "redeemed_by": true,
+      "redeemed_email": true,
+      "amount": true,
       "product_id": true,
       "order_id": true,
-      "order_item_id": true,
       "sender_name": true,
-      "sender_email": true,
       "recipient_name": true,
       "recipient_email": true,
       "message": true,
@@ -27,7 +22,9 @@
       "delivery_postcode": true,
       "delivery_country": true,
       "created_at": true,
-      "updated_at": true
+      "updated_at": true,
+      "is_reedemed": true,
+      "is_cancelled": true
     },
     "constraint": {
       "PRIMARY": true,
@@ -35,23 +32,23 @@
     },
     "index": {
       "VENBHAS_GIFTCARD_CODE_IDX_ORDER": true,
-      "VENBHAS_GIFTCARD_CODE_IDX_EMAIL": true,
-      "VENBHAS_GIFTCARD_CODE_IDX_CUSTOMER": true
+      "VENBHAS_GIFTCARD_CODE_IDX_EMAIL": true
     }
   },
   "venbhas_giftcard_transaction": {
     "column": {
       "entity_id": true,
       "giftcard_id": true,
-      "action": true,
+      "transaction_type": true,
       "amount": true,
-      "balance_after": true,
+      "previous_balance": true,
+      "current_balance": true,
+      "description": true,
       "order_id": true,
-      "invoice_id": true,
-      "creditmemo_id": true,
       "customer_id": true,
       "customer_email": true,
-      "created_at": true
+      "created_at": true,
+      "store_id": true
     },
     "constraint": {
       "PRIMARY": true,
@@ -76,8 +73,7 @@
       "base_venbhas_giftcard_amount": true,
       "venbhas_giftcard_codes": true,
       "venbhas_giftcard_applied": true,
-      "venbhas_giftcard_usage_details": true,
-      "venbhas_giftcard_redeemed": true
+      "venbhas_giftcard_usage_details": true
     }
   }
 }

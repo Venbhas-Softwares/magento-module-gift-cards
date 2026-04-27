@@ -11,19 +11,24 @@
         <!-- ko template: getTemplate() --><!-- /ko -->
         <!--/ko-->
 
+        <div class="field" style="margin-bottom: 10px;">
+            <strong data-bind="i18n: 'Available Gift Amount:'"></strong>
+            <span data-bind="text: Number(walletBalance()).toFixed(2)"></span>
+        </div>
+
         <form class="form form-giftcard" id="giftcard-form" data-bind="submit: apply">
             <div class="payment-option-inner">
                 <div class="field">
-                    <label class="label" for="giftcard-code">
-                        <span data-bind="i18n: 'Enter gift card code'"></span>
+                    <label class="label" for="giftcard-amount">
+                        <span data-bind="i18n: 'Enter gift amount to apply'"></span>
                     </label>
                     <div class="control">
                         <input class="input-text"
                                type="text"
-                               id="giftcard-code"
-                               name="giftcard_code"
+                               id="giftcard-amount"
+                               name="amount"
                                data-validate="{'required-entry':true}"
-                               data-bind="value: giftcardCode, attr:{placeholder: $t('Enter gift card code')}">
+                               data-bind="value: applyAmount, attr:{placeholder: $t('Enter amount')}">
                     </div>
                 </div>
             </div>
@@ -33,61 +38,35 @@
                         <span><!-- ko i18n: 'Apply'--><!-- /ko --></span>
                     </button>
                 </div>
+                <!-- ko if: isApplied() -->
+                <div class="secondary" style="margin-left: 10px;">
+                    <button class="action action-remove" type="button" data-bind="click: remove">
+                        <span><!-- ko i18n: 'Remove'--><!-- /ko --></span>
+                    </button>
+                </div>
+                <!-- /ko -->
             </div>
         </form>
 
-        <!-- ko if: myCodes().length -->
-        <div class="venbhas-giftcard-previous" style="margin-top: 12px;">
-            <strong data-bind="i18n: 'Previously used gift cards'"></strong>
-            <div style="font-size: 13px; margin-top: 6px;">
-                <span data-bind="i18n: 'You used these gift card code(s) previously. Balance is still available; click Apply to use again.'"></span>
-            </div>
-            <ul class="items" style="margin-top: 8px;" data-bind="foreach: myCodes">
-                <li class="item" style="margin-bottom: 6px;">
-                    <span data-bind="text: code"></span>
-                    <span> - </span>
-                    <span data-bind="text: Number(amount).toFixed(2)"></span>
-                    <span data-bind="text: currency ? (' ' + currency) : ''"></span>
-                    <button type="button" class="action action-apply" style="margin-left: 10px;"
-                            data-bind="click: function(){ $parent.useMyCode($data); }">
-                        <span data-bind="i18n: 'Apply'"></span>
-                    </button>
-                </li>
-            </ul>
+        <!-- ko if: showAddButton() -->
+        <div style="margin-top: 12px;">
+            <button type="button" class="action secondary" data-bind="click: openAddGiftcard">
+                <span data-bind="i18n: 'Add a new gift card'"></span>
+            </button>
         </div>
         <!-- /ko -->
 
-        <!-- ko if: isApplied() -->
-        <div class="applied-giftcards" style="margin-top: 12px;">
-            <strong data-bind="i18n: 'Applied gift cards'"></strong>
-            <ul class="items" data-bind="foreach: appliedCodes">
-                <li class="item">
-                    <span data-bind="text: $data"></span>
-                    <button type="button" class="action action-remove" data-bind="click: function(){ $parent.remove($data); }">
-                        <span data-bind="i18n: 'Remove'"></span>
-                    </button>
-                </li>
-            </ul>
-            <!-- ko if: balanceDetails().length -->
-            <div class="giftcard-balances" style="margin-top:10px;font-size:13px;">
-                <strong data-bind="i18n: 'Balance after this order'"></strong>
-                <ul class="items" data-bind="foreach: balanceDetails">
-                    <li class="item">
-                        <span data-bind="text: code"></span>:
-                        <!-- ko i18n: 'remaining'--><!-- /ko -->
-                        <span data-bind="text: typeof balance_after !== 'undefined' ? Number(balance_after).toFixed(2) : ''"></span>
-                        <span data-bind="text: currency"></span>
-                        <!-- ko if: typeof amount_applied !== 'undefined' && Number(amount_applied) > 0 -->
-                        <span> (</span><span data-bind="i18n: 'this order'"></span><span>: </span>
-                        <span data-bind="text: Number(amount_applied).toFixed(2)"></span>
-                        <span>)</span>
-                        <!-- /ko -->
-                    </li>
-                </ul>
+        <!-- Hidden modal used for checkout add-giftcard -->
+        <div id="venbhas-add-giftcard-modal-checkout" style="display:none">
+            <div class="field">
+                <label for="venbhas-giftcard-code-checkout" class="label">
+                    <span data-bind="i18n: 'Gift card code'"></span>
+                </label>
+                <div class="control">
+                    <input type="text" id="venbhas-giftcard-code-checkout" class="input-text" />
+                </div>
             </div>
-            <!-- /ko -->
         </div>
-        <!-- /ko -->
     </div>
 </div>
 <!-- /ko -->

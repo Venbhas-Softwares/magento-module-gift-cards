@@ -11,7 +11,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Venbhas\GiftCard\Model\Quote\GiftCardManager;
 
 /**
- * Checkout controller to remove a gift card code via AJAX.
+ * Checkout controller to remove gift amount (wallet) via AJAX.
  */
 class Remove implements HttpPostActionInterface
 {
@@ -31,10 +31,6 @@ class Remove implements HttpPostActionInterface
     private $checkoutSession;
 
     /**
-     * @var GiftCardManager
-     */
-    private $giftCardManager;
-
     /**
      * Initialize controller.
      *
@@ -46,13 +42,11 @@ class Remove implements HttpPostActionInterface
     public function __construct(
         RequestInterface $request,
         JsonFactory $jsonFactory,
-        CheckoutSession $checkoutSession,
-        GiftCardManager $giftCardManager
+        CheckoutSession $checkoutSession
     ) {
         $this->request = $request;
         $this->jsonFactory = $jsonFactory;
         $this->checkoutSession = $checkoutSession;
-        $this->giftCardManager = $giftCardManager;
     }
 
     /**
@@ -65,18 +59,14 @@ class Remove implements HttpPostActionInterface
         $result = $this->jsonFactory->create();
 
         try {
-            $code = (string)$this->request->getParam('giftcard_code');
-            if (trim($code) === '') {
-                $payload = $this->readJsonBody();
-                $code = (string)($payload['giftcard_code'] ?? '');
-            }
-            $code = strtoupper(trim($code));
-            if ($code === '') {
-                throw new LocalizedException(__('Missing gift card code.'));
-            }
             $quote = $this->checkoutSession->getQuote();
-            $this->giftCardManager->removeCode($quote, $code);
-            return $result->setData(['success' => true, 'message' => (string)__('Gift card code removed.')]);
+            $quote->setData('venbhas_giftcard_amount', null);
+            $quote->setData('base_venbhas_giftcard_amount', null);
+            $quote->setTotalsCollectedFlag(false);
+            $quote->collectTotals();
+            $quote->save();
+
+            return $result->setData(['success' => true, 'message' => (string)__('Gift amount removed.')]);
         } catch (\Throwable $e) {
             return $result->setData(['success' => false, 'message' => $e->getMessage()]);
         }

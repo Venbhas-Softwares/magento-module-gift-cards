@@ -1,7 +1,5 @@
 # Venbhas Gift Card
 
-
-
 * ## Product type: 
 
 ## **Type code**: `giftcard`
@@ -318,19 +316,9 @@ On `sales\_order`:
 
 ## Important: “Purchased gift card product” codes are issued on **invoice payment**, not at order placement.
 
-### 1\) Reserve pending rows at order placement
+### 1\) Order placement (no DB rows created)
 
-* Observer: `Observer/ReserveGiftCardDetailsOnOrderPlace.php`
-* Calls: `Model/GiftCardIssuer::reservePendingForOrder($order)`
-
-Behavior:
-
-* Inserts one row per gift card quantity into `venbhas\_giftcard\_code` as:
-
-  * `status = pending`
-  * `code = PENDING-{orderId}-{orderItemId}-{seq}` (placeholder)
-  * `balance\_amount = 0`, `initial\_value = 0`
-  * sender/recipient/delivery details captured from order item options
+Gift card purchase details are stored only in the order item options. The module does **not** insert placeholder/pending rows into `venbhas_giftcard_code` during order placement.
 
 ### 2\) Activate / generate real codes on invoice payment
 

@@ -19,8 +19,6 @@ class ConvertQuoteToOrder implements ObserverInterface
     private const FIELDS = [
         'venbhas_giftcard_amount',
         'base_venbhas_giftcard_amount',
-        'venbhas_giftcard_codes',
-        'venbhas_giftcard_applied',
     ];
 
     /**
@@ -49,12 +47,10 @@ class ConvertQuoteToOrder implements ObserverInterface
                     }
                 }
             }
+            if ($this->isEmptyForCopy($field, $value)) {
+                $value = null;
+            }
             $order->setData($field, $value);
-        }
-
-        $applied = (string) $order->getData('venbhas_giftcard_applied');
-        if ($applied !== '') {
-            $order->setData('venbhas_giftcard_usage_details', $applied);
         }
     }
 

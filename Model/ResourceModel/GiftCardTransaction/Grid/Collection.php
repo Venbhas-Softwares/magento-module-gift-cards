@@ -55,7 +55,7 @@ class Collection extends SearchResult
         $this->getSelect()->joinLeft(
             ['gc' => $gcTable],
             'main_table.giftcard_id = gc.entity_id',
-            ['giftcard_code' => 'gc.code', 'gc_currency' => 'gc.currency_code']
+            ['giftcard_code' => 'gc.code']
         );
 
         $soTable = $this->getTable('sales_order');

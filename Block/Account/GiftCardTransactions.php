@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Block\Account;
 
 use Magento\Customer\Model\Session;
+use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
@@ -48,6 +49,11 @@ class GiftCardTransactions extends Template
     private PriceCurrencyInterface $_priceCurrency;
 
     /**
+     * @var FormKey
+     */
+    private FormKey $formKey;
+
+    /**
      * Initialize block.
      *
      * @param Context $context Block context
@@ -61,11 +67,13 @@ class GiftCardTransactions extends Template
         Session $customerSession,
         CustomerGiftCardTransactionsLoader $transactionsLoader,
         PriceCurrencyInterface $priceCurrency,
+        FormKey $formKey,
         array $data = []
     ) {
         $this->_customerSession = $customerSession;
         $this->_transactionsLoader = $transactionsLoader;
         $this->_priceCurrency = $priceCurrency;
+        $this->formKey = $formKey;
 
         parent::__construct($context, $data);
     }
@@ -110,6 +118,56 @@ class GiftCardTransactions extends Template
     }
 
     /**
+     * Wallet balance for the current customer (credits - usage).
+     */
+    public function getWalletBalance(): float
+    {
+        $cid = (int) $this->_customerSession->getCustomerId();
+        if ($cid <= 0) {
+            return 0.0;
+        }
+
+        $email = '';
+        try {
+            $customerData = method_exists($this->_customerSession, 'getCustomerData')
+                ? $this->_customerSession->getCustomerData()
+                : null;
+            if ($customerData && $customerData->getEmail()) {
+                $email = trim((string) $customerData->getEmail());
+            }
+            if ($email === '') {
+                $customer = $this->_customerSession->getCustomer();
+                if ($customer && $customer->getEmail()) {
+                    $email = trim((string) $customer->getEmail());
+                }
+            }
+        } catch (\Throwable $e) {
+            $email = '';
+        }
+
+        return $this->_transactionsLoader->getWalletBalance($cid, $email !== '' ? $email : null);
+    }
+
+    /**
+     * Signed amount for display (credit: +, usage: -).
+     */
+    public function formatSignedAmount(GiftCardTransaction $trx): string
+    {
+        $type = (string) $trx->getData('transaction_type');
+        $amount = (float) $trx->getData('amount');
+        if ($amount <= 0.0001) {
+            return $this->formatAmount(0.0, null);
+        }
+
+        $sign = '+';
+        if ($type === GiftCardTransaction::ACTION_CHECKOUT_APPLY || $type === GiftCardTransaction::ACTION_REDEEM) {
+            $sign = '-';
+        }
+
+        return $sign . $this->formatAmount($amount, null);
+    }
+
+    /**
      * Get the display label for a transaction action.
      *
      * @param GiftCardTransaction $trx Transaction entity
@@ -118,14 +176,15 @@ class GiftCardTransactions extends Template
      */
     public function getActionLabel(GiftCardTransaction $trx): Phrase
     {
-        $action = (string) $trx->getData('action');
-        if ($action === GiftCardTransaction::ACTION_CHECKOUT_APPLY) {
+        $type = (string) $trx->getData('transaction_type');
+        if ($type === GiftCardTransaction::ACTION_CHECKOUT_APPLY) {
             return __('Applied at checkout');
         }
-        if ($action === GiftCardTransaction::ACTION_REDEEM) {
-            return ((int) $trx->getData('invoice_id')) > 0
-                ? __('Redeemed on invoice payment')
-                : __('Redeemed when order was placed');
+        if ($type === GiftCardTransaction::ACTION_REDEEM) {
+            return __('Redeemed');
+        }
+        if ($type === GiftCardTransaction::ACTION_CREDIT) {
+            return __('Credit');
         }
 
         return __('Gift card');
@@ -160,5 +219,15 @@ class GiftCardTransactions extends Template
     public function getOrderViewUrl(int $orderId): string
     {
         return $this->getUrl('sales/order/view', ['order_id' => $orderId]);
+    }
+
+    public function getAddGiftcardUrl(): string
+    {
+        return $this->getUrl('venbhas_giftcard/account/addGiftcard');
+    }
+
+    public function getFormKeyValue(): string
+    {
+        return (string) $this->formKey->getFormKey();
     }
 }

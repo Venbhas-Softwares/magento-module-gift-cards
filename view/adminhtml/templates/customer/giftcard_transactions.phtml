@@ -23,7 +23,6 @@ $rows = $block->getTransactions();
                 $orderId = (int) $trx->getData('order_id');
                 $incrementId = (string) $trx->getData('increment_id');
                 $code = (string) $trx->getData('giftcard_code');
-                $currency = (string) $trx->getData('gc_currency');
                 ?>
                 <tr>
                     <td><?= $escaper->escapeHtml($trx->getData('created_at')) ?></td>
@@ -39,11 +38,11 @@ $rows = $block->getTransactions();
                     </td>
                     <td><?= $escaper->escapeHtml($code) ?></td>
                     <td>
-                        <?= $escaper->escapeHtml($block->formatAmount((float) $trx->getData('amount'), $currency)) ?>
+                        <?= $escaper->escapeHtml($block->formatAmount((float) $trx->getData('amount'), null)) ?>
                     </td>
                     <td>
                         <?php
-                        $balanceAfter = $block->formatAmount((float) $trx->getData('balance_after'), $currency);
+                        $balanceAfter = $block->formatAmount((float) $trx->getData('current_balance'), null);
                         ?>
                         <?= $escaper->escapeHtml($balanceAfter) ?>
                     </td>

@@ -83,7 +83,7 @@ class GiftCardCheckoutTransactionLogger
         $codeTable = $this->resource->getTableName('venbhas_giftcard_code');
 
         $existing = (int)$conn->fetchOne(
-            'SELECT COUNT(*) FROM ' . $trxTable . ' WHERE order_id = ? AND action = ?',
+            'SELECT COUNT(*) FROM ' . $trxTable . ' WHERE order_id = ? AND transaction_type = ?',
             [$orderId, GiftCardTransaction::ACTION_CHECKOUT_APPLY]
         );
         if ($existing > 0) {
@@ -94,58 +94,36 @@ class GiftCardCheckoutTransactionLogger
         $orderEmail = trim((string)$order->getCustomerEmail());
         $customerEmail = $orderEmail !== '' ? $orderEmail : null;
 
-        $codeTableColumns = array_keys((array)$conn->describeTable($codeTable));
-        // Only select columns that exist: requesting `amount`/`balance` on installs that only have
-        // `balance_amount` makes MySQL throw "Unknown column" and the whole log is rolled back.
-        $selectCodeColumns = ['entity_id', 'status'];
-        foreach (['balance_amount', 'amount', 'balance'] as $balanceCol) {
-            if (in_array($balanceCol, $codeTableColumns, true)) {
-                $selectCodeColumns[] = $balanceCol;
-            }
-        }
-
         $conn->beginTransaction();
         try {
+            $totalUsed = 0.0;
             foreach ($applied as $row) {
-                $code = strtoupper(trim((string)($row['code'] ?? '')));
-                $amount = (float)($row['base_amount'] ?? $row['amount'] ?? 0);
-                if ($code === '' || $amount <= 0.0001) {
-                    continue;
+                $amt = (float) ($row['base_amount'] ?? $row['amount'] ?? 0);
+                if ($amt > 0.0001) {
+                    $totalUsed += $amt;
                 }
-
-                $select = $conn->select()
-                    ->from($codeTable, $selectCodeColumns)
-                    ->where('code = ?', $code);
-                $gc = $conn->fetchRow($select);
-                if (!$gc) {
-                    $this->logger->warning(
-                        'Venbhas GiftCard: checkout transaction log skipped, code not found.',
-                        ['order_id' => $orderId, 'code' => $code]
-                    );
-                    continue;
-                }
-
-                $currentAmount = $this->readGiftCardBalanceFromRow($gc);
-                if (!$this->rowHasBalanceColumn($gc)) {
-                    $usedAmount = $amount;
-                    $balanceAfter = 0.0;
-                } else {
-                    $usedAmount = min($amount, max(0.0, $currentAmount));
-                    $balanceAfter = max(0.0, $currentAmount - $usedAmount);
-                }
-
-                $conn->insert($trxTable, [
-                    'giftcard_id' => (int)$gc['entity_id'],
-                    'action' => GiftCardTransaction::ACTION_CHECKOUT_APPLY,
-                    'amount' => $usedAmount,
-                    'balance_after' => $balanceAfter,
-                    'order_id' => $orderId,
-                    'invoice_id' => null,
-                    'creditmemo_id' => null,
-                    'customer_id' => $orderCustomerId,
-                    'customer_email' => $customerEmail,
-                ]);
             }
+            if ($totalUsed <= 0.0001) {
+                $conn->commit();
+                return;
+            }
+
+            $previousBalance = $this->getWalletBalance($conn, $trxTable, $orderCustomerId, $customerEmail);
+            $usedAmount = min($totalUsed, max(0.0, $previousBalance));
+            $currentBalance = max(0.0, $previousBalance - $usedAmount);
+
+            $conn->insert($trxTable, [
+                'giftcard_id' => null,
+                'transaction_type' => GiftCardTransaction::ACTION_CHECKOUT_APPLY,
+                'amount' => $usedAmount,
+                'previous_balance' => $previousBalance,
+                'current_balance' => $currentBalance,
+                'description' => 'used gift amount at checkout',
+                'order_id' => $orderId,
+                'customer_id' => $orderCustomerId,
+                'customer_email' => $customerEmail,
+                'store_id' => (int) ($order->getStoreId() ?: 0),
+            ]);
             $conn->commit();
         } catch (\Throwable $e) {
             $conn->rollBack();
@@ -186,30 +164,37 @@ class GiftCardCheckoutTransactionLogger
      */
     private function readGiftCardBalanceFromRow(array $row): float
     {
-        foreach (['balance_amount', 'amount', 'balance'] as $key) {
-            if (array_key_exists($key, $row) && $row[$key] !== null && $row[$key] !== '') {
-                return (float)$row[$key];
-            }
+        if (array_key_exists('amount', $row) && $row['amount'] !== null && $row['amount'] !== '') {
+            return (float)$row['amount'];
         }
 
         return 0.0;
     }
 
-    /**
-     * Check whether the DB row includes any balance column.
-     *
-     * @param array $row Gift card DB row
-     *
-     * @return bool
-     */
-    private function rowHasBalanceColumn(array $row): bool
+    // rowHasBalanceColumn removed: this project schema always uses `amount`.
+
+    private function getWalletBalance(\Magento\Framework\DB\Adapter\AdapterInterface $conn, string $trxTable, ?int $customerId, ?string $customerEmail): float
     {
-        foreach (['balance_amount', 'amount', 'balance'] as $key) {
-            if (array_key_exists($key, $row)) {
-                return true;
-            }
+        $where = [];
+        $cid = $customerId ? (int) $customerId : 0;
+        if ($cid > 0) {
+            $where[] = 'customer_id = ' . $cid;
+        }
+        $email = $customerEmail !== null ? strtolower(trim($customerEmail)) : '';
+        if ($email !== '') {
+            $where[] = 'customer_email = ' . $conn->quote($email);
+        }
+        if (!$where) {
+            return 0.0;
         }
 
-        return false;
+        $sql = 'SELECT COALESCE(SUM(CASE '
+            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CREDIT) . ' THEN amount '
+            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CHECKOUT_APPLY) . ' THEN -amount '
+            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_REDEEM) . ' THEN -amount '
+            . 'ELSE 0 END), 0) '
+            . 'FROM ' . $trxTable . ' WHERE (' . implode(' OR ', $where) . ')';
+
+        return (float) $conn->fetchOne($sql);
     }
 }

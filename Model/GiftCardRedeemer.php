@@ -59,7 +59,9 @@ class GiftCardRedeemer
      */
     public function redeemOnInvoicePay(OrderInterface $order, InvoiceInterface $invoice): void
     {
-        $this->executeRedemption($order, $invoice);
+        // Redemption has been intentionally disabled for this project.
+        // Only order-level amount fields are persisted; gift card balances are not deducted on invoice.
+        return;
     }
 
     /**
@@ -72,142 +74,8 @@ class GiftCardRedeemer
      */
     private function executeRedemption(OrderInterface $order, InvoiceInterface $invoice): void
     {
-        $conn = $this->resource->getConnection();
-        $salesOrderTable = $this->resource->getTableName('sales_order');
-        $orderId = $this->salesOrderEntityIdResolver->resolve($order);
-
-        if ($orderId > 0) {
-            $already = (int) $conn->fetchOne(
-                'SELECT venbhas_giftcard_redeemed FROM ' . $salesOrderTable . ' WHERE entity_id = ?',
-                [$orderId]
-            );
-            if ($already === 1) {
-                return;
-            }
-        }
-
-        if ((int) $order->getData('venbhas_giftcard_redeemed') === 1) {
-            return;
-        }
-
-        $raw = (string) $order->getData('venbhas_giftcard_applied');
-        if ($raw === '') {
-            if ($orderId > 0) {
-                $conn->update(
-                    $salesOrderTable,
-                    ['venbhas_giftcard_redeemed' => 1],
-                    ['entity_id = ?' => $orderId]
-                );
-            }
-            $order->setData('venbhas_giftcard_redeemed', 1);
-
-            return;
-        }
-
-        $applied = $this->decodeApplied($raw);
-        if (!$applied) {
-            if ($orderId > 0) {
-                $conn->update(
-                    $salesOrderTable,
-                    ['venbhas_giftcard_redeemed' => 1],
-                    ['entity_id = ?' => $orderId]
-                );
-            }
-            $order->setData('venbhas_giftcard_redeemed', 1);
-
-            return;
-        }
-
-        $codeTable = $this->resource->getTableName('venbhas_giftcard_code');
-        $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
-
-        $codeColumns = $this->resolveGiftCardSelectColumns($conn, $codeTable);
-
-        $orderCustomerId = $order->getCustomerId() ? (int) $order->getCustomerId() : null;
-        $orderEmail = strtolower(trim((string) $order->getCustomerEmail()));
-
-        $invoiceId = (int) $invoice->getEntityId();
-
-        $conn->beginTransaction();
-        try {
-            foreach ($applied as $row) {
-                $code = strtoupper(trim((string) ($row['code'] ?? '')));
-                $amount = (float) ($row['base_amount'] ?? 0);
-                if ($code === '' || $amount <= 0.0001) {
-                    continue;
-                }
-
-                $select = $conn->select()
-                    ->from($codeTable, $codeColumns)
-                    ->where('code = ?', $code)
-                    ->forUpdate(true);
-                $gc = $conn->fetchRow($select);
-                if (!$gc) {
-                    throw new LocalizedException(__('Gift card code %1 was not found.', $code));
-                }
-                if ((int) $gc['status'] !== GiftCardCode::STATUS_ACTIVE) {
-                    throw new LocalizedException(__('Gift card code %1 is not active.', $code));
-                }
-
-                $this->assertOrderMatchesRedeemerLock($order, $gc);
-
-                $currentAmount = $this->readBalanceFromGcRow($gc);
-                if ($currentAmount + 0.0001 < $amount) {
-                    throw new LocalizedException(__('Gift card code %1 has insufficient balance.', $code));
-                }
-
-                $newAmount = max(0.0, $currentAmount - $amount);
-                $newStatus = $newAmount <= 0.0001 ? GiftCardCode::STATUS_INACTIVE : GiftCardCode::STATUS_ACTIVE;
-
-                $balanceAttr = $this->balanceColumnPresentInRow($gc);
-                $update = [
-                    $balanceAttr => $newAmount,
-                    'status' => $newStatus,
-                ];
-
-                $hasLock = !empty($gc['redeemer_customer_id']) || !empty($gc['redeemer_email']);
-                if (!$hasLock) {
-                    if ($orderCustomerId) {
-                        $update['redeemer_customer_id'] = $orderCustomerId;
-                    } elseif ($orderEmail !== '') {
-                        $update['redeemer_email'] = $orderEmail;
-                    }
-                }
-
-                $conn->update(
-                    $codeTable,
-                    $update,
-                    ['entity_id = ?' => (int) $gc['entity_id']]
-                );
-
-                $conn->insert($trxTable, [
-                    'giftcard_id' => (int) $gc['entity_id'],
-                    'action' => GiftCardTransaction::ACTION_REDEEM,
-                    'amount' => $amount,
-                    'balance_after' => $newAmount,
-                    'order_id' => $orderId > 0 ? $orderId : null,
-                    'invoice_id' => $invoiceId > 0 ? $invoiceId : null,
-                    'creditmemo_id' => null,
-                    'customer_id' => $orderCustomerId,
-                    'customer_email' => $order->getCustomerEmail(),
-                ]);
-            }
-
-            if ($orderId > 0) {
-                $conn->update(
-                    $salesOrderTable,
-                    ['venbhas_giftcard_redeemed' => 1],
-                    ['entity_id = ?' => $orderId]
-                );
-            }
-
-            $conn->commit();
-        } catch (\Throwable $e) {
-            $conn->rollBack();
-            throw $e;
-        }
-
-        $order->setData('venbhas_giftcard_redeemed', 1);
+        // Redemption disabled (left for backward compatibility with existing observers/DI wiring).
+        return;
     }
 
     /**

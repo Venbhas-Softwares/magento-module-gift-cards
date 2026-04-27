@@ -141,18 +141,6 @@ $addressVisibleInitially = $offerPhysicalAddress && ($deliveryType === $delivery
         </div>
     </div>
 
-    <div class="field">
-        <label class="label" for="venbhas_giftcard_sender_email">
-            <span><?= $escaper->escapeHtml(__('Sender Email')) ?></span>
-        </label>
-        <div class="control">
-            <input type="email"
-                   name="venbhas_giftcard[sender_email]"
-                   id="venbhas_giftcard_sender_email"
-                   class="input-text" />
-        </div>
-    </div>
-
     <?php if ($allowMessage): ?>
     <div class="field required">
         <label class="label" for="venbhas_giftcard_message">

@@ -1,6 +1,7 @@
 <?php
 /** @var \Venbhas\GiftCard\Block\Account\GiftCardTransactions $block */
 $rows = $block->getTransactions();
+$walletBalance = (float) $block->getWalletBalance();
 ?>
 <div class="block block-giftcard-transactions">
     <style>
@@ -12,11 +13,50 @@ $rows = $block->getTransactions();
         .block-giftcard-transactions table.data.table td { padding: .75rem .5rem; border-bottom: 1px solid rgba(0,0,0,.08); text-align: left; vertical-align: top; }
         .block-giftcard-transactions table.data.table thead th { white-space: nowrap; }
         .block-giftcard-transactions .block-title strong { font-size: 1.1rem; }
+        .block-giftcard-transactions .header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+        .block-giftcard-transactions .wallet { text-align: right; white-space: nowrap; }
+        .block-giftcard-transactions .wallet .label { display: block; font-weight: 600; }
+        .block-giftcard-transactions .wallet .value { display: block; font-size: 1.2rem; font-weight: 700; }
     </style>
-    <div class="block-title">
+    <div class="block-title header-row">
         <strong><?= $block->escapeHtml(__('Gift card usage history')) ?></strong>
+        <div class="wallet">
+            <span class="label"><?= $block->escapeHtml(__('Gift Amount')) ?></span>
+            <span class="value"><?= $block->escapeHtml($block->formatAmount($walletBalance, null)) ?></span>
+        </div>
     </div>
     <div class="block-content">
+        <div style="margin: .75rem 0;">
+            <button type="button" class="action primary" id="venbhas-add-giftcard-btn">
+                <?= $block->escapeHtml(__('Add a new gift card')) ?>
+            </button>
+        </div>
+
+        <div id="venbhas-add-giftcard-modal" style="display:none">
+            <div class="field">
+                <label for="venbhas-giftcard-code" class="label">
+                    <span><?= $block->escapeHtml(__('Gift card code')) ?></span>
+                </label>
+                <div class="control">
+                    <input type="text" id="venbhas-giftcard-code" class="input-text" />
+                </div>
+            </div>
+        </div>
+
+        <script type="text/x-magento-init">
+        {
+            "*": {
+                "Venbhas_GiftCard/js/account/add-giftcard": {
+                    "modalSelector": "#venbhas-add-giftcard-modal",
+                    "buttonSelector": "#venbhas-add-giftcard-btn",
+                    "inputSelector": "#venbhas-giftcard-code",
+                    "postUrl": "<?= $block->escapeJs($block->getAddGiftcardUrl()) ?>",
+                    "formKey": "<?= $block->escapeJs($block->getFormKeyValue()) ?>"
+                }
+            }
+        }
+        </script>
+
         <?php if (!$rows): ?>
             <p><?= $block->escapeHtml(__('You have no gift card transactions yet.')) ?></p>
         <?php else: ?>
@@ -26,11 +66,11 @@ $rows = $block->getTransactions();
                     <thead>
                     <tr>
                         <th scope="col"><?= $block->escapeHtml(__('Date')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Type')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Description')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Order')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Gift card code')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Amount used')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Balance after')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Amount')) ?></th>
+                        
                     </tr>
                     </thead>
                     <tbody>
@@ -39,7 +79,6 @@ $rows = $block->getTransactions();
                         $orderId = (int) $trx->getData('order_id');
                         $incrementId = (string) $trx->getData('increment_id');
                         $code = (string) $trx->getData('giftcard_code');
-                        $currency = (string) $trx->getData('gc_currency');
                         ?>
                         <tr>
                             <td data-th="<?= $block->escapeHtmlAttr(__('Date')) ?>"><?= $block->escapeHtml($trx->getData('created_at')) ?></td>
@@ -54,8 +93,8 @@ $rows = $block->getTransactions();
                                 <?php endif; ?>
                             </td>
                             <td data-th="<?= $block->escapeHtmlAttr(__('Gift card code')) ?>"><?= $block->escapeHtml($code) ?></td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Amount used')) ?>"><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('amount'), $currency)) ?></td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Balance after')) ?>"><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('balance_after'), $currency)) ?></td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Amount')) ?>"><?= $block->escapeHtml($block->formatSignedAmount($trx)) ?></td>
+                            
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
