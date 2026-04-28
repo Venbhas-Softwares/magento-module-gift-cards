@@ -24,5 +24,16 @@
     <event name="sales_order_invoice_pay">
         <observer name="venbhas_giftcard_generate_on_invoice" instance="Venbhas\GiftCard\Observer\GenerateGiftCardOnInvoicePay"/>
     </event>
+
+    <!-- Wallet credit-back on cancel / refund -->
+    <event name="sales_order_cancel_after">
+        <observer name="venbhas_giftcard_wallet_credit_on_cancel" instance="Venbhas\GiftCard\Observer\CreditWalletOnOrderCancel"/>
+    </event>
+    <event name="sales_order_creditmemo_save_before">
+        <observer name="venbhas_giftcard_block_refund_if_redeemed" instance="Venbhas\GiftCard\Observer\PreventGiftCardRefundIfRedeemed"/>
+    </event>
+    <event name="sales_order_creditmemo_refund">
+        <observer name="venbhas_giftcard_wallet_credit_on_refund" instance="Venbhas\GiftCard\Observer\CreditWalletOnCreditmemoRefund"/>
+    </event>
 </config>
 

@@ -66,10 +66,12 @@ $walletBalance = (float) $block->getWalletBalance();
                     <thead>
                     <tr>
                         <th scope="col"><?= $block->escapeHtml(__('Date')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Transactiontype')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Description')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Order')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Gift card code')) ?></th>
                         <th scope="col"><?= $block->escapeHtml(__('Amount')) ?></th>
+                        <th scope="col"><?= $block->escapeHtml(__('Balance after')) ?></th>
                         
                     </tr>
                     </thead>
@@ -82,7 +84,8 @@ $walletBalance = (float) $block->getWalletBalance();
                         ?>
                         <tr>
                             <td data-th="<?= $block->escapeHtmlAttr(__('Date')) ?>"><?= $block->escapeHtml($trx->getData('created_at')) ?></td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Type')) ?>"><?= $block->escapeHtml($block->getActionLabel($trx)) ?></td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Transactiontype')) ?>"><?= $block->escapeHtml($block->getActionLabel($trx)) ?></td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Description')) ?>"><?= $block->escapeHtml((string) $trx->getData('description')) ?></td>
                             <td data-th="<?= $block->escapeHtmlAttr(__('Order')) ?>">
                                 <?php if ($orderId && $incrementId !== ''): ?>
                                     <a href="<?= $block->escapeUrl($block->getOrderViewUrl($orderId)) ?>">
@@ -94,6 +97,7 @@ $walletBalance = (float) $block->getWalletBalance();
                             </td>
                             <td data-th="<?= $block->escapeHtmlAttr(__('Gift card code')) ?>"><?= $block->escapeHtml($code) ?></td>
                             <td data-th="<?= $block->escapeHtmlAttr(__('Amount')) ?>"><?= $block->escapeHtml($block->formatSignedAmount($trx)) ?></td>
+                            <td data-th="<?= $block->escapeHtmlAttr(__('Balance after')) ?>"><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('current_balance'), null)) ?></td>
                             
                         </tr>
                     <?php endforeach; ?>

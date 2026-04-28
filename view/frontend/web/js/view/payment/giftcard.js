@@ -21,6 +21,21 @@ define([
         return Number(totals.base_venbhas_giftcard_amount || totals.venbhas_giftcard_amount || 0) || 0;
     }
 
+    function getFormKey() {
+        if (window.checkoutConfig && window.checkoutConfig.formKey) {
+            return window.checkoutConfig.formKey;
+        }
+        if (typeof window.FORM_KEY !== 'undefined' && window.FORM_KEY) {
+            return window.FORM_KEY;
+        }
+        try {
+            var m = document.cookie.match(/(?:^|; )form_key=([^;]*)/);
+            return m ? decodeURIComponent(m[1]) : '';
+        } catch (e) {
+            return '';
+        }
+    }
+
     return Component.extend({
         defaults: {
             template: 'Venbhas_GiftCard/payment/giftcard'
@@ -31,7 +46,8 @@ define([
         isApplied: ko.observable(false),
         appliedAmount: ko.observable(0),
         showAddButton: ko.observable(false),
-        _addModal: null,
+        /** @type {boolean} Modal widget created (DOM for payment block may not exist at first init). */
+        _addGiftcardModalReady: false,
 
         initialize: function () {
             this._super();
@@ -46,7 +62,6 @@ define([
             }, this);
 
             this._syncLoginState();
-            this._initAddGiftcardModal();
             this._loadWallet();
 
             return this;
@@ -64,9 +79,13 @@ define([
                 messageContainer.addErrorMessage({message: $.mage.__('Please enter a gift amount.')});
                 return;
             }
-            // Cap client-side to wallet balance (server/collector will cap again).
-            if (Number(this.walletBalance()) > 0) {
-                amt = Math.min(amt, Number(this.walletBalance()));
+            var wallet = Number(this.walletBalance()) || 0;
+            if (amt > wallet + 0.009) {
+                messageContainer.addErrorMessage({
+                    message: $.mage.__('The amount cannot exceed your available gift balance (%1).')
+                        .replace('%1', wallet.toFixed(2))
+                });
+                return;
             }
             applyAction(amt);
         },
@@ -82,14 +101,34 @@ define([
             this.showAddButton(!!(c && c.firstname));
         },
 
-        _initAddGiftcardModal: function () {
+        /**
+         * Build modal widget once DOM exists (checkout renders payment UI after uiComponent init).
+         *
+         * @returns {boolean} True if modal is ready to use
+         */
+        _ensureAddGiftcardModal: function () {
+            if (this._addGiftcardModalReady) {
+                return true;
+            }
             var $modalEl = $('#venbhas-add-giftcard-modal-checkout');
             if (!$modalEl.length) {
-                return;
+                return false;
             }
             var $input = $('#venbhas-giftcard-code-checkout');
+            var $msg = $modalEl.find('.venbhas-add-giftcard-msg');
+            function showMsg(text) {
+                if (!$msg.length) {
+                    return;
+                }
+                $msg.text(text || '').show();
+            }
+            function clearMsg() {
+                if ($msg.length) {
+                    $msg.text('').hide();
+                }
+            }
 
-            this._addModal = modal({
+            modal({
                 type: 'popup',
                 responsive: true,
                 innerScroll: true,
@@ -98,9 +137,10 @@ define([
                     text: $.mage ? $.mage.__('Add') : 'Add',
                     class: 'action primary',
                     click: function () {
+                        clearMsg();
                         var code = ($input.val() || '').trim();
                         if (!code) {
-                            messageContainer.addErrorMessage({message: $.mage.__('Please enter a gift card code.')});
+                            showMsg($.mage.__('Please enter a gift card code.'));
                             return;
                         }
 
@@ -112,8 +152,9 @@ define([
                             type: 'POST',
                             dataType: 'json',
                             data: {
-                                form_key: window.FORM_KEY || '',
-                                giftcard_code: code
+                                form_key: getFormKey(),
+                                giftcard_code: code,
+                                source: 'checkout'
                             }
                         }).done(function (res) {
                             if (res && res.success) {
@@ -131,29 +172,43 @@ define([
                             } else {
                                 fullScreenLoader.stopLoader();
                                 totals.isLoading(false);
-                                messageContainer.addErrorMessage({message: (res && res.message) || $.mage.__('Unable to add gift card.')});
+                                showMsg((res && res.message) ? res.message : $.mage.__('Unable to add gift card.'));
                             }
                         }.bind(this)).fail(function () {
                             fullScreenLoader.stopLoader();
                             totals.isLoading(false);
-                            messageContainer.addErrorMessage({message: $.mage.__('Unable to add gift card.')});
+                            showMsg($.mage.__('Unable to add gift card.'));
                         });
                     }.bind(this)
                 }]
             }, $modalEl);
+
+            this._addGiftcardModalReady = true;
+            return true;
         },
 
         openAddGiftcard: function () {
             if (!this.showAddButton()) {
                 return;
             }
-            var $modalEl = $('#venbhas-add-giftcard-modal-checkout');
-            var $input = $('#venbhas-giftcard-code-checkout');
-            if (!$modalEl.length) {
-                return;
+            var self = this;
+            var attempts = 0;
+            var maxAttempts = 40;
+
+            function tryOpen() {
+                attempts += 1;
+                if (!self._ensureAddGiftcardModal()) {
+                    if (attempts < maxAttempts) {
+                        window.setTimeout(tryOpen, 50);
+                    }
+                    return;
+                }
+                $('#venbhas-giftcard-code-checkout').val('');
+                $('#venbhas-add-giftcard-modal-checkout').find('.venbhas-add-giftcard-msg').text('').hide();
+                $('#venbhas-add-giftcard-modal-checkout').modal('openModal');
             }
-            $input.val('');
-            $modalEl.modal('openModal');
+
+            tryOpen();
         },
 
         _loadWallet: function () {

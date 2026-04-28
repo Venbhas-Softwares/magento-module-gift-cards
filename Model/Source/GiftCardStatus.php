@@ -11,9 +11,8 @@ class GiftCardStatus implements OptionSourceInterface
     public function toOptionArray(): array
     {
         return [
-            ['value' => GiftCardCode::STATUS_ACTIVE, 'label' => __('Active')],
-            ['value' => GiftCardCode::STATUS_INACTIVE, 'label' => __('Inactive')],
-            ['value' => GiftCardCode::STATUS_PENDING, 'label' => __('Pending')],
+            ['value' => GiftCardCode::STATUS_ACTIVE, 'label' => __('Yes')],
+            ['value' => GiftCardCode::STATUS_INACTIVE, 'label' => __('No')],
         ];
     }
 }

@@ -3,13 +3,6 @@
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
         <referenceBlock name="customer_account_navigation">
-            <block class="Magento\Framework\View\Element\Html\Link\Current" name="customer-account-navigation-giftcards-link">
-                <arguments>
-                    <argument name="label" xsi:type="string" translate="true">My Gift Cards</argument>
-                    <argument name="path" xsi:type="string">venbhas_giftcard/account/index</argument>
-                    <argument name="sortOrder" xsi:type="number">250</argument>
-                </arguments>
-            </block>
             <block class="Magento\Framework\View\Element\Html\Link\Current" name="customer-account-navigation-giftcard-transactions-link">
                 <arguments>
                     <argument name="label" xsi:type="string" translate="true">My Gift Card Transactions</argument>

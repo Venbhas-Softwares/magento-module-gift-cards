@@ -98,14 +98,14 @@ class GiftCard extends AbstractTotal
             return $this;
         }
 
-        $total->addTotalAmount(self::CODE, -$toApply);
+        $total->addTotalAmount(self::CODE, -$baseToApply);
         $total->addBaseTotalAmount(self::CODE, -$baseToApply);
-        $total->setGrandTotal((float) $total->getGrandTotal() - $toApply);
+        $total->setGrandTotal((float) $total->getGrandTotal() - $baseToApply);
         $total->setBaseGrandTotal((float) $total->getBaseGrandTotal() - $baseToApply);
 
-        $total->setData('venbhas_giftcard_amount', $toApply);
+        $total->setData('venbhas_giftcard_amount', $baseToApply);
         $total->setData('base_venbhas_giftcard_amount', $baseToApply);
-        $quote->setData('venbhas_giftcard_amount', $toApply);
+        $quote->setData('venbhas_giftcard_amount', $baseToApply);
         $quote->setData('base_venbhas_giftcard_amount', $baseToApply);
 
         return $this;

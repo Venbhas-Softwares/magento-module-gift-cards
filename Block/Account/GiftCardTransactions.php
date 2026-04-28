@@ -160,7 +160,11 @@ class GiftCardTransactions extends Template
         }
 
         $sign = '+';
-        if ($type === GiftCardTransaction::ACTION_CHECKOUT_APPLY || $type === GiftCardTransaction::ACTION_REDEEM) {
+        if (
+            $type === GiftCardTransaction::ACTION_DEBIT
+            || $type === GiftCardTransaction::ACTION_CHECKOUT_APPLY
+            || $type === GiftCardTransaction::ACTION_REDEEM
+        ) {
             $sign = '-';
         }
 
@@ -177,6 +181,9 @@ class GiftCardTransactions extends Template
     public function getActionLabel(GiftCardTransaction $trx): Phrase
     {
         $type = (string) $trx->getData('transaction_type');
+        if ($type === GiftCardTransaction::ACTION_DEBIT) {
+            return __('Debited at checkout');
+        }
         if ($type === GiftCardTransaction::ACTION_CHECKOUT_APPLY) {
             return __('Applied at checkout');
         }

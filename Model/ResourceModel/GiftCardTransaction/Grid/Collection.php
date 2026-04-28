@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\Grid;
 
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Data\Collection\Db\FetchStrategyInterface as FetchStrategy;
 use Magento\Framework\Data\Collection\EntityFactoryInterface as EntityFactory;
 use Magento\Framework\Event\ManagerInterface as EventManager;
 use Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult;
+use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface as Logger;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction as ResourceModel;
 
@@ -15,6 +17,11 @@ use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction as ResourceModel;
  */
 class Collection extends SearchResult
 {
+    /**
+     * @var StoreManagerInterface|null
+     */
+    private $storeManager;
+
     /**
      * Initialize grid collection with default table mapping.
      *
@@ -33,11 +40,13 @@ class Collection extends SearchResult
         Logger $logger,
         FetchStrategy $fetchStrategy,
         EventManager $eventManager,
+        ?StoreManagerInterface $storeManager = null,
         ?string $mainTable = null,
         ?string $resourceModel = null
     ) {
         $mainTable = $mainTable ?: 'venbhas_giftcard_transaction';
         $resourceModel = $resourceModel ?: ResourceModel::class;
+        $this->storeManager = $storeManager;
 
         parent::__construct($entityFactory, $logger, $fetchStrategy, $eventManager, $mainTable, $resourceModel);
     }
@@ -64,6 +73,32 @@ class Collection extends SearchResult
             'main_table.order_id = so.entity_id',
             ['increment_id' => 'so.increment_id']
         );
+
+        // Customer name (uses flat grid table for performance / non-EAV join complexity).
+        $cgTable = $this->getTable('customer_grid_flat');
+        $this->getSelect()->joinLeft(
+            ['cg' => $cgTable],
+            'main_table.customer_id = cg.entity_id',
+            ['customer_name' => 'cg.name']
+        );
+
+        return $this;
+    }
+
+    protected function _afterLoad()
+    {
+        parent::_afterLoad();
+
+        $storeManager = $this->storeManager ?: ObjectManager::getInstance()->get(StoreManagerInterface::class);
+        foreach ($this->getItems() as $item) {
+            $storeId = (int) $item->getData('store_id');
+            try {
+                $currency = (string) $storeManager->getStore($storeId)->getBaseCurrencyCode();
+            } catch (\Throwable $e) {
+                $currency = '';
+            }
+            $item->setData('currency_code', $currency);
+        }
 
         return $this;
     }

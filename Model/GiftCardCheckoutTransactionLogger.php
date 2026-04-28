@@ -68,23 +68,18 @@ class GiftCardCheckoutTransactionLogger
             return;
         }
 
-        $raw = (string)$order->getData('venbhas_giftcard_applied');
-        if ($raw === '') {
-            return;
-        }
-
-        $applied = $this->decodeApplied($raw);
-        if ($applied === []) {
+        // Wallet model: usage is stored as an amount on the order, not JSON-applied codes.
+        $totalUsed = (float) ($order->getData('base_venbhas_giftcard_amount') ?? $order->getData('venbhas_giftcard_amount') ?? 0);
+        if ($totalUsed <= 0.0001) {
             return;
         }
 
         $conn = $this->resource->getConnection();
         $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
-        $codeTable = $this->resource->getTableName('venbhas_giftcard_code');
 
         $existing = (int)$conn->fetchOne(
-            'SELECT COUNT(*) FROM ' . $trxTable . ' WHERE order_id = ? AND transaction_type = ?',
-            [$orderId, GiftCardTransaction::ACTION_CHECKOUT_APPLY]
+            'SELECT COUNT(*) FROM ' . $trxTable . ' WHERE order_id = ? AND transaction_type IN(?, ?)',
+            [$orderId, GiftCardTransaction::ACTION_DEBIT, GiftCardTransaction::ACTION_CHECKOUT_APPLY]
         );
         if ($existing > 0) {
             return;
@@ -96,29 +91,17 @@ class GiftCardCheckoutTransactionLogger
 
         $conn->beginTransaction();
         try {
-            $totalUsed = 0.0;
-            foreach ($applied as $row) {
-                $amt = (float) ($row['base_amount'] ?? $row['amount'] ?? 0);
-                if ($amt > 0.0001) {
-                    $totalUsed += $amt;
-                }
-            }
-            if ($totalUsed <= 0.0001) {
-                $conn->commit();
-                return;
-            }
-
             $previousBalance = $this->getWalletBalance($conn, $trxTable, $orderCustomerId, $customerEmail);
             $usedAmount = min($totalUsed, max(0.0, $previousBalance));
             $currentBalance = max(0.0, $previousBalance - $usedAmount);
 
             $conn->insert($trxTable, [
                 'giftcard_id' => null,
-                'transaction_type' => GiftCardTransaction::ACTION_CHECKOUT_APPLY,
+                'transaction_type' => GiftCardTransaction::ACTION_DEBIT,
                 'amount' => $usedAmount,
                 'previous_balance' => $previousBalance,
                 'current_balance' => $currentBalance,
-                'description' => 'used gift amount at checkout',
+                'description' => 'debited gift amount at checkout',
                 'order_id' => $orderId,
                 'customer_id' => $orderCustomerId,
                 'customer_email' => $customerEmail,
@@ -132,27 +115,6 @@ class GiftCardCheckoutTransactionLogger
                 ['order_id' => $orderId, 'exception' => $e]
             );
         }
-    }
-
-    /**
-     * Decode applied gift card JSON.
-     *
-     * @param string $raw JSON string
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function decodeApplied(string $raw): array
-    {
-        try {
-            $decoded = $this->json->unserialize($raw);
-        } catch (\Exception $e) {
-            return [];
-        }
-        if (!is_array($decoded)) {
-            return [];
-        }
-
-        return $decoded;
     }
 
     /**
@@ -190,6 +152,7 @@ class GiftCardCheckoutTransactionLogger
 
         $sql = 'SELECT COALESCE(SUM(CASE '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CREDIT) . ' THEN amount '
+            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_DEBIT) . ' THEN -amount '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CHECKOUT_APPLY) . ' THEN -amount '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_REDEEM) . ' THEN -amount '
             . 'ELSE 0 END), 0) '

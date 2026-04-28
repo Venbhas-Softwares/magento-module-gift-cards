@@ -13,8 +13,6 @@ class GiftCardCode extends AbstractModel
 {
     public const STATUS_ACTIVE = 1;
     public const STATUS_INACTIVE = 0;
-    /** Reserved at order placement; real code issued on invoice payment */
-    public const STATUS_PENDING = 2;
 
     /**
      * Initialize resource model.

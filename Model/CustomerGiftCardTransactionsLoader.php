@@ -53,7 +53,8 @@ class CustomerGiftCardTransactionsLoader
         $collection->joinSalesOrder();
         $collection->addFieldToFilter(
             'main_table.transaction_type',
-            ['in' => [GiftCardTransaction::ACTION_REDEEM, GiftCardTransaction::ACTION_CHECKOUT_APPLY, GiftCardTransaction::ACTION_CREDIT]]
+            // Backward compat: older rows used `checkout_apply` before wallet debits were renamed to `debit`.
+            ['in' => [GiftCardTransaction::ACTION_REDEEM, GiftCardTransaction::ACTION_DEBIT, GiftCardTransaction::ACTION_CHECKOUT_APPLY, GiftCardTransaction::ACTION_CREDIT]]
         );
         $collection->setOrder('main_table.created_at', 'DESC');
         $collection->setOrder('main_table.entity_id', 'DESC');
@@ -123,6 +124,7 @@ class CustomerGiftCardTransactionsLoader
 
         $sql = 'SELECT COALESCE(SUM(CASE '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CREDIT) . ' THEN amount '
+            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_DEBIT) . ' THEN -amount '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CHECKOUT_APPLY) . ' THEN -amount '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_REDEEM) . ' THEN -amount '
             . 'ELSE 0 END), 0) '

@@ -8,7 +8,7 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Exception\LocalizedException;
-use Venbhas\GiftCard\Model\Quote\GiftCardManager;
+use Venbhas\GiftCard\Model\CustomerGiftCardTransactionsLoader;
 
 /**
  * Checkout controller to apply gift amount (wallet) via AJAX.
@@ -31,22 +31,28 @@ class Apply implements HttpPostActionInterface
     private $checkoutSession;
 
     /**
+     * @var CustomerGiftCardTransactionsLoader
+     */
+    private $walletLoader;
+
     /**
      * Initialize controller.
      *
      * @param RequestInterface $request Request
      * @param JsonFactory $jsonFactory JSON result factory
      * @param CheckoutSession $checkoutSession Checkout session
-     * @param GiftCardManager $giftCardManager Gift card manager
+     * @param CustomerGiftCardTransactionsLoader $walletLoader Wallet balance loader
      */
     public function __construct(
         RequestInterface $request,
         JsonFactory $jsonFactory,
-        CheckoutSession $checkoutSession
+        CheckoutSession $checkoutSession,
+        CustomerGiftCardTransactionsLoader $walletLoader
     ) {
         $this->request = $request;
         $this->jsonFactory = $jsonFactory;
         $this->checkoutSession = $checkoutSession;
+        $this->walletLoader = $walletLoader;
     }
 
     /**
@@ -67,6 +73,17 @@ class Apply implements HttpPostActionInterface
             }
             if ($amount <= 0.0001) {
                 throw new LocalizedException(__('Please enter a gift amount.'));
+            }
+
+            $customerId = $quote->getCustomerId() ? (int) $quote->getCustomerId() : 0;
+            $email = strtolower(trim((string) $quote->getCustomerEmail()));
+            $email = $email !== '' ? $email : null;
+
+            $available = $this->walletLoader->getWalletBalance($customerId, $email);
+            if ($amount > $available + 0.009) {
+                throw new LocalizedException(
+                    __('The amount cannot exceed your available gift balance (%1).', number_format($available, 2))
+                );
             }
 
             $quote->setData('venbhas_giftcard_amount', $amount);

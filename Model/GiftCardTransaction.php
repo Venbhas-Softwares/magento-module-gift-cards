@@ -15,6 +15,8 @@ class GiftCardTransaction extends AbstractModel
     public const ACTION_REDEEM = 'redeem';
     /** Optional ledger row when checkout_apply logger is enabled (balance uses ACTION_REDEEM redemption). */
     public const ACTION_CHECKOUT_APPLY = 'checkout_apply';
+    /** Wallet debit when using gift amount at checkout. */
+    public const ACTION_DEBIT = 'debit';
     /** Manual credit added by customer account "Add gift card" flow. */
     public const ACTION_CREDIT = 'credit';
 

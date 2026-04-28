@@ -105,6 +105,7 @@ class AddGiftcard extends AbstractAccount
             $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
 
             $now = $this->dateTime->gmtDate();
+            $source = strtolower(trim((string) $this->getRequest()->getParam('source')));
 
             $conn->beginTransaction();
             try {
@@ -169,20 +170,29 @@ class AddGiftcard extends AbstractAccount
                 }
 
                 // Wallet balance before this credit (sum of credits - usage).
+                // Important: customer_email can be NULL; do not use `customer_email = NULL` in SQL.
+                $whereParts = ['customer_id = ?'];
+                $bind = [$customerId];
+                if ($customerEmail !== null && $customerEmail !== '') {
+                    $whereParts[] = 'customer_email = ?';
+                    $bind[] = $customerEmail;
+                }
                 $previousBalance = (float) $conn->fetchOne(
                     'SELECT COALESCE(SUM(CASE '
                     . 'WHEN transaction_type = ? THEN amount '
-                    . 'WHEN transaction_type = ? THEN -amount '
+                    . 'WHEN transaction_type IN(?, ?) THEN -amount '
                     . 'WHEN transaction_type = ? THEN -amount '
                     . 'ELSE 0 END), 0) '
-                    . 'FROM ' . $trxTable . ' WHERE (customer_id = ? OR customer_email = ?)',
-                    [
-                        GiftCardTransaction::ACTION_CREDIT,
-                        GiftCardTransaction::ACTION_CHECKOUT_APPLY,
-                        GiftCardTransaction::ACTION_REDEEM,
-                        $customerId,
-                        $customerEmail,
-                    ]
+                    . 'FROM ' . $trxTable . ' WHERE (' . implode(' OR ', $whereParts) . ')',
+                    array_merge(
+                        [
+                            GiftCardTransaction::ACTION_CREDIT,
+                            GiftCardTransaction::ACTION_DEBIT,
+                            GiftCardTransaction::ACTION_CHECKOUT_APPLY,
+                            GiftCardTransaction::ACTION_REDEEM,
+                        ],
+                        $bind
+                    )
                 );
 
                 $update = ['updated_at' => $now];
@@ -230,7 +240,9 @@ class AddGiftcard extends AbstractAccount
                     'amount' => $creditAmount,
                     'previous_balance' => $previousBalance,
                     'current_balance' => $currentBalance,
-                    'description' => 'added a giftcard in my account',
+                    'description' => $source === 'checkout'
+                        ? 'added a new giftcard at checkout'
+                        : 'added a new giftcard in my account',
                     'order_id' => null,
                     'customer_id' => $customerId,
                     'customer_email' => $customerEmail,

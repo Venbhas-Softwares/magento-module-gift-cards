@@ -20,7 +20,7 @@ define([
                 click: function () {
                     var code = ($input.val() || '').trim();
                     if (!code) {
-                        alert('Please enter a gift card code.');
+                        alert($.mage ? $.mage.__('Please enter a gift card code.') : 'Please enter a gift card code.');
                         return;
                     }
 
@@ -36,10 +36,10 @@ define([
                         if (res && res.success) {
                             window.location.reload();
                         } else {
-                            alert((res && res.message) ? res.message : 'Unable to add gift card.');
+                            alert((res && res.message) ? res.message : ($.mage ? $.mage.__('Unable to add gift card.') : 'Unable to add gift card.'));
                         }
                     }).fail(function () {
-                        alert('Unable to add gift card.');
+                        alert($.mage ? $.mage.__('Unable to add gift card.') : 'Unable to add gift card.');
                     });
                 }
             }]

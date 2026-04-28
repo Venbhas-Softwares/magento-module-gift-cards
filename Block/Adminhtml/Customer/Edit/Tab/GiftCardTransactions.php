@@ -117,17 +117,62 @@ class GiftCardTransactions extends Template implements TabInterface
      */
     public function getActionLabel(GiftCardTransaction $trx): Phrase
     {
-        $action = (string) $trx->getData('action');
-        if ($action === GiftCardTransaction::ACTION_CHECKOUT_APPLY) {
+        $type = (string) $trx->getData('transaction_type');
+        if ($type === GiftCardTransaction::ACTION_DEBIT) {
+            return __('Debited at checkout');
+        }
+        if ($type === GiftCardTransaction::ACTION_CHECKOUT_APPLY) {
             return __('Applied at checkout');
         }
-        if ($action === GiftCardTransaction::ACTION_REDEEM) {
-            return ((int) $trx->getData('invoice_id')) > 0
-                ? __('Redeemed on invoice payment')
-                : __('Redeemed when order was placed');
+        if ($type === GiftCardTransaction::ACTION_REDEEM) {
+            return __('Redeemed');
+        }
+        if ($type === GiftCardTransaction::ACTION_CREDIT) {
+            return __('Credit');
         }
 
         return __('Gift card');
+    }
+
+    /**
+     * Wallet balance for the customer being edited.
+     */
+    public function getWalletBalance(): float
+    {
+        $cid = (int) $this->_registry->registry(RegistryConstants::CURRENT_CUSTOMER_ID);
+        if ($cid <= 0) {
+            return 0.0;
+        }
+        try {
+            $email = (string) $this->_customerRepository->getById($cid)->getEmail();
+        } catch (\Throwable $e) {
+            return 0.0;
+        }
+
+        return $this->_transactionsLoader->getWalletBalance($cid, $email !== '' ? $email : null);
+    }
+
+    /**
+     * Signed amount for display (credit: +, usage: -).
+     */
+    public function formatSignedAmount(GiftCardTransaction $trx): string
+    {
+        $type = (string) $trx->getData('transaction_type');
+        $amount = (float) $trx->getData('amount');
+        if ($amount <= 0.0001) {
+            return $this->formatAmount(0.0, null);
+        }
+
+        $sign = '+';
+        if (
+            $type === GiftCardTransaction::ACTION_DEBIT
+            || $type === GiftCardTransaction::ACTION_CHECKOUT_APPLY
+            || $type === GiftCardTransaction::ACTION_REDEEM
+        ) {
+            $sign = '-';
+        }
+
+        return $sign . $this->formatAmount($amount, null);
     }
 
     /**

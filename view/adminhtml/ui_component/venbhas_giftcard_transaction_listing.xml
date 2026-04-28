@@ -50,64 +50,49 @@
                 <label translate="true">Gift Card Code</label>
             </settings>
         </column>
-        <column name="action">
+        <column name="transaction_type">
             <settings>
                 <filter>text</filter>
-                <label translate="true">Action</label>
+                <label translate="true"> Transaction Type</label>
             </settings>
         </column>
-        <column name="amount">
+         <column name="description">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Description</label>
+            </settings>
+        </column>
+        <column name="amount" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminPrice">
             <settings>
                 <filter>textRange</filter>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
                 <label translate="true">Amount</label>
             </settings>
         </column>
-        <column name="balance_after">
-            <settings>
-                <filter>textRange</filter>
-                <label translate="true">Balance After</label>
-            </settings>
-        </column>
-        <column name="order_id">
-            <settings>
-                <filter>textRange</filter>
-                <label translate="true">Order ID</label>
-            </settings>
-        </column>
-        <column name="increment_id">
+        <column name="increment_id" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminOrderLink">
             <settings>
                 <filter>text</filter>
                 <label translate="true">Order #</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
             </settings>
         </column>
-        <column name="invoice_id">
-            <settings>
-                <filter>textRange</filter>
-                <label translate="true">Invoice ID</label>
-            </settings>
-        </column>
-        <column name="creditmemo_id">
-            <settings>
-                <filter>textRange</filter>
-                <label translate="true">Credit Memo ID</label>
-            </settings>
-        </column>
-        <column name="customer_id">
-            <settings>
-                <filter>textRange</filter>
-                <label translate="true">Customer ID</label>
-            </settings>
-        </column>
-        <column name="customer_email">
+        <column name="customer_name" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminCustomerLink">
             <settings>
                 <filter>text</filter>
-                <label translate="true">Customer Email</label>
+                <label translate="true">Customer</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
             </settings>
         </column>
         <column name="created_at">
             <settings>
                 <filter>dateRange</filter>
                 <label translate="true">Created</label>
+            </settings>
+        </column>
+        <column name="store_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Store ID</label>
             </settings>
         </column>
     </columns>
