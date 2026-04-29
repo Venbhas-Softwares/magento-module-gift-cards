@@ -82,5 +82,11 @@
         <column xsi:type="decimal" name="base_venbhas_giftcard_amount" precision="12" scale="4" nullable="true" comment="Venbhas Gift Card Base Amount"/>
     </table>
 
+    <!-- Invoice totals persistence -->
+    <table name="sales_invoice" resource="sales" comment="Sales Flat Invoice">
+        <column xsi:type="decimal" name="venbhas_giftcard_amount" precision="12" scale="4" nullable="true" comment="Venbhas Gift Card Amount"/>
+        <column xsi:type="decimal" name="base_venbhas_giftcard_amount" precision="12" scale="4" nullable="true" comment="Venbhas Gift Card Base Amount"/>
+    </table>
+
 </schema>
 

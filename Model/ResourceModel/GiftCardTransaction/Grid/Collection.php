@@ -32,6 +32,7 @@ class Collection extends SearchResult
      * @param Logger $logger Logger
      * @param FetchStrategy $fetchStrategy Fetch strategy
      * @param EventManager $eventManager Event manager
+     * @param StoreManagerInterface|null $storeManager Store manager
      * @param string|null $mainTable Main table
      * @param string|null $resourceModel Resource model
      */
@@ -85,6 +86,11 @@ class Collection extends SearchResult
         return $this;
     }
 
+    /**
+     * Add `currency_code` field for UI price column formatting.
+     *
+     * @return $this
+     */
     protected function _afterLoad()
     {
         parent::_afterLoad();

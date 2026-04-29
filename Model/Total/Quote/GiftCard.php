@@ -37,11 +37,9 @@ class GiftCard extends AbstractTotal
     /**
      * Initialize total collector.
      *
-     * @param GiftCardManager $giftCardManager Gift card manager
-     * @param CodeCollectionFactory $codeCollectionFactory Gift card code collection factory
      * @param Config $config Module config
      * @param Json $json JSON serializer
-     * @param GiftCardRedeemValidator $redeemValidator Redeem validator
+     * @param ResourceConnection $resource Resource connection
      */
     public function __construct(
         Config $config,
@@ -111,6 +109,13 @@ class GiftCard extends AbstractTotal
         return $this;
     }
 
+    /**
+     * Load wallet balance for the quote customer.
+     *
+     * @param Quote $quote Quote
+     *
+     * @return float
+     */
     private function getWalletBalance(Quote $quote): float
     {
         $customerId = $quote->getCustomerId() ? (int) $quote->getCustomerId() : 0;
@@ -131,10 +136,18 @@ class GiftCard extends AbstractTotal
             $where[] = 'customer_email = ' . $conn->quote($email);
         }
 
-        $sql = 'SELECT COALESCE(SUM(CASE '
-            . 'WHEN transaction_type = ' . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_CREDIT) . ' THEN amount '
-            . 'WHEN transaction_type = ' . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_CHECKOUT_APPLY) . ' THEN -amount '
-            . 'WHEN transaction_type = ' . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_REDEEM) . ' THEN -amount '
+        $sql =
+            // phpcs:ignore Magento2.SQL.RawQuery.RawQuery
+            'SELECT COALESCE(SUM(CASE '
+            . 'WHEN transaction_type = '
+            . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_CREDIT)
+            . ' THEN amount '
+            . 'WHEN transaction_type = '
+            . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_CHECKOUT_APPLY)
+            . ' THEN -amount '
+            . 'WHEN transaction_type = '
+            . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_REDEEM)
+            . ' THEN -amount '
             . 'ELSE 0 END), 0) '
             . 'FROM ' . $trxTable . ' WHERE (' . implode(' OR ', $where) . ')';
 

@@ -14,6 +14,11 @@ class GiftCard extends Template
      */
     private $resource;
 
+    /**
+     * @param Template\Context $context Block context
+     * @param ResourceConnection $resource Resource connection
+     * @param array $data Additional data
+     */
     public function __construct(
         Template\Context $context,
         ResourceConnection $resource,
@@ -53,7 +58,8 @@ class GiftCard extends Template
                 $conn = $this->resource->getConnection();
                 $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
                 $credited = (float) $conn->fetchOne(
-                    'SELECT COALESCE(SUM(amount),0) FROM ' . $trxTable . ' WHERE order_id = ? AND transaction_type = ? AND description = ?',
+                    'SELECT COALESCE(SUM(amount),0) FROM ' . $trxTable
+                    . ' WHERE order_id = ? AND transaction_type = ? AND description = ?',
                     [$orderId, 'credit', $desc]
                 );
                 if ($credited > 0.0001) {
@@ -82,4 +88,3 @@ class GiftCard extends Template
         return $this;
     }
 }
-

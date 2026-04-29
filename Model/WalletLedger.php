@@ -21,6 +21,10 @@ class WalletLedger
      */
     private $walletLoader;
 
+    /**
+     * @param ResourceConnection $resource Resource connection
+     * @param CustomerGiftCardTransactionsLoader $walletLoader Wallet loader
+     */
     public function __construct(
         ResourceConnection $resource,
         CustomerGiftCardTransactionsLoader $walletLoader
@@ -29,6 +33,14 @@ class WalletLedger
         $this->walletLoader = $walletLoader;
     }
 
+    /**
+     * Check whether a credit row already exists for the order and description.
+     *
+     * @param int $orderId Order ID
+     * @param string $description Ledger description
+     *
+     * @return bool
+     */
     public function hasCreditForOrder(int $orderId, string $description): bool
     {
         if ($orderId <= 0) {
@@ -43,6 +55,15 @@ class WalletLedger
         return $cnt > 0;
     }
 
+    /**
+     * Insert a wallet credit row for the order.
+     *
+     * @param OrderInterface $order Order
+     * @param float $amount Credit amount
+     * @param string $description Ledger description
+     *
+     * @return void
+     */
     public function creditBackToWallet(OrderInterface $order, float $amount, string $description): void
     {
         $orderId = (int) $order->getEntityId();
@@ -74,4 +95,3 @@ class WalletLedger
         ]);
     }
 }
-

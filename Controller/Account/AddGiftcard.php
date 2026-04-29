@@ -48,6 +48,15 @@ class AddGiftcard extends AbstractAccount
      */
     private $dateTime;
 
+    /**
+     * @param Context $context Action context
+     * @param JsonFactory $resultJsonFactory JSON result factory
+     * @param FormKeyValidator $formKeyValidator Form key validator
+     * @param CustomerSession $customerSession Customer session
+     * @param ResourceConnection $resource Resource connection
+     * @param StoreManagerInterface $storeManager Store manager
+     * @param DateTime $dateTime Date helper
+     */
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
@@ -66,6 +75,11 @@ class AddGiftcard extends AbstractAccount
         parent::__construct($context);
     }
 
+    /**
+     * Add a gift card code to the logged-in customer's wallet.
+     *
+     * @return \Magento\Framework\Controller\Result\Json
+     */
     public function execute()
     {
         $result = $this->resultJsonFactory->create();
@@ -119,6 +133,8 @@ class AddGiftcard extends AbstractAccount
                 $hasRedeemedEmail = in_array('redeemed_email', $codeColumns, true);
                 $hasIsReedemed = in_array('is_reedemed', $codeColumns, true);
                 $hasIsRedeemed = in_array('is_redeemed', $codeColumns, true);
+                $hasIsCancelled = in_array('is_cancelled', $codeColumns, true);
+                $hasIsCanceled = in_array('is_canceled', $codeColumns, true);
 
                 // Lock the giftcard_code row.
                 $selectCols = ['entity_id', 'code'];
@@ -133,6 +149,8 @@ class AddGiftcard extends AbstractAccount
                     'redeemed_email',
                     'is_reedemed',
                     'is_redeemed',
+                    'is_cancelled',
+                    'is_canceled',
                 ] as $c) {
                     if (in_array($c, $codeColumns, true)) {
                         $selectCols[] = $c;
@@ -159,10 +177,24 @@ class AddGiftcard extends AbstractAccount
                     throw new LocalizedException(__('This gift card code is already redeemed.'));
                 }
 
+                $isCancelledFlag = 0;
+                if ($hasIsCancelled) {
+                    $isCancelledFlag = (int) ($gc['is_cancelled'] ?? 0);
+                } elseif ($hasIsCanceled) {
+                    $isCancelledFlag = (int) ($gc['is_canceled'] ?? 0);
+                }
+                if ($isCancelledFlag === 1) {
+                    throw new LocalizedException(__('Card is not valid.'));
+                }
+
                 $creditAmount = null;
                 if ($hasAmount && isset($gc['amount']) && $gc['amount'] !== null && $gc['amount'] !== '') {
                     $creditAmount = (float) $gc['amount'];
-                } elseif ($hasBalanceAmount && isset($gc['balance_amount']) && $gc['balance_amount'] !== null && $gc['balance_amount'] !== '') {
+                } elseif ($hasBalanceAmount
+                    && isset($gc['balance_amount'])
+                    && $gc['balance_amount'] !== null
+                    && $gc['balance_amount'] !== ''
+                ) {
                     $creditAmount = (float) $gc['balance_amount'];
                 }
                 if ($creditAmount === null || $creditAmount <= 0.0001) {
@@ -184,15 +216,12 @@ class AddGiftcard extends AbstractAccount
                     . 'WHEN transaction_type = ? THEN -amount '
                     . 'ELSE 0 END), 0) '
                     . 'FROM ' . $trxTable . ' WHERE (' . implode(' OR ', $whereParts) . ')',
-                    array_merge(
-                        [
-                            GiftCardTransaction::ACTION_CREDIT,
-                            GiftCardTransaction::ACTION_DEBIT,
-                            GiftCardTransaction::ACTION_CHECKOUT_APPLY,
-                            GiftCardTransaction::ACTION_REDEEM,
-                        ],
-                        $bind
-                    )
+                    array_merge([
+                        GiftCardTransaction::ACTION_CREDIT,
+                        GiftCardTransaction::ACTION_DEBIT,
+                        GiftCardTransaction::ACTION_CHECKOUT_APPLY,
+                        GiftCardTransaction::ACTION_REDEEM,
+                    ], $bind)
                 );
 
                 $update = ['updated_at' => $now];
@@ -267,4 +296,3 @@ class AddGiftcard extends AbstractAccount
         }
     }
 }
-

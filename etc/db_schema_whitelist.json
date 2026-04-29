@@ -75,6 +75,12 @@
       "venbhas_giftcard_applied": true,
       "venbhas_giftcard_usage_details": true
     }
+  },
+  "sales_invoice": {
+    "column": {
+      "venbhas_giftcard_amount": true,
+      "base_venbhas_giftcard_amount": true
+    }
   }
 }
 

@@ -21,11 +21,21 @@ class GiftCard extends AbstractTotal
      */
     private $resource;
 
+    /**
+     * @param ResourceConnection $resource Resource connection
+     */
     public function __construct(ResourceConnection $resource)
     {
         $this->resource = $resource;
     }
 
+    /**
+     * Reduce credit memo grand total by remaining gift amount.
+     *
+     * @param Creditmemo $creditmemo Credit memo
+     *
+     * @return $this
+     */
     public function collect(Creditmemo $creditmemo)
     {
         $order = $creditmemo->getOrder();
@@ -33,7 +43,11 @@ class GiftCard extends AbstractTotal
             return $this;
         }
 
-        $orderGift = (float) ($order->getData('base_venbhas_giftcard_amount') ?? $order->getData('venbhas_giftcard_amount') ?? 0);
+        $orderGift = (float) (
+            $order->getData('base_venbhas_giftcard_amount')
+            ?? $order->getData('venbhas_giftcard_amount')
+            ?? 0
+        );
         if ($orderGift <= 0.0001) {
             return $this;
         }
@@ -77,4 +91,3 @@ class GiftCard extends AbstractTotal
         return $this;
     }
 }
-

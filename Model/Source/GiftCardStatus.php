@@ -8,6 +8,11 @@ use Venbhas\GiftCard\Model\GiftCardCode;
 
 class GiftCardStatus implements OptionSourceInterface
 {
+    /**
+     * Return yes/no options for redeemed flag rendering.
+     *
+     * @return array<int, array<string, int|string|\Magento\Framework\Phrase>>
+     */
     public function toOptionArray(): array
     {
         return [
@@ -16,4 +21,3 @@ class GiftCardStatus implements OptionSourceInterface
         ];
     }
 }
-

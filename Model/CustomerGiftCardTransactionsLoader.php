@@ -28,6 +28,7 @@ class CustomerGiftCardTransactionsLoader
      * Initialize loader.
      *
      * @param CollectionFactory $collectionFactory Transaction collection factory
+     * @param ResourceConnection $resource Resource connection
      */
     public function __construct(
         CollectionFactory $collectionFactory,
@@ -54,7 +55,14 @@ class CustomerGiftCardTransactionsLoader
         $collection->addFieldToFilter(
             'main_table.transaction_type',
             // Backward compat: older rows used `checkout_apply` before wallet debits were renamed to `debit`.
-            ['in' => [GiftCardTransaction::ACTION_REDEEM, GiftCardTransaction::ACTION_DEBIT, GiftCardTransaction::ACTION_CHECKOUT_APPLY, GiftCardTransaction::ACTION_CREDIT]]
+            [
+                'in' => [
+                    GiftCardTransaction::ACTION_REDEEM,
+                    GiftCardTransaction::ACTION_DEBIT,
+                    GiftCardTransaction::ACTION_CHECKOUT_APPLY,
+                    GiftCardTransaction::ACTION_CREDIT,
+                ],
+            ]
         );
         $collection->setOrder('main_table.created_at', 'DESC');
         $collection->setOrder('main_table.entity_id', 'DESC');
@@ -122,7 +130,9 @@ class CustomerGiftCardTransactionsLoader
             return 0.0;
         }
 
-        $sql = 'SELECT COALESCE(SUM(CASE '
+        $sql =
+            // phpcs:ignore Magento2.SQL.RawQuery.RawQuery
+            'SELECT COALESCE(SUM(CASE '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CREDIT) . ' THEN amount '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_DEBIT) . ' THEN -amount '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CHECKOUT_APPLY) . ' THEN -amount '

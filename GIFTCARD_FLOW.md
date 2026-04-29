@@ -1,540 +1,411 @@
-# Venbhas Gift Card
+# Venbhas Gift Card Flow
 
-* ## Product type: 
+This document describes the **current** flow used by the module after the wallet refactor.
 
-## **Type code**: `giftcard`
+## 1. High-level model
 
-* Registered in: `etc/product\_types.xml`
+There are now **two separate concepts**:
 
-  * `modelInstance="Venbhas\\GiftCard\\Model\\Product\\Type\\GiftCard"`
+1. **Gift card product purchase**
+   - customer buys a gift card product
+   - actual code row is created only after invoice payment
 
-Key class:
+2. **Wallet usage**
+   - customer adds a gift card code to their wallet
+   - checkout applies a wallet amount, not an individual code
 
-* `Model/Product/Type/GiftCard.php`
+The transaction table is the wallet ledger.
 
-  * Extends Simple (`Magento\\Catalog\\Model\\Product\\Type\\Simple`)
-  * Overrides:
+## 2. Product type
 
-    * `isVirtual($product)`: if delivery is **physical-only**, returns `false` so the line item becomes **shippable**
-    * `canConfigure($product)`: always `true` (gift card products always have fields)
+- Type code: `giftcard`
+- Registered in `etc/product_types.xml`
+- Main class: `Model/Product/Type/GiftCard.php`
 
+Key behavior:
 
+- `isVirtual($product)` returns `false` when physical delivery is required
+- `canConfigure($product)` always returns `true`
 
-## Gift card product fields (admin): 
+## 3. Product attributes and PDP fields
 
-## Gift-card-specific **product attributes** are created via a data patch:
+Gift card product attributes are created by:
 
-* `Setup/Patch/Data/AddGiftOptionsProductAttributes.php`
+- `Setup/Patch/Data/AddGiftOptionsProductAttributes.php`
 
-It creates an attribute group **“Gift Options”** and attributes that apply only to product type `giftcard`:
+Important attributes:
 
-* **Delivery Type** (`GiftOptionsResolver::ATTR\_DELIVERY\_TYPE`)
+- delivery type
+- custom amount allowed
+- preset amounts
+- custom message allowed
 
-  * Source model: `Model/Config/Source/Product/GiftDeliveryTypeWithConfig`
-  * “Use configuration defaults” is supported (store config fallback)
-* **Custom Amount Allowed** (`GiftOptionsResolver::ATTR\_ALLOW\_CUSTOM\_AMOUNT`)
+Frontend rendering:
 
-  * Source model: `Model/Config/Source/Product/NullableYesNo`
-* **Amounts Available** (`GiftOptionsResolver::ATTR\_AMOUNTS\_AVAILABLE`)
+- layout: `view/frontend/layout/catalog_product_view_type_giftcard.xml`
+- block: `Block/Product/View/Fields.php`
+- template: `view/frontend/templates/product/view/fields.phtml`
 
-  * Textarea of comma-separated presets
-* **Custom Message Allowed** (`GiftOptionsResolver::ATTR\_ALLOW\_CUSTOM\_MESSAGE`)
+Posted data includes:
 
-  * Source model: `Model/Config/Source/Product/NullableYesNo`
+- `venbhas_giftcard[amount]`
+- recipient/sender fields
+- message
+- `delivery_type`
+- physical delivery address fields when needed
 
-Store defaults (fallbacks) are defined in:
+## 4. Add to cart flow
 
-* `etc/config.xml`
-* Admin configuration UI is in:
+### Validation before add
 
-  * `etc/adminhtml/system.xml` (`Stores → Configuration → Venbhas → Gift Card`)
-
-
-
-## Product page (frontend): 
-
-## Layout injection for gift card PDP:
-
-* `view/frontend/layout/catalog\_product\_view\_type\_giftcard.xml`
-
-  * Adds block `Venbhas\\GiftCard\\Block\\Product\\View\\Fields`
-  * Template: `view/frontend/templates/product/view/fields.phtml`
-
-Block logic:
-
-* `Block/Product/View/Fields.php`
-
-  * `shouldRender()` checks module enabled + product type `giftcard`
-  * Reads presets/min/max/delivery/message rules via:
-
-    * `Model/Product/GiftOptionsResolver.php` (product attributes or fallback to config)
-    * `Model/Config.php` (store config)
-
-Posted field names (request payload):
-
-* `venbhas\_giftcard\[amount]`
-* `venbhas\_giftcard\[recipient\_name]`, `venbhas\_giftcard\[recipient\_email]`
-* `venbhas\_giftcard\[sender\_name]`, `venbhas\_giftcard\[sender\_email]`
-* `venbhas\_giftcard\[message]`
-* `venbhas\_giftcard\[delivery\_type]`
-* physical delivery fields when selected:
-
-  * `delivery\_street`, `delivery\_city`, `delivery\_region`, `delivery\_postcode`, `delivery\_country`
-
-
-
-## Add-to-cart: validation + persistence (quote item)
-
-Events wired in `etc/events.xml`:
-
-### 1\) Validation (before add)
-
-* Event: `checkout\_cart\_product\_add\_before`
-* Observer: `Observer/ValidateGiftCardFieldsOnAddToCart.php`
+- event: `checkout_cart_product_add_before`
+- observer: `Observer/ValidateGiftCardFieldsOnAddToCart.php`
 
 Validates:
 
-* required text fields: recipient/sender
-* message required if allowed by resolver/config
-* amount:
+- required recipient/sender data
+- amount rules
+- delivery rules
+- physical address fields when physical delivery is selected
 
-  * must be > 0
-  * must be within min/max
-  * if custom amount not allowed → must match one of the presets
-* delivery:
+### Persist options after add
 
-  * if product/store delivery type is `both` → posted `delivery\_type` must be `virtual` or `physical`
-  * if physical delivery selected → address fields must be present
+- event: `checkout_cart_product_add_after`
+- observer: `Observer/PersistGiftCardFieldsOnQuoteItem.php`
 
-### 2\) Persist gift fields on quote item (after add)
+Stores gift options in quote item `additional_options` so they appear in:
 
-* Event: `checkout\_cart\_product\_add\_after`
-* Observer: `Observer/PersistGiftCardFieldsOnQuoteItem.php`
+- cart
+- admin order item view
+- emails
 
-How it is stored:
+### Apply selected amount as line item price
 
-* Adds/updates quote item option `additional\_options` (JSON)
-* Each row includes:
+- event: `checkout_cart_product_add_after`
+- observer: `Observer/ApplyGiftCardAmountToQuoteItem.php`
 
-  * `label`, `value`, `option\_code`
-* This is the standard Magento mechanism that makes gift fields show on:
+This sets custom price on the quote item based on the selected gift amount.
 
-  * cart line item options
-  * order item options
-  * emails/admin order item display (after quote→order conversion)
+## 5. Gift card issuance flow
 
-### 3\) Apply selected amount as price (after add)
+### Order placement
 
-* Event: `checkout\_cart\_product\_add\_after`
-* Observer: `Observer/ApplyGiftCardAmountToQuoteItem.php`
+No row is inserted into `venbhas_giftcard_code` during order placement.
 
-Behavior:
+There are **no pending placeholder rows** anymore.
 
-* Converts posted `amount` into **base currency**
-* Applies it as:
+### Invoice payment
 
-  * `quote\_item.custom\_price`
-  * `quote\_item.original\_custom\_price`
+- event: `sales_order_invoice_pay`
+- observer: `Observer/GenerateGiftCardOnInvoicePay.php`
+- issuer: `Model/GiftCardIssuer.php`
 
+What happens:
 
+- each invoiced gift card product item creates real code rows
+- one row per invoiced quantity
+- code is generated by `Model/CodeGenerator.php`
+- purchase metadata is stored on the code row
+- `purchased_by` / `purchased_by_email` are filled from order customer context
 
+Important:
 
+- code row is created only when invoice is paid
+- no old `pending-*` flow is used
 
-## Applying an existing gift card code in cart/checkout (discount)
-
-There are two UIs (cart and checkout) calling the same underlying quote manager.
-
-### Cart UI (form post)
-
-* Template: `view/frontend/templates/cart/giftcard.phtml`
-* Layout: `view/frontend/layout/checkout\_cart\_index.xml`
-* Controller:
-
-  * Apply: `Controller/Cart/Apply.php` (`venbhas\_giftcard/cart/apply`)
-  * Remove: `Controller/Cart/Remove.php` (`venbhas\_giftcard/cart/remove`)
-
-### Checkout UI (Knockout component)
-
-* Layout: `view/frontend/layout/checkout\_index\_index.xml`
-* Component: `view/frontend/web/js/view/payment/giftcard.js`
-* Template: `view/frontend/web/template/payment/giftcard.html`
-* AJAX controllers:
-
-  * Apply: `Controller/Checkout/Apply.php` (`venbhas\_giftcard/checkout/apply`)
-  * Remove: `Controller/Checkout/Remove.php` (`venbhas\_giftcard/checkout/remove`)
-
-### Underlying quote storage
-
-Both cart and checkout call:
-
-* `Model/Quote/GiftCardManager.php`
-
-Storage on quote:
-
-* `quote.venbhas\_giftcard\_codes` (CSV string of codes)
-
-Important: Applying a code does **not** deduct balance immediately. It:
-
-* validates + locks the code to a redeemer (first apply)
-* triggers totals recollection so the discount is computed
-
-
-
-
-
-## Validation when applying a gift card code 
-
-## Main validator:
-
-* `Model/Quote/GiftCardRedeemValidator.php`
-
-`assertMayApply($quote, $code)` enforces:
-
-* code exists in `venbhas\_giftcard\_code`
-* `status = active`
-* `balance\_amount > 0`
-* redeemer lock rules:
-
-  * if `redeemer\_customer\_id` is set → quote customer id must match
-  * else if `redeemer\_email` is set → quote customer email must match
-
-Locking (first user wins):
-
-* When a code has no lock yet, validator sets exactly one of:
-
-  * `venbhas\_giftcard\_code.redeemer\_customer\_id`
-  * `venbhas\_giftcard\_code.redeemer\_email`
-* Update is guarded so races do not overwrite existing locks.
-
-Practical effect:
-
-* Once someone applies a code first time, other customers cannot apply it later.
-
-
-
-
-
-## Totals: 
-
-## Quote total collector:
-
-* `Model/Total/Quote/GiftCard.php`
-
-  * total code: `venbhas\_giftcard`
-
-What it does:
-
-* reads codes from quote (`GiftCardManager::getCodes()`)
-* loads matching code rows from `venbhas\_giftcard\_code`
-* skips codes that fail `GiftCardRedeemValidator::canQuoteUseGiftCard()`
-* applies gift cards up to the quote base grand total
-* stores:
-
-  * `quote.venbhas\_giftcard\_amount`
-  * `quote.base\_venbhas\_giftcard\_amount`
-  * `quote.venbhas\_giftcard\_applied` (JSON array of `{code, base\_amount}`)
-  * `quote.venbhas\_giftcard\_balance\_details` (JSON) used only for UI display
-
-Copy quote → order (persistence):
-
-* Observer: `Observer/ConvertQuoteToOrder.php` on `sales\_model\_service\_quote\_submit\_before`
-* Copies to `sales\_order`:
-
-  * `venbhas\_giftcard\_amount`, `base\_venbhas\_giftcard\_amount`
-  * `venbhas\_giftcard\_codes` (CSV)
-  * `venbhas\_giftcard\_applied` (JSON)
-  * `venbhas\_giftcard\_usage\_details` (mirror of applied JSON for display)
-
-Checkout totals API / JS “extra fields”:
-
-* `etc/extension\_attributes.xml` extends `Magento\\Quote\\Api\\Data\\TotalsInterface` with:
-
-  * `venbhas\_giftcard\_codes`, `venbhas\_giftcard\_balance\_details`
-* Plugin: `Plugin/Quote/CartTotalRepositoryPlugin.php`
-
-  * forces `collectTotals()`
-  * exposes the two fields via `TotalsInterface.extension\_attributes`
-
-
-
-
-
-
-
-## Database: 
-
-## Defined in `etc/db\_schema.xml`.
-
-### Gift card code table
-
-`venbhas\_giftcard\_code` holds the gift card itself:
-
-* `code` (unique)
-* `status`: pending / active / inactive
-* `balance\_amount`, `initial\_value`, `currency\_code`
-* redeemer lock:
-
-  * `redeemer\_customer\_id`, `redeemer\_email`
-* purchase context:
-
-  * `order\_id`, `order\_item\_id`, `product\_id`, `customer\_id` (purchaser)
-* recipient/sender/delivery fields (including physical address)
-
-### Gift card ledger / transactions table
-
-`venbhas\_giftcard\_transaction` is the audit/ledger:
-
-* `action`:
-
-  * `checkout\_apply` (logged at order placement)
-  * `redeem` (balance deduction on invoice pay)
-* `amount`, `balance\_after`
-* links: `order\_id`, `invoice\_id`, `customer\_id`, `customer\_email`
-
-### Quote + Order columns
-
-On `quote`:
-
-* `venbhas\_giftcard\_amount`, `base\_venbhas\_giftcard\_amount`
-* `venbhas\_giftcard\_codes` (CSV)
-* `venbhas\_giftcard\_applied` (JSON)
-
-On `sales\_order`:
-
-* same as quote plus:
-
-  * `venbhas\_giftcard\_usage\_details` (JSON for display)
-  * `venbhas\_giftcard\_redeemed` (flag; prevents double redemption)
-
-
-
-
-
-
-
-## Gift card issuance: 
-
-## Important: “Purchased gift card product” codes are issued on **invoice payment**, not at order placement.
-
-### 1\) Order placement (no DB rows created)
-
-Gift card purchase details are stored only in the order item options. The module does **not** insert placeholder/pending rows into `venbhas_giftcard_code` during order placement.
-
-### 2\) Activate / generate real codes on invoice payment
-
-* Event: `sales\_order\_invoice\_pay`
-* Observer: `Observer/GenerateGiftCardOnInvoicePay.php`
-* Calls: `GiftCardIssuer::issueForOrderItem($order, $orderItem, $qtyThisInvoice)`
-
-Activation:
-
-* Converts pending rows to active and sets:
-
-  * real `code` from `Model/CodeGenerator.php`
-  * `balance\_amount = initial\_value = basePrice` of the gift card item
-  * `status = active`
-* Retries if code collision happens (unique index on `code`)
-
-Code generation format:
-
-* `Model/CodeGenerator.php`
-
-  * random alphabet: `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`
-  * grouped as: `XXXX-XXXX-XXXX-XXXX`
-
-
-
-
-
-
-
-## Redeem: 
-
-## Redeem happens on **invoice payment**:
-
-* Observer: `Observer/GenerateGiftCardOnInvoicePay.php`
-
-  * calls `Model/GiftCardRedeemer::redeemOnInvoicePay($order, $invoice)`
-
-Redeemer behavior (`Model/GiftCardRedeemer.php`):
-
-* Reads `sales\_order.venbhas\_giftcard\_applied` JSON (`\[{code, base\_amount}]`)
-* For each code:
-
-  * loads gift card row with `FOR UPDATE`
-  * validates:
-
-    * exists, active
-    * redeemer lock matches order customer/email
-    * sufficient balance
-  * updates `venbhas\_giftcard\_code.balance\_amount` (and status inactive if balance reaches 0)
-  * inserts transaction row:
-
-    * `action = redeem`, with `invoice\_id`
-* Sets `sales\_order.venbhas\_giftcard\_redeemed = 1` (DB + runtime) so invoice pay cannot double-redeem.
-
-
-
-
-
-
-
-## Ledger logging: 
-
-## At order placement, the module logs a “checkout apply” ledger entry (audit trail).
-
-* Observer: `Observer/LogGiftCardCheckoutUsageOnOrderPlace.php`
-* Writer: `Model/GiftCardCheckoutTransactionLogger.php`
-
-It inserts into `venbhas\_giftcard\_transaction`:
-
-* `action = checkout\_apply`
-* `amount = used amount for that order`
-* `balance\_after` (best effort snapshot)
-
-It does **not** change `balance\_amount`. Balance changes only in redeem flow (invoice pay).
-
-
-
-
-
-
-
-## Emails: 
-
-## Email templates are registered in:
-
-* `etc/email\_templates.xml`
-
-  * `venbhas\_giftcard\_email\_template` → `view/frontend/email/giftcard\_email.html`
-  * `venbhas\_giftcard\_redemption\_receipt\_template` → `view/frontend/email/giftcard\_redemption\_receipt.html`
-
-### A) “You received a Gift Card” (recipient email)
-
-* Sender: `Model/Email/GiftCardSender.php`
-* Trigger: invoice payment observer `Observer/GenerateGiftCardOnInvoicePay.php`
-
-  * after issuing codes for each invoice item, it calls `$this->sender->send($code)`
-
-Rules:
-
-* If `delivery\_type` is **physical** → **skips email** (physical card is shipped; code is not emailed)
-* Requires `recipient\_email`
-* Template vars include:
-
-  * gift card code, formatted value, sender/recipient names, message
-
-
-
-
-
-### B) “Gift card usage receipt” (customer placing the order)
-
-* Sender: `Model/Email/GiftCardRedemptionReceiptSender.php`
-* Trigger: invoice payment observer `Observer/GenerateGiftCardOnInvoicePay.php`
-
-  * always called after redeem attempt: `$this->redemptionReceiptSender->sendForOrder($order)`
-
-Rules:
-
-* Requires `order.customer\_email`
-* Requires `sales\_order.venbhas\_giftcard\_applied` JSON
-* Builds an HTML table including:
-
-  * code, amount used, initial amount, current balance (read from `venbhas\_giftcard\_code`)
-
-
-
-
-
-
-
-## “My codes” in checkout: 
-
-## Checkout component loads “previously used gift cards”:
-
-* JS: `view/frontend/web/js/view/payment/giftcard.js`
-
-  * calls `GET venbhas\_giftcard/checkout/mycodes` for logged-in customers
+## 6. Add code to wallet
 
 Controller:
 
-* `Controller/Checkout/MyCodes.php`
+- `Controller/Account/AddGiftcard.php`
 
-Query:
+Used from:
 
-* selects active codes where:
+- My Account transactions page
+- checkout add-giftcard popup
 
-  * `redeemer\_customer\_id = current customer`
-  * `status = active`
-  * `balance\_amount > 0`
-* returns up to 25 rows: `{code, amount, currency}`
+What it does:
 
-Meaning:
+- validates form key and customer login
+- loads the `venbhas_giftcard_code` row by code
+- rejects invalid states
+- creates a `credit` transaction row
+- marks the code as redeemed (`is_reedemed = 1`)
 
-* This feature lists codes **locked to the customer** (first-applied redeemer), not codes they purchased.
+Validation rules:
 
-\---
+- code must exist
+- code must not already be redeemed
+- code must not be canceled
+- amount must be valid
 
-## My Account: 
+Canceled codes now return:
 
-## Navigation items are always added by:
+- `Card is not valid.`
 
-* `view/frontend/layout/customer\_account.xml`
+## 7. Wallet model
 
-  * “My Gift Cards” → `venbhas\_giftcard/account/index`
-  * “My Gift Card Transactions” → `venbhas\_giftcard/account/transactions`
+Wallet is computed from `venbhas_giftcard_transaction`.
 
-### A) “My Gift Cards” 
+Main reader:
 
-* Controller: `Controller/Account/Index.php`
-* Layout: `view/frontend/layout/venbhas\_giftcard\_account\_index.xml`
-* Block: `Block/Account/MyGiftCards.php`
-* Template: `view/frontend/templates/account/mygiftcards.phtml`
+- `Model/CustomerGiftCardTransactionsLoader.php`
 
-Filter logic:
+Balance calculation:
 
-* Lists gift cards where the customer is the **redeemer**:
+- `credit` adds to wallet
+- `debit` subtracts from wallet
+- legacy `checkout_apply` subtracts
+- legacy `redeem` subtracts
 
-  * `redeemer\_customer\_id = current customer id`
-  * OR `redeemer\_email = customer email` (lowercased match)
+Transaction rows store:
 
-So:
+- `amount`
+- `previous_balance`
+- `current_balance`
+- `description`
+- customer + order references
 
-* A gift card you received by email will appear here **only after you apply it** (because applying is when the lock is set).
-* It is intentionally **not** a “gift cards I purchased” list.
-* 
+## 8. Checkout flow
 
-### B) “My Gift Card Transactions” 
+### Checkout UI
 
-* Controller: `Controller/Account/Transactions.php`
-* Layout: `view/frontend/layout/venbhas\_giftcard\_account\_transactions.xml`
-* Block: `Block/Account/GiftCardTransactions.php`
-* Template: `view/frontend/templates/account/transactions.phtml`
+- layout: `view/frontend/layout/checkout_index_index.xml`
+- component: `view/frontend/web/js/view/payment/giftcard.js`
+- template: `view/frontend/web/template/payment/giftcard.html`
 
-Data source:
+Controllers:
 
-* `Model/CustomerGiftCardTransactionsLoader.php` builds a collection:
+- apply: `Controller/Checkout/Apply.php`
+- remove: `Controller/Checkout/Remove.php`
+- wallet balance: `Controller/Checkout/Wallet.php`
 
-  * base: `Model/ResourceModel/GiftCardTransaction/Collection.php`
-  * joins:
+Behavior:
 
-    * gift card code table (code + currency): `joinGiftCardCode()`
-    * sales order table (increment id): `joinSalesOrder()`
-  * filters actions:
+- customer enters wallet amount
+- backend validates it does not exceed available wallet balance
+- quote stores:
+  - `venbhas_giftcard_amount`
+  - `base_venbhas_giftcard_amount`
 
-    * `checkout\_apply`, `redeem`
-  * filters “my rows” by:
+### Quote total collector
 
-    * transaction `customer\_id` or `customer\_email`, OR joined `sales\_order.customer\_id`
+- `Model/Total/Quote/GiftCard.php`
 
-Displayed columns:
+This applies the wallet amount as discount-like total during checkout.
 
-* date, type (action label), order increment link, gift card code, amount used, balance after.
+## 9. Quote to order
 
+- event: `sales_model_service_quote_submit_before`
+- observer: `Observer/ConvertQuoteToOrder.php`
 
+Copies:
 
+- `venbhas_giftcard_amount`
+- `base_venbhas_giftcard_amount`
 
+from quote to order.
 
-## 
+## 10. Order placement logging
+
+- events:
+  - `sales_model_service_quote_submit_success`
+  - `sales_order_place_after`
+- observer: `Observer/LogGiftCardCheckoutUsageOnOrderPlace.php`
+- writer: `Model/GiftCardCheckoutTransactionLogger.php`
+
+What it writes:
+
+- one `debit` transaction row
+- description: `debited gift amount at checkout`
+
+This is the wallet deduction entry for checkout usage.
+
+## 11. Cancel flow
+
+- event: `order_cancel_after`
+- observer: `Observer/CreditWalletOnOrderCancel.php`
+- writer: `Model/WalletLedger.php`
+
+If order has applied gift amount:
+
+- wallet is credited back
+- transaction row is inserted:
+  - `transaction_type = credit`
+  - `description = order canceled`
+
+This applies for pending order cancellation too.
+
+## 12. Refund / credit memo flow
+
+### Prevent refund when issued code already redeemed
+
+- event: `sales_order_creditmemo_save_before`
+- observer: `Observer/PreventGiftCardRefundIfRedeemed.php`
+
+If refund contains gift card product items and any issued code from that order has `is_reedemed = 1`:
+
+- refund is blocked
+
+### Credit wallet back on refund
+
+- event: `sales_order_creditmemo_refund`
+- observer: `Observer/CreditWalletOnCreditmemoRefund.php`
+
+If order used wallet amount:
+
+- wallet is credited back
+- transaction row is inserted:
+  - `transaction_type = credit`
+  - description like `order refunded (creditmemo X)`
+
+### Cancel refunded gift card codes
+
+When the refund contains gift card product items:
+
+- related rows in `venbhas_giftcard_code` are updated
+- `is_cancelled = 1`
+
+After this:
+
+- code cannot be added from My Account
+- code cannot be added from checkout popup
+- error shown: `Card is not valid.`
+
+## 13. Invoice totals flow
+
+### Invoice collector
+
+- `Model/Total/Invoice/GiftCard.php`
+- registered in `etc/sales.xml` under `order_invoice`
+
+Behavior:
+
+- invoice grand total is reduced by gift amount
+- invoice stores:
+  - `venbhas_giftcard_amount`
+  - `base_venbhas_giftcard_amount`
+
+This makes invoice total exclude applied gift amount.
+
+### Invoice admin totals row
+
+Added on:
+
+- invoice create
+- invoice view
+
+Files:
+
+- `Block/Adminhtml/Order/Invoice/Totals/GiftCard.php`
+- `view/adminhtml/layout/sales_order_invoice_new.xml`
+- `view/adminhtml/layout/sales_order_invoice_view.xml`
+
+## 14. Credit memo totals flow
+
+### Credit memo collector
+
+- `Model/Total/Creditmemo/GiftCard.php`
+- registered in `etc/sales.xml` under `order_creditmemo`
+
+Behavior:
+
+- credit memo grand total is reduced by gift amount
+- credit memo data gets:
+  - `venbhas_giftcard_amount`
+  - `base_venbhas_giftcard_amount`
+
+### Credit memo admin totals row
+
+Added on:
+
+- credit memo create
+- credit memo update qty
+- credit memo view
+
+Files:
+
+- `Block/Adminhtml/Order/Creditmemo/Totals/GiftCard.php`
+- `view/adminhtml/layout/sales_order_creditmemo_new.xml`
+- `view/adminhtml/layout/sales_order_creditmemo_updateqty.xml`
+- `view/adminhtml/layout/sales_order_creditmemo_view.xml`
+
+## 15. Customer account flow
+
+### Transactions page
+
+- controller: `Controller/Account/Transactions.php`
+- block: `Block/Account/GiftCardTransactions.php`
+- template: `view/frontend/templates/account/transactions.phtml`
+
+Shows:
+
+- wallet balance
+- signed amount
+- balance after
+- description
+- order link when available
+
+### Add code popup
+
+Uses same backend add controller as checkout popup:
+
+- `Controller/Account/AddGiftcard.php`
+
+## 16. Database summary
+
+### `venbhas_giftcard_code`
+
+Current important columns:
+
+- `code`
+- `amount`
+- `purchased_by`
+- `purchased_by_email`
+- `redeemed_by`
+- `redeemed_email`
+- `product_id`
+- `order_id`
+- `is_reedemed`
+- `is_cancelled`
+
+### `venbhas_giftcard_transaction`
+
+Current important columns:
+
+- `transaction_type`
+- `description`
+- `amount`
+- `previous_balance`
+- `current_balance`
+- `order_id`
+- `customer_id`
+- `customer_email`
+
+### Sales columns
+
+`quote`:
+
+- `venbhas_giftcard_amount`
+- `base_venbhas_giftcard_amount`
+
+`sales_order`:
+
+- `venbhas_giftcard_amount`
+- `base_venbhas_giftcard_amount`
+
+`sales_invoice`:
+
+- `venbhas_giftcard_amount`
+- `base_venbhas_giftcard_amount`
+
+## 17. Commands
+
+Wallet rebalance command:
+
+```bash
+bin/magento venbhas:giftcard:recalc-wallet
+```
+
+Use it to recalculate `previous_balance` and `current_balance` for existing rows.
 

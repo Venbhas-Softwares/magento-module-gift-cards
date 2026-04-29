@@ -26,7 +26,7 @@
     </event>
 
     <!-- Wallet credit-back on cancel / refund -->
-    <event name="sales_order_cancel_after">
+    <event name="order_cancel_after">
         <observer name="venbhas_giftcard_wallet_credit_on_cancel" instance="Venbhas\GiftCard\Observer\CreditWalletOnOrderCancel"/>
     </event>
     <event name="sales_order_creditmemo_save_before">

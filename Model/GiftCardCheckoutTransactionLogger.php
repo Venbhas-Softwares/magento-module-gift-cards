@@ -9,8 +9,7 @@ use Magento\Sales\Api\Data\OrderInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Records checkout_apply ledger rows when an order is placed (applied at checkout).
- * Balance deduction and redeem rows occur on invoice payment (GiftCardRedeemer).
+ * Records wallet debit ledger rows when an order is placed.
  */
 class GiftCardCheckoutTransactionLogger
 {
@@ -69,7 +68,11 @@ class GiftCardCheckoutTransactionLogger
         }
 
         // Wallet model: usage is stored as an amount on the order, not JSON-applied codes.
-        $totalUsed = (float) ($order->getData('base_venbhas_giftcard_amount') ?? $order->getData('venbhas_giftcard_amount') ?? 0);
+        $totalUsed = (float) (
+            $order->getData('base_venbhas_giftcard_amount')
+            ?? $order->getData('venbhas_giftcard_amount')
+            ?? 0
+        );
         if ($totalUsed <= 0.0001) {
             return;
         }
@@ -118,25 +121,21 @@ class GiftCardCheckoutTransactionLogger
     }
 
     /**
-     * Read the current balance from a gift card DB row.
+     * Calculate wallet balance for the given customer identity.
      *
-     * @param array $row Gift card DB row
+     * @param \Magento\Framework\DB\Adapter\AdapterInterface $conn DB adapter
+     * @param string $trxTable Transaction table
+     * @param int|null $customerId Customer ID
+     * @param string|null $customerEmail Customer email
      *
      * @return float
      */
-    private function readGiftCardBalanceFromRow(array $row): float
-    {
-        if (array_key_exists('amount', $row) && $row['amount'] !== null && $row['amount'] !== '') {
-            return (float)$row['amount'];
-        }
-
-        return 0.0;
-    }
-
-    // rowHasBalanceColumn removed: this project schema always uses `amount`.
-
-    private function getWalletBalance(\Magento\Framework\DB\Adapter\AdapterInterface $conn, string $trxTable, ?int $customerId, ?string $customerEmail): float
-    {
+    private function getWalletBalance(
+        \Magento\Framework\DB\Adapter\AdapterInterface $conn,
+        string $trxTable,
+        ?int $customerId,
+        ?string $customerEmail
+    ): float {
         $where = [];
         $cid = $customerId ? (int) $customerId : 0;
         if ($cid > 0) {
@@ -150,7 +149,9 @@ class GiftCardCheckoutTransactionLogger
             return 0.0;
         }
 
-        $sql = 'SELECT COALESCE(SUM(CASE '
+        $sql =
+            // phpcs:ignore Magento2.SQL.RawQuery.RawQuery
+            'SELECT COALESCE(SUM(CASE '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CREDIT) . ' THEN amount '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_DEBIT) . ' THEN -amount '
             . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CHECKOUT_APPLY) . ' THEN -amount '

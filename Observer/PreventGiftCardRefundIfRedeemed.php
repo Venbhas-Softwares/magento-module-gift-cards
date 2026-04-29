@@ -17,11 +17,21 @@ class PreventGiftCardRefundIfRedeemed implements ObserverInterface
      */
     private $resource;
 
+    /**
+     * @param ResourceConnection $resource Resource connection
+     */
     public function __construct(ResourceConnection $resource)
     {
         $this->resource = $resource;
     }
 
+    /**
+     * Block refund if issued gift card codes from the order were redeemed.
+     *
+     * @param Observer $observer Event observer
+     *
+     * @return void
+     */
     public function execute(Observer $observer): void
     {
         /** @var CreditmemoInterface|null $creditmemo */
@@ -57,8 +67,9 @@ class PreventGiftCardRefundIfRedeemed implements ObserverInterface
             [$orderId]
         );
         if ($redeemed > 0) {
-            throw new LocalizedException(__('Refund is not allowed because one or more gift cards from this order were already redeemed.'));
+            throw new LocalizedException(
+                __('Refund is not allowed because one or more gift cards from this order were already redeemed.')
+            );
         }
     }
 }
-

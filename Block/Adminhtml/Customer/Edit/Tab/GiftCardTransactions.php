@@ -154,6 +154,10 @@ class GiftCardTransactions extends Template implements TabInterface
 
     /**
      * Signed amount for display (credit: +, usage: -).
+     *
+     * @param GiftCardTransaction $trx Transaction entity
+     *
+     * @return string
      */
     public function formatSignedAmount(GiftCardTransaction $trx): string
     {
@@ -164,8 +168,7 @@ class GiftCardTransactions extends Template implements TabInterface
         }
 
         $sign = '+';
-        if (
-            $type === GiftCardTransaction::ACTION_DEBIT
+        if ($type === GiftCardTransaction::ACTION_DEBIT
             || $type === GiftCardTransaction::ACTION_CHECKOUT_APPLY
             || $type === GiftCardTransaction::ACTION_REDEEM
         ) {
@@ -267,7 +270,8 @@ class GiftCardTransactions extends Template implements TabInterface
     /**
      * Get the admin order view URL for the given order id.
      *
-     * @param int $orderId
+     * @param int $orderId Order ID
+     *
      * @return string
      */
     public function getAdminOrderUrl(int $orderId): string

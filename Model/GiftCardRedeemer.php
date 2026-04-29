@@ -61,7 +61,7 @@ class GiftCardRedeemer
     {
         // Redemption has been intentionally disabled for this project.
         // Only order-level amount fields are persisted; gift card balances are not deducted on invoice.
-        return;
+        unset($order, $invoice);
     }
 
     /**
@@ -75,7 +75,7 @@ class GiftCardRedeemer
     private function executeRedemption(OrderInterface $order, InvoiceInterface $invoice): void
     {
         // Redemption disabled (left for backward compatibility with existing observers/DI wiring).
-        return;
+        unset($order, $invoice);
     }
 
     /**

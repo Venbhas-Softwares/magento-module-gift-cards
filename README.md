@@ -1,96 +1,239 @@
 # Venbhas Gift Card (`Venbhas_GiftCard`)
 
-Gift card products, checkout redemption, balance handling, emails, usage ledger, and customer account UI for Magento 2 Open Source.
+Magento 2 gift card module with:
 
-## Features
+- gift card product purchase flow
+- wallet-based gift amount usage in checkout
+- transaction ledger for wallet credits/debits
+- customer account transaction history
+- admin grids and admin customer tab
+- invoice / credit memo totals integration
 
-- **Configurable gift card products** with amount rules, optional custom amount, storefront gift options (recipient, message, delivery type).
-- **Delivery modes (store configuration + product):** virtual (email), physical (ship card), or customer choice when `both` is configured.
-- **Checkout redemption:** quote total collector applies gift cards to the grand total (including zero total).
-- **Ledger** in `venbhas_giftcard_transaction`:
-  - **`checkout_apply`** — logged when an order is placed with gift card(s) applied (intent / audit).
-  - **`redeem`** — logged when balances are deducted on **invoice payment** (financial movement).
-- **Balance deduction:** occurs on **`sales_order_invoice_pay`**, not at order placement. Flag `sales_order.venbhas_giftcard_redeemed` prevents double processing.
-- **Apply lock:** first successful apply locks the card to redeemer customer id or guest email (`GiftCardRedeemValidator`).
-- **Admin:** gift card codes grid, gift card transactions grid, customer tab “Gift Card Transactions”, order usage display.
-- **Customer account:** “My Gift Cards” (codes **this customer applied**, i.e. redeemer only), “My Gift Card Transactions”.
-- **Emails:**
-  - **Purchased gift card:** sent to recipient on invoice payment for **virtual** delivery only; **physical** delivery skips automated code email (`GiftCardSender`).
-  - **Usage receipt:** optional email on invoice payment summarizing redemption when gift cards were applied to the order (`GiftCardRedemptionReceiptSender`).
-- **Checkout “My codes”** (logged-in customers): reuse locked cards with remaining balance (`Controller/Checkout/MyCodes.php` + payment UI).
+## Current behavior
 
-## Accounting flow (recommended mental model)
+This module no longer uses the old per-code checkout redemption flow.
+
+Current model:
+
+- Gift card **products** create rows in `venbhas_giftcard_code`
+- Customers **add a code to their wallet** from My Account or checkout popup
+- Checkout applies a **wallet amount**, not individual gift card codes
+- Wallet movements are tracked in `venbhas_giftcard_transaction`
+
+## Main features
+
+- **Gift card product type** with configurable amount and recipient/delivery fields
+- **Gift card code issuance on invoice payment only**
+  - no placeholder or `pending-*` rows on order placement
+- **Wallet flow**
+  - adding a valid gift code creates a `credit` transaction
+  - applying wallet amount in checkout creates a `debit` transaction on order placement
+- **Cancel / refund credit-back**
+  - canceling an order credits the wallet back with description `order canceled`
+  - refunding an order credits the wallet back with description `order refunded (...)`
+- **Refund protection for gift card products**
+  - if any issued code from the order is already redeemed, refund is blocked
+- **Canceled gift cards are invalid**
+  - refunded gift-card-product codes are marked `is_cancelled = 1`
+  - canceled codes cannot be added again from checkout or My Account
+- **Admin totals integration**
+  - Gift Card row is shown on invoice create / view
+  - Gift Card row is shown on credit memo create / view
+
+## Accounting model
 
 | Step | What happens |
-|------|----------------|
-| Order placed | Quote→order persistence; **`checkout_apply`** ledger rows; **no** DB balance deduction on codes yet. |
-| Invoice paid | **`redeem`** rows; **`venbhas_giftcard_code.balance_amount`** updated; `venbhas_giftcard_redeemed` set on order. |
+|------|--------------|
+| Gift card product ordered | No row is inserted into `venbhas_giftcard_code` yet |
+| Invoice paid for gift card product | Actual gift card code row is created in `venbhas_giftcard_code` |
+| Customer adds code to wallet | `credit` row inserted into `venbhas_giftcard_transaction` |
+| Customer applies wallet amount in checkout | Quote/order stores `venbhas_giftcard_amount`; order placement logs `debit` row |
+| Order canceled | Wallet is credited back with `credit` row and description `order canceled` |
+| Credit memo refund | Wallet is credited back with `credit` row and description `order refunded (...)` |
+| Gift card product refunded | Issued code rows for that order are marked `is_cancelled = 1` |
 
-## Data model
+## Tables
 
-### Tables
+### `venbhas_giftcard_code`
 
-**`venbhas_giftcard_code`**
+Main fields used by current flow:
 
-- Codes, **`balance_amount`** (current balance), **`initial_value`**, currency, status (`pending` / `active` / `inactive`).
-- Locks: **`redeemer_customer_id`**, **`redeemer_email`** (first checkout apply).
-- Gift product context: **`customer_id`** (buyer), **`recipient_email`**, **`delivery_type`** (`virtual` \| `physical`), shipping address columns when physical.
+- `code`
+- `amount`
+- `purchased_by`
+- `purchased_by_email`
+- `redeemed_by`
+- `redeemed_email`
+- `product_id`
+- `order_id`
+- recipient / sender / delivery fields
+- `is_reedemed`
+- `is_cancelled`
 
-**`venbhas_giftcard_transaction`**
+Notes:
 
-- **`action`:** `checkout_apply` \| `redeem`
-- **`order_id`**, **`invoice_id`**, amounts, **`balance_after`**, customer snapshot.
+- `amount` is the issued value for the gift card code
+- `is_reedemed` means the code was already added to a wallet
+- `is_cancelled` means the code became invalid because the related gift card product order was refunded
 
-### Sales / quote columns
+### `venbhas_giftcard_transaction`
 
-Persisted gift card fields on **`quote`** and **`sales_order`:**
+Main fields used by current flow:
 
-- `venbhas_giftcard_amount`, `base_venbhas_giftcard_amount`
-- `venbhas_giftcard_codes` (CSV)
-- `venbhas_giftcard_applied` (JSON array: `code`, `base_amount`)
-- `venbhas_giftcard_usage_details` (mirror for display)
-- `venbhas_giftcard_redeemed` (0/1)
+- `giftcard_id`
+- `transaction_type`
+- `description`
+- `amount`
+- `previous_balance`
+- `current_balance`
+- `order_id`
+- `customer_id`
+- `customer_email`
+- `store_id`
 
-Checkout totals extension attributes (API / Hyvä consumption): see `Plugin/Quote/CartTotalRepositoryPlugin.php`.
+Transaction types currently used:
+
+- `credit`
+- `debit`
+- legacy `checkout_apply`
+- legacy `redeem`
+
+Current wallet math:
+
+- `credit` adds to wallet
+- `debit`, `checkout_apply`, and `redeem` subtract from wallet
+
+## Sales entity fields
+
+### `quote`
+
+- `venbhas_giftcard_amount`
+- `base_venbhas_giftcard_amount`
+
+### `sales_order`
+
+- `venbhas_giftcard_amount`
+- `base_venbhas_giftcard_amount`
+
+### `sales_invoice`
+
+- `venbhas_giftcard_amount`
+- `base_venbhas_giftcard_amount`
+
+These invoice fields are used so invoice create/view can show the Gift Card row and support partial invoicing.
 
 ## Important classes
 
-| Area | Class / path |
-|------|----------------|
-| Quote total | `Model/Total/Quote/GiftCard.php` |
-| Redeem + balance | `Model/GiftCardRedeemer.php` (invoice only) |
-| Checkout ledger | `Model/GiftCardCheckoutTransactionLogger.php` |
-| Order entity id helper | `Model/SalesOrderEntityIdResolver.php` |
-| Quote→order options (admin line items) | `Plugin/Quote/Item/ToOrderItemPlugin.php` |
-| Customer transaction query | `Model/CustomerGiftCardTransactionsLoader.php` |
-| Issue codes on invoice | `Model/GiftCardIssuer.php` |
-| Email | `Model/Email/GiftCardSender.php`, `Model/Email/GiftCardRedemptionReceiptSender.php` |
+| Area | Class |
+|------|-------|
+| Gift card issuance | `Model/GiftCardIssuer.php` |
+| Checkout wallet debit logging | `Model/GiftCardCheckoutTransactionLogger.php` |
+| Wallet balance loader | `Model/CustomerGiftCardTransactionsLoader.php` |
+| Wallet ledger writer | `Model/WalletLedger.php` |
+| Quote total collector | `Model/Total/Quote/GiftCard.php` |
+| Invoice total collector | `Model/Total/Invoice/GiftCard.php` |
+| Credit memo total collector | `Model/Total/Creditmemo/GiftCard.php` |
+| Add code to wallet | `Controller/Account/AddGiftcard.php` |
+| Checkout apply wallet amount | `Controller/Checkout/Apply.php` |
+| Checkout remove wallet amount | `Controller/Checkout/Remove.php` |
+| Checkout wallet balance API | `Controller/Checkout/Wallet.php` |
 
-## Observers (selected)
+## Events / observers
 
-- `ConvertQuoteToOrder` — field sync / usage details.
-- `LogGiftCardCheckoutUsageOnOrderPlace` — `checkout_apply` ledger.
-- `GenerateGiftCardOnInvoicePay` — redeem balances, issue purchased codes, send emails.
-- `PersistGiftCardFieldsOnQuoteItem` — gift options + **`additional_options`** (shows in cart, emails, admin order items when copied to order item).
+- `sales_model_service_quote_submit_before`
+  - `Observer/ConvertQuoteToOrder.php`
+  - copies gift amount fields from quote to order
 
-## Installation / deploy
+- `sales_model_service_quote_submit_success`
+  - `Observer/LogGiftCardCheckoutUsageOnOrderPlace.php`
+  - logs checkout wallet usage to transaction table
+
+- `sales_order_place_after`
+  - `Observer/LogGiftCardCheckoutUsageOnOrderPlace.php`
+  - fallback for usage logging
+
+- `sales_order_invoice_pay`
+  - `Observer/GenerateGiftCardOnInvoicePay.php`
+  - issues purchased gift card codes and sends emails
+
+- `order_cancel_after`
+  - `Observer/CreditWalletOnOrderCancel.php`
+  - credits wallet back when applied gift amount order is canceled
+
+- `sales_order_creditmemo_save_before`
+  - `Observer/PreventGiftCardRefundIfRedeemed.php`
+  - blocks refund of gift card products when issued codes were already redeemed
+
+- `sales_order_creditmemo_refund`
+  - `Observer/CreditWalletOnCreditmemoRefund.php`
+  - credits wallet back for refund
+  - marks gift card product codes as canceled
+
+## Frontend behavior
+
+### Product page
+
+- gift card fields render on gift card product page
+- amount, recipient, message, and delivery data are stored on quote item options
+- invoicing later issues the real code
+
+### My Account
+
+- customers can add a gift card code to wallet
+- canceled codes are rejected with `Card is not valid.`
+- transaction page shows:
+  - wallet balance
+  - signed amount (`+` credit / `-` debit)
+  - balance after transaction
+  - order links where available
+
+### Checkout
+
+- customer sees wallet balance
+- can apply amount from wallet
+- can remove applied amount
+- can add a new gift card from popup
+- add popup uses same backend validation as My Account
+- canceled codes are rejected with `Card is not valid.`
+
+## Admin behavior
+
+- Gift Card Codes grid
+- Gift Card Transactions grid
+- clickable order and customer links
+- amount shown with currency formatting
+- customer edit tab shows transaction history
+- invoice create / view shows Gift Card row
+- credit memo create / view shows Gift Card row
+
+## Commands
+
+### Recalculate wallet balances
+
+```bash
+bin/magento venbhas:giftcard:recalc-wallet
+```
+
+Rebuilds `previous_balance` and `current_balance` for existing transaction rows.
+
+## Deploy / upgrade
 
 ```bash
 bin/magento setup:upgrade
-bin/magento cache:flush
+bin/magento cache:clean
 ```
 
-After DI changes (plugins): `bin/magento setup:di:compile` in production mode.
+If running production mode and DI changed:
 
-## Verification checklist
+```bash
+bin/magento setup:di:compile
+```
 
-- **Checkout:** apply code, place order; `sales_order.venbhas_giftcard_applied` populated; ledger has **`checkout_apply`** with order id.
-- **Invoice:** capture/pay invoice; code **`balance_amount`** decreases; ledger has **`redeem`** with `invoice_id`; order flag redeemed.
-- **Virtual purchase:** recipient receives gift card email on invoice; **physical** purchase does not email the code.
-- **Admin order:** line item options show gift fields including **Gift card delivery** (after quote→order conversion plugin).
-- **Customer account:** “My Gift Cards” lists only cards where this account is **redeemer**; “My Gift Card Transactions” lists ledger rows for that customer (including order-linked rows).
+## Quick verification checklist
 
-## Notes
-
-- Schema uses **`balance_amount`** for current balance (legacy column names may exist on older DBs; several readers fall back).
-- For local email testing, use an SMTP catcher (e.g. Mailpit) and configure Magento SMTP to `127.0.0.1:1025`.
+- place order using wallet amount
+- invoice order and verify invoice total excludes gift amount
+- cancel pending order and verify wallet gets `order canceled` credit row
+- refund invoiced order and verify wallet gets `order refunded (...)` credit row
+- refund gift card product order and verify code row gets `is_cancelled = 1`
+- try adding canceled code in checkout / My Account and verify `Card is not valid.`

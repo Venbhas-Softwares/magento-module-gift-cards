@@ -47,6 +47,11 @@ class MassStatus extends Action
         parent::__construct($context);
     }
 
+    /**
+     * Mass update code status.
+     *
+     * @return Redirect
+     */
     public function execute(): Redirect
     {
         $status = (int)$this->getRequest()->getParam('status');
@@ -87,4 +92,3 @@ class MassStatus extends Action
         return $this->resultRedirectFactory->create()->setPath('*/*/index');
     }
 }
-

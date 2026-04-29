@@ -13,7 +13,7 @@ use Venbhas\GiftCard\Model\ResourceModel\GiftCardCode as GiftCardCodeResource;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\CollectionFactory as GiftCardCodeCollectionFactory;
 
 /**
- * Issues gift card codes and reserves pending gift card rows from order item options.
+ * Issues gift card codes from invoiced gift card product items.
  */
 class GiftCardIssuer
 {
@@ -75,6 +75,7 @@ class GiftCardIssuer
 
     /**
      * Legacy: previously used to insert pending rows at order placement.
+     *
      * Gift cards are now issued only on invoice payment via {@see issueForOrderItem()}.
      *
      * @param OrderInterface $order Order
@@ -84,7 +85,7 @@ class GiftCardIssuer
     public function reservePendingForOrder(OrderInterface $order): void
     {
         // Intentionally disabled: this project does not create placeholder/pending rows on order placement.
-        return;
+        unset($order);
     }
 
     /**
@@ -139,22 +140,22 @@ class GiftCardIssuer
         $created = [];
         for ($i = 0; $i < $qtyThisInvoice; $i++) {
             $created[] = $this->createOne(
-                value: $value,
-                storeId: $storeId,
-                customerId: $customerId,
-                customerEmail: $purchasedByEmail,
-                productId: (int) $item->getProductId() ?: null,
-                orderId: $orderId,
-                senderName: $senderName,
-                recipientName: $recipientName,
-                recipientEmail: $recipientEmail,
-                message: $message,
-                deliveryType: $deliveryType,
-                deliveryStreet: $deliveryStreet,
-                deliveryCity: $deliveryCity,
-                deliveryRegion: $deliveryRegion,
-                deliveryPostcode: $deliveryPostcode,
-                deliveryCountry: $deliveryCountry
+                $value,
+                $storeId,
+                $customerId,
+                $purchasedByEmail,
+                (int) $item->getProductId() ?: null,
+                $orderId,
+                $senderName,
+                $recipientName,
+                $recipientEmail,
+                $message,
+                $deliveryType,
+                $deliveryStreet,
+                $deliveryCity,
+                $deliveryRegion,
+                $deliveryPostcode,
+                $deliveryCountry
             );
         }
 
@@ -225,15 +226,12 @@ class GiftCardIssuer
      * Create and persist a gift card code entity.
      *
      * @param float $value Initial value
-     * @param string $currency Currency code
-     * @param int $websiteId Website ID
      * @param int $storeId Store ID
      * @param int|null $customerId Customer ID
+     * @param string|null $customerEmail Customer email
      * @param int|null $productId Product ID
      * @param int|null $orderId Order ID
-     * @param int|null $orderItemId Order item ID
      * @param string|null $senderName Sender name
-     * @param string|null $senderEmail Sender email
      * @param string|null $recipientName Recipient name
      * @param string|null $recipientEmail Recipient email
      * @param string|null $message Message

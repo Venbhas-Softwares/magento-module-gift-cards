@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Venbhas\GiftCard\Ui\Component\Listing\Column;
 
+use Magento\Framework\Escaper;
 use Magento\Framework\UrlInterface;
 use Magento\Ui\Component\Listing\Columns\Column;
 
@@ -20,17 +21,39 @@ class AdminOrderLink extends Column
      */
     private $urlBuilder;
 
+    /**
+     * @var Escaper
+     */
+    private $escaper;
+
+    /**
+     * @param \Magento\Framework\View\Element\UiComponent\ContextInterface $context UI context
+     * @param \Magento\Framework\View\Element\UiComponentFactory $uiComponentFactory UI factory
+     * @param UrlInterface $urlBuilder URL builder
+     * @param Escaper $escaper HTML escaper
+     * @param array $components Components
+     * @param array $data Component data
+     */
     public function __construct(
         \Magento\Framework\View\Element\UiComponent\ContextInterface $context,
         \Magento\Framework\View\Element\UiComponentFactory $uiComponentFactory,
         UrlInterface $urlBuilder,
+        Escaper $escaper,
         array $components = [],
         array $data = []
     ) {
         $this->urlBuilder = $urlBuilder;
+        $this->escaper = $escaper;
         parent::__construct($context, $uiComponentFactory, $components, $data);
     }
 
+    /**
+     * Render the order increment ID as an admin order link.
+     *
+     * @param array $dataSource Listing data
+     *
+     * @return array
+     */
     public function prepareDataSource(array $dataSource): array
     {
         if (!isset($dataSource['data']['items']) || !is_array($dataSource['data']['items'])) {
@@ -55,11 +78,11 @@ class AdminOrderLink extends Column
             }
 
             $url = $this->urlBuilder->getUrl('sales/order/view', ['order_id' => $orderId]);
-            $item[$name] = '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' .
-                htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+            $item[$name] = '<a href="' . $this->escaper->escapeHtmlAttr($url) . '">'
+                . $this->escaper->escapeHtml($label)
+                . '</a>';
         }
 
         return $dataSource;
     }
 }
-

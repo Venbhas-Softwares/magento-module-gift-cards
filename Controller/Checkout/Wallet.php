@@ -28,6 +28,11 @@ class Wallet implements HttpGetActionInterface
      */
     private $transactionsLoader;
 
+    /**
+     * @param JsonFactory $jsonFactory JSON result factory
+     * @param CheckoutSession $checkoutSession Checkout session
+     * @param CustomerGiftCardTransactionsLoader $transactionsLoader Wallet balance loader
+     */
     public function __construct(
         JsonFactory $jsonFactory,
         CheckoutSession $checkoutSession,
@@ -38,6 +43,11 @@ class Wallet implements HttpGetActionInterface
         $this->transactionsLoader = $transactionsLoader;
     }
 
+    /**
+     * Return the current wallet balance for the checkout quote customer.
+     *
+     * @return \Magento\Framework\Controller\Result\Json
+     */
     public function execute()
     {
         $result = $this->jsonFactory->create();
@@ -60,4 +70,3 @@ class Wallet implements HttpGetActionInterface
         }
     }
 }
-

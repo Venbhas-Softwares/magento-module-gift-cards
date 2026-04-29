@@ -22,6 +22,14 @@ class AdminPrice extends Column
      */
     private $storeManager;
 
+    /**
+     * @param \Magento\Framework\View\Element\UiComponent\ContextInterface $context UI context
+     * @param \Magento\Framework\View\Element\UiComponentFactory $uiComponentFactory UI factory
+     * @param PriceCurrencyInterface $priceCurrency Price formatter
+     * @param StoreManagerInterface $storeManager Store manager
+     * @param array $components Components
+     * @param array $data Component data
+     */
     public function __construct(
         \Magento\Framework\View\Element\UiComponent\ContextInterface $context,
         \Magento\Framework\View\Element\UiComponentFactory $uiComponentFactory,
@@ -35,6 +43,13 @@ class AdminPrice extends Column
         parent::__construct($context, $uiComponentFactory, $components, $data);
     }
 
+    /**
+     * Format grid amount values with currency.
+     *
+     * @param array $dataSource Listing data
+     *
+     * @return array
+     */
     public function prepareDataSource(array $dataSource): array
     {
         if (!isset($dataSource['data']['items']) || !is_array($dataSource['data']['items'])) {
@@ -69,4 +84,3 @@ class AdminPrice extends Column
         return $dataSource;
     }
 }
-

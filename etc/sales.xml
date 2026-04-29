@@ -8,6 +8,13 @@
                   sort_order="750"/>
         </group>
     </section>
+    <section name="order_invoice">
+        <group name="totals">
+            <item name="venbhas_giftcard"
+                  instance="Venbhas\GiftCard\Model\Total\Invoice\GiftCard"
+                  sort_order="1200"/>
+        </group>
+    </section>
     <section name="order_creditmemo">
         <group name="totals">
             <item name="venbhas_giftcard"

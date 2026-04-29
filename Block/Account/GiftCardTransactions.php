@@ -60,6 +60,7 @@ class GiftCardTransactions extends Template
      * @param Session $customerSession Customer session
      * @param CustomerGiftCardTransactionsLoader $transactionsLoader Transactions loader
      * @param PriceCurrencyInterface $priceCurrency Price currency formatter
+     * @param FormKey $formKey Form key service
      * @param array $data Additional data
      */
     public function __construct(
@@ -150,6 +151,10 @@ class GiftCardTransactions extends Template
 
     /**
      * Signed amount for display (credit: +, usage: -).
+     *
+     * @param GiftCardTransaction $trx Transaction entity
+     *
+     * @return string
      */
     public function formatSignedAmount(GiftCardTransaction $trx): string
     {
@@ -160,8 +165,7 @@ class GiftCardTransactions extends Template
         }
 
         $sign = '+';
-        if (
-            $type === GiftCardTransaction::ACTION_DEBIT
+        if ($type === GiftCardTransaction::ACTION_DEBIT
             || $type === GiftCardTransaction::ACTION_CHECKOUT_APPLY
             || $type === GiftCardTransaction::ACTION_REDEEM
         ) {
@@ -228,11 +232,21 @@ class GiftCardTransactions extends Template
         return $this->getUrl('sales/order/view', ['order_id' => $orderId]);
     }
 
+    /**
+     * Get the add gift card endpoint URL.
+     *
+     * @return string
+     */
     public function getAddGiftcardUrl(): string
     {
         return $this->getUrl('venbhas_giftcard/account/addGiftcard');
     }
 
+    /**
+     * Get the current CSRF form key value.
+     *
+     * @return string
+     */
     public function getFormKeyValue(): string
     {
         return (string) $this->formKey->getFormKey();

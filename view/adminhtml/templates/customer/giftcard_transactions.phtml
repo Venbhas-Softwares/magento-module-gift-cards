@@ -11,7 +11,9 @@ $walletBalance = (float) $block->getWalletBalance();
             <strong><?= $escaper->escapeHtml(__('Gift card usage history')) ?></strong>
             <div style="text-align:right;">
                 <div style="font-weight:600;"><?= $escaper->escapeHtml(__('Gift Amount')) ?></div>
-                <div style="font-size: 16px; font-weight: 700;"><?= $escaper->escapeHtml($block->formatAmount($walletBalance, null)) ?></div>
+                <div style="font-size: 16px; font-weight: 700;">
+                    <?= $escaper->escapeHtml($block->formatAmount($walletBalance, null)) ?>
+                </div>
             </div>
         </div>
         <table class="admin__table-secondary">

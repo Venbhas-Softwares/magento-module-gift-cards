@@ -15,11 +15,21 @@ class CreditWalletOnOrderCancel implements ObserverInterface
      */
     private $ledger;
 
+    /**
+     * @param WalletLedger $ledger Wallet credit-back helper
+     */
     public function __construct(WalletLedger $ledger)
     {
         $this->ledger = $ledger;
     }
 
+    /**
+     * Credit wallet back when a gift-applied order is canceled.
+     *
+     * @param Observer $observer Event observer
+     *
+     * @return void
+     */
     public function execute(Observer $observer): void
     {
         /** @var OrderInterface|null $order */
@@ -28,7 +38,11 @@ class CreditWalletOnOrderCancel implements ObserverInterface
             return;
         }
 
-        $amount = (float) ($order->getData('base_venbhas_giftcard_amount') ?? $order->getData('venbhas_giftcard_amount') ?? 0);
+        $amount = (float) (
+            $order->getData('base_venbhas_giftcard_amount')
+            ?? $order->getData('venbhas_giftcard_amount')
+            ?? 0
+        );
         if ($amount <= 0.0001) {
             return;
         }
@@ -42,4 +56,3 @@ class CreditWalletOnOrderCancel implements ObserverInterface
         $this->ledger->creditBackToWallet($order, $amount, $desc);
     }
 }
-

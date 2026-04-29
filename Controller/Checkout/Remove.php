@@ -31,13 +31,11 @@ class Remove implements HttpPostActionInterface
     private $checkoutSession;
 
     /**
-    /**
      * Initialize controller.
      *
      * @param RequestInterface $request Request
      * @param JsonFactory $jsonFactory JSON result factory
      * @param CheckoutSession $checkoutSession Checkout session
-     * @param GiftCardManager $giftCardManager Gift card manager
      */
     public function __construct(
         RequestInterface $request,

@@ -10,32 +10,44 @@ $walletBalance = (float) $block->getWalletBalance();
         .block-giftcard-transactions table.data.table { width: 100%; border-collapse: collapse; }
         .block-giftcard-transactions table.data.table caption { text-align: left; font-weight: 600; padding: .5rem 0; }
         .block-giftcard-transactions table.data.table th,
-        .block-giftcard-transactions table.data.table td { padding: .75rem .5rem; border-bottom: 1px solid rgba(0,0,0,.08); text-align: left; vertical-align: top; }
+        .block-giftcard-transactions table.data.table td {
+            padding: .75rem .5rem;
+            border-bottom: 1px solid rgba(0,0,0,.08);
+            text-align: left;
+            vertical-align: top;
+        }
         .block-giftcard-transactions table.data.table thead th { white-space: nowrap; }
         .block-giftcard-transactions .block-title strong { font-size: 1.1rem; }
-        .block-giftcard-transactions .header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+        .block-giftcard-transactions .header-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 1rem;
+        }
         .block-giftcard-transactions .wallet { text-align: right; white-space: nowrap; }
         .block-giftcard-transactions .wallet .label { display: block; font-weight: 600; }
         .block-giftcard-transactions .wallet .value { display: block; font-size: 1.2rem; font-weight: 700; }
     </style>
     <div class="block-title header-row">
-        <strong><?= $block->escapeHtml(__('Gift card usage history')) ?></strong>
+        <strong><?= $escaper->escapeHtml(__('Gift card usage history')) ?></strong>
         <div class="wallet">
-            <span class="label"><?= $block->escapeHtml(__('Gift Amount')) ?></span>
-            <span class="value"><?= $block->escapeHtml($block->formatAmount($walletBalance, null)) ?></span>
+            <span class="label"><?= $escaper->escapeHtml(__('Gift Amount')) ?></span>
+            <span class="value">
+                <?= $escaper->escapeHtml($block->formatAmount($walletBalance, null)) ?>
+            </span>
         </div>
     </div>
     <div class="block-content">
         <div style="margin: .75rem 0;">
             <button type="button" class="action primary" id="venbhas-add-giftcard-btn">
-                <?= $block->escapeHtml(__('Add a new gift card')) ?>
+                <?= $escaper->escapeHtml(__('Add a new gift card')) ?>
             </button>
         </div>
 
         <div id="venbhas-add-giftcard-modal" style="display:none">
             <div class="field">
                 <label for="venbhas-giftcard-code" class="label">
-                    <span><?= $block->escapeHtml(__('Gift card code')) ?></span>
+                    <span><?= $escaper->escapeHtml(__('Gift card code')) ?></span>
                 </label>
                 <div class="control">
                     <input type="text" id="venbhas-giftcard-code" class="input-text" />
@@ -50,28 +62,28 @@ $walletBalance = (float) $block->getWalletBalance();
                     "modalSelector": "#venbhas-add-giftcard-modal",
                     "buttonSelector": "#venbhas-add-giftcard-btn",
                     "inputSelector": "#venbhas-giftcard-code",
-                    "postUrl": "<?= $block->escapeJs($block->getAddGiftcardUrl()) ?>",
-                    "formKey": "<?= $block->escapeJs($block->getFormKeyValue()) ?>"
+                    "postUrl": "<?= $escaper->escapeJs($block->getAddGiftcardUrl()) ?>",
+                    "formKey": "<?= $escaper->escapeJs($block->getFormKeyValue()) ?>"
                 }
             }
         }
         </script>
 
         <?php if (!$rows): ?>
-            <p><?= $block->escapeHtml(__('You have no gift card transactions yet.')) ?></p>
+            <p><?= $escaper->escapeHtml(__('You have no gift card transactions yet.')) ?></p>
         <?php else: ?>
             <div class="table-wrapper">
                 <table class="data table" id="giftcard-transactions-table">
-                    <caption class="table-caption"><?= $block->escapeHtml(__('Gift card transactions')) ?></caption>
+                    <caption class="table-caption"><?= $escaper->escapeHtml(__('Gift card transactions')) ?></caption>
                     <thead>
                     <tr>
-                        <th scope="col"><?= $block->escapeHtml(__('Date')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Transactiontype')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Description')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Order')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Gift card code')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Amount')) ?></th>
-                        <th scope="col"><?= $block->escapeHtml(__('Balance after')) ?></th>
+                        <th scope="col"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                        <th scope="col"><?= $escaper->escapeHtml(__('Transactiontype')) ?></th>
+                        <th scope="col"><?= $escaper->escapeHtml(__('Description')) ?></th>
+                        <th scope="col"><?= $escaper->escapeHtml(__('Order')) ?></th>
+                        <th scope="col"><?= $escaper->escapeHtml(__('Gift card code')) ?></th>
+                        <th scope="col"><?= $escaper->escapeHtml(__('Amount')) ?></th>
+                        <th scope="col"><?= $escaper->escapeHtml(__('Balance after')) ?></th>
                         
                     </tr>
                     </thead>
@@ -83,22 +95,35 @@ $walletBalance = (float) $block->getWalletBalance();
                         $code = (string) $trx->getData('giftcard_code');
                         ?>
                         <tr>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Date')) ?>"><?= $block->escapeHtml($trx->getData('created_at')) ?></td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Transactiontype')) ?>"><?= $block->escapeHtml($block->getActionLabel($trx)) ?></td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Description')) ?>"><?= $block->escapeHtml((string) $trx->getData('description')) ?></td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Order')) ?>">
+                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Date')) ?>">
+                                <?= $escaper->escapeHtml($trx->getData('created_at')) ?>
+                            </td>
+                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Transactiontype')) ?>">
+                                <?= $escaper->escapeHtml($block->getActionLabel($trx)) ?>
+                            </td>
+                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Description')) ?>">
+                                <?= $escaper->escapeHtml((string) $trx->getData('description')) ?>
+                            </td>
+                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Order')) ?>">
                                 <?php if ($orderId && $incrementId !== ''): ?>
-                                    <a href="<?= $block->escapeUrl($block->getOrderViewUrl($orderId)) ?>">
-                                        <?= $block->escapeHtml($incrementId) ?>
+                                    <a href="<?= $escaper->escapeUrl($block->getOrderViewUrl($orderId)) ?>">
+                                        <?= $escaper->escapeHtml($incrementId) ?>
                                     </a>
                                 <?php else: ?>
-                                    <?= $block->escapeHtml(__('—')) ?>
+                                    <?= $escaper->escapeHtml(__('—')) ?>
                                 <?php endif; ?>
                             </td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Gift card code')) ?>"><?= $block->escapeHtml($code) ?></td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Amount')) ?>"><?= $block->escapeHtml($block->formatSignedAmount($trx)) ?></td>
-                            <td data-th="<?= $block->escapeHtmlAttr(__('Balance after')) ?>"><?= $block->escapeHtml($block->formatAmount((float) $trx->getData('current_balance'), null)) ?></td>
-                            
+                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Gift card code')) ?>">
+                                <?= $escaper->escapeHtml($code) ?>
+                            </td>
+                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Amount')) ?>">
+                                <?= $escaper->escapeHtml($block->formatSignedAmount($trx)) ?>
+                            </td>
+                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Balance after')) ?>">
+                                <?= $escaper->escapeHtml(
+                                    $block->formatAmount((float) $trx->getData('current_balance'), null)
+                                ) ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
