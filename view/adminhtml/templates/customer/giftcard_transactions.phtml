@@ -39,7 +39,7 @@ $walletBalance = (float) $block->getWalletBalance();
                 $amount = (float) $trx->getData('amount');
                 ?>
                 <tr>
-                    <td><?= $escaper->escapeHtml($trx->getData('created_at')) ?></td>
+                    <td><?= $escaper->escapeHtml($block->formatCreatedAt($trx->getData('created_at'))) ?></td>
                     <td><?= $escaper->escapeHtml($block->getActionLabel($trx)) ?></td>
                     <td>
                         <?php

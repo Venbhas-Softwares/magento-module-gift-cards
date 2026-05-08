@@ -16,6 +16,7 @@ use Magento\Customer\Controller\RegistryConstants;
 use Magento\Framework\Phrase;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\Registry;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Ui\Component\Layout\Tabs\TabInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
@@ -57,6 +58,8 @@ class GiftCardTransactions extends Template implements TabInterface
      */
     private PriceCurrencyInterface $_priceCurrency;
 
+    private TimezoneInterface $localeDate;
+
     /**
      * Initialize block.
      *
@@ -79,11 +82,36 @@ class GiftCardTransactions extends Template implements TabInterface
         $this->_transactionsLoader = $transactionsLoader;
         $this->_customerRepository = $customerRepository;
         $this->_priceCurrency = $priceCurrency;
+        $this->localeDate = $context->getLocaleDate();
 
         parent::__construct($context, $data);
 
-        // Render as an admin grid-style table inside the ajax-loaded tab.
-        $this->setTemplate('Venbhas_GiftCard::customer/giftcard_transactions.phtml');
+        // Render as a Magento UI listing grid (filters, paging, search).
+        $this->setTemplate('Venbhas_GiftCard::customer/giftcard_transactions_ui.phtml');
+    }
+
+    public function getCurrentCustomerId(): int
+    {
+        $cid = (int) $this->_registry->registry(RegistryConstants::CURRENT_CUSTOMER_ID);
+        if ($cid <= 0) {
+            $cid = (int) $this->getRequest()->getParam('id');
+        }
+        return $cid;
+    }
+
+    public function formatCreatedAt($createdAt): string
+    {
+        $value = trim((string) $createdAt);
+        if ($value === '') {
+            return '';
+        }
+
+        try {
+            $dt = $this->localeDate->date($value);
+            return $dt->format('M j, Y, g:i:s A');
+        } catch (\Throwable $e) {
+            return $value;
+        }
     }
 
     /**
