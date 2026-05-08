@@ -53,6 +53,31 @@ class Collection extends SearchResult
     }
 
     /**
+     * Join sales order for human-readable order number in the grid.
+     *
+     * @return $this
+     */
+    protected function _initSelect()
+    {
+        parent::_initSelect();
+
+        // Prevent ambiguous field errors once we join other tables that also have same column names.
+        $this->addFilterToMap('entity_id', 'main_table.entity_id');
+        $this->addFilterToMap('amount', 'main_table.amount');
+        $this->addFilterToMap('created_at', 'main_table.created_at');
+        $this->addFilterToMap('store_id', 'main_table.store_id');
+
+        $soTable = $this->getTable('sales_order');
+        $this->getSelect()->joinLeft(
+            ['so' => $soTable],
+            'main_table.order_id = so.entity_id',
+            ['increment_id' => 'so.increment_id']
+        );
+
+        return $this;
+    }
+
+    /**
      * Add `currency_code` field for UI price column formatting.
      */
     protected function _afterLoad()

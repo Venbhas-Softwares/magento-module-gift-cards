@@ -1,0 +1,12 @@
+<?php
+/**
+ * Render UI grid (Orders-tab style) for customer gift card transactions.
+ *
+ * @var \Magento\Backend\Block\Template $block
+ */
+?>
+<?= $block->getLayout()
+    ->createBlock(\Magento\Ui\Block\Wrapper::class)
+    ->setData('uiComponent', 'venbhas_giftcard_customer_transaction_listing')
+    ->renderApp(); ?>
+

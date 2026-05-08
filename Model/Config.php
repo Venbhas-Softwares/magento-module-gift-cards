@@ -13,7 +13,7 @@ class Config
 
     public const XML_PATH_TOTAL_TITLE = 'venbhas_giftcard/general/total_title';
 
-    public const XML_PATH_ALLOW_CUSTOM_MESSAGE = 'venbhas_giftcard/general/allow_custom_message';
+    public const XML_PATH_ALLOW_CUSTOM_MESSAGE = 'venbhas_giftcard/amount/allow_custom_message';
 
     public const XML_PATH_ALLOW_CUSTOM_AMOUNT = 'venbhas_giftcard/amount/allow_custom_amount';
 
@@ -23,7 +23,7 @@ class Config
 
     public const XML_PATH_AMOUNT_MAX = 'venbhas_giftcard/amount/max';
 
-    public const XML_PATH_GIFT_DELIVERY_TYPE = 'venbhas_giftcard/delivery/gift_delivery_type';
+    public const XML_PATH_GIFT_DELIVERY_TYPE = 'venbhas_giftcard/amount/gift_delivery_type';
 
     public const GIFT_DELIVERY_VIRTUAL = 'virtual';
 

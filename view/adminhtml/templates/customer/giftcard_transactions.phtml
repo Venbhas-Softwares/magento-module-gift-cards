@@ -19,13 +19,14 @@ $walletBalance = (float) $block->getWalletBalance();
         <table class="admin__table-secondary">
             <thead>
             <tr>
-                <th><?= $escaper->escapeHtml(__('Date')) ?></th>
-                <th><?= $escaper->escapeHtml(__('Transactiontype')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Created At')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Transaction Type')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Description')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Order')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Gift card code')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Amount')) ?></th>
-                <th><?= $escaper->escapeHtml(__('Balance after')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Previous Balance')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Current Balance')) ?></th>
             </tr>
             </thead>
             <tbody>
@@ -34,11 +35,22 @@ $walletBalance = (float) $block->getWalletBalance();
                 $orderId = (int) $trx->getData('order_id');
                 $incrementId = (string) $trx->getData('increment_id');
                 $code = (string) $trx->getData('giftcard_code');
+                $type = (string) $trx->getData('transaction_type');
+                $amount = (float) $trx->getData('amount');
                 ?>
                 <tr>
                     <td><?= $escaper->escapeHtml($trx->getData('created_at')) ?></td>
                     <td><?= $escaper->escapeHtml($block->getActionLabel($trx)) ?></td>
-                    <td><?= $escaper->escapeHtml((string) $trx->getData('description')) ?></td>
+                    <td>
+                        <?php
+                        $desc = str_replace('_', ' ', trim((string) $trx->getData('description')));
+                        if ($desc !== '') {
+                            $desc = mb_strtolower($desc);
+                            $desc = mb_strtoupper(mb_substr($desc, 0, 1)) . mb_substr($desc, 1);
+                        }
+                        ?>
+                        <?= $escaper->escapeHtml($desc) ?>
+                    </td>
                     <td>
                         <?php if ($orderId && $incrementId !== ''): ?>
                             <a href="<?= $escaper->escapeUrl($block->getAdminOrderUrl($orderId)) ?>">
@@ -50,13 +62,31 @@ $walletBalance = (float) $block->getWalletBalance();
                     </td>
                     <td><?= $escaper->escapeHtml($code) ?></td>
                     <td>
-                        <?= $escaper->escapeHtml($block->formatSignedAmount($trx)) ?>
+                        <?php
+                        $formattedAmount = $block->formatAmount($amount, null);
+                        if ($amount <= 0.0001) {
+                            echo $escaper->escapeHtml($formattedAmount);
+                        } else {
+                            $sign = '+';
+                            if ($type === \Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_DEBIT
+                                || $type === \Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_CHECKOUT_APPLY
+                                || $type === \Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_REDEEM
+                            ) {
+                                $sign = '-';
+                            }
+                            $signClass = $sign === '+' ? 'venbhas-gc-sign--plus' : 'venbhas-gc-sign--minus';
+                            ?>
+                            <span class="venbhas-gc-sign <?= $escaper->escapeHtmlAttr($signClass) ?>">
+                                <?= $escaper->escapeHtml('[' . $sign . ']') ?>
+                            </span>
+                            <?= $escaper->escapeHtml($formattedAmount) ?>
+                        <?php } ?>
+                    </td>   
+                    <td>
+                        <?= $escaper->escapeHtml($block->formatAmount((float) $trx->getData('previous_balance'), null)) ?>
                     </td>
                     <td>
-                        <?php
-                        $balanceAfter = $block->formatAmount((float) $trx->getData('current_balance'), null);
-                        ?>
-                        <?= $escaper->escapeHtml($balanceAfter) ?>
+                        <?= $escaper->escapeHtml($block->formatAmount((float) $trx->getData('current_balance'), null)) ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

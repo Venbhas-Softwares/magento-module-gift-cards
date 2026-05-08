@@ -61,6 +61,16 @@ class Collection extends SearchResult
     {
         parent::_initSelect();
 
+        // Prevent ambiguous field errors once we join other tables that also have same column names.
+        $this->addFilterToMap('entity_id', 'main_table.entity_id');
+        $this->addFilterToMap('amount', 'main_table.amount');
+        $this->addFilterToMap('previous_balance', 'main_table.previous_balance');
+        $this->addFilterToMap('current_balance', 'main_table.current_balance');
+        $this->addFilterToMap('created_at', 'main_table.created_at');
+        $this->addFilterToMap('store_id', 'main_table.store_id');
+        $this->addFilterToMap('customer_id', 'main_table.customer_id');
+        $this->addFilterToMap('customer_email', 'main_table.customer_email');
+
         $gcTable = $this->getTable('venbhas_giftcard_code');
         $this->getSelect()->joinLeft(
             ['gc' => $gcTable],

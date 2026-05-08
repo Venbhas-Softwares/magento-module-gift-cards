@@ -17,6 +17,7 @@
             <argument name="requestFieldName" xsi:type="string">entity_id</argument>
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
+                    <item name="aclResource" xsi:type="string">Venbhas_GiftCard::transactions</item>
                     <item name="update_url" xsi:type="url" path="mui/index/render"/>
                     <item name="storageConfig" xsi:type="array">
                         <item name="indexField" xsi:type="string">entity_id</item>
@@ -32,11 +33,46 @@
     </dataSource>
 
     <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <exportButton name="export_button"/>
+        <filters name="listing_filters">
+            <argument name="data" xsi:type="array">
+                <item name="observers" xsi:type="array">
+                    <item name="column" xsi:type="string">column</item>
+                </item>
+            </argument>
+            <settings>
+                <dataScope>filters</dataScope>
+                <storageConfig>
+                    <namespace>current.filters</namespace>
+                    <provider>ns = ${ $.ns }, index = bookmarks</provider>
+                </storageConfig>
+            </settings>
+            <filterSelect name="store_id" provider="${ $.parentName }">
+                <settings>
+                    <options class="Magento\Store\Ui\Component\Listing\Column\Store\Options"/>
+                    <caption translate="true">All Store Views</caption>
+                    <label translate="true">Store</label>
+                    <dataScope>store_id</dataScope>
+                    <imports>
+                        <link name="visible">ns = ${ $.ns }, index = ${ $.index }:visible</link>
+                    </imports>
+                </settings>
+            </filterSelect>
+        </filters>
         <paging name="listing_paging"/>
-        <filters name="listing_filters"/>
     </listingToolbar>
 
     <columns name="listing_columns">
+        <selectionsColumn name="ids">
+            <settings>
+                <indexField>entity_id</indexField>
+            </settings>
+        </selectionsColumn>
         <column name="entity_id">
             <settings>
                 <filter>textRange</filter>
@@ -50,23 +86,39 @@
                 <label translate="true">Gift Card Code</label>
             </settings>
         </column>
-        <column name="transaction_type">
+        <column name="transaction_type" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSentenceCase">
             <settings>
                 <filter>text</filter>
                 <label translate="true"> Transaction Type</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
             </settings>
         </column>
-         <column name="description">
+         <column name="description" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSentenceCase">
             <settings>
                 <filter>text</filter>
                 <label translate="true">Description</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
             </settings>
         </column>
-        <column name="amount" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminPrice">
+        <column name="amount" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSignedPrice">
             <settings>
                 <filter>textRange</filter>
                 <bodyTmpl>ui/grid/cells/html</bodyTmpl>
                 <label translate="true">Amount</label>
+            </settings>
+        </column>
+        <column name="previous_balance" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminPrice">
+            <settings>
+                <filter>textRange</filter>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+                <label translate="true">Previous Balance</label>
+            </settings>
+        </column>
+        <column name="current_balance" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminPrice">
+            <settings>
+                <filter>textRange</filter>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+                <label translate="true">Current Balance</label>
             </settings>
         </column>
         <column name="increment_id" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminOrderLink">
@@ -83,16 +135,18 @@
                 <bodyTmpl>ui/grid/cells/html</bodyTmpl>
             </settings>
         </column>
-        <column name="created_at">
+        <column name="created_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Venbhas_GiftCard/js/grid/columns/date-with-comma">
             <settings>
                 <filter>dateRange</filter>
-                <label translate="true">Created</label>
+                <dataType>date</dataType>
+                <label translate="true">Created At</label>
             </settings>
         </column>
-        <column name="store_id">
+        <column name="store_id" class="Magento\Store\Ui\Component\Listing\Column\Store">
             <settings>
-                <filter>text</filter>
-                <label translate="true">Store ID</label>
+                <label translate="true">Store</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+                <sortable>false</sortable>
             </settings>
         </column>
     </columns>

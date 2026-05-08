@@ -3,22 +3,24 @@
          xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
     <argument name="data" xsi:type="array">
         <item name="js_config" xsi:type="array">
-            <item name="provider" xsi:type="string">venbhas_giftcard_code_listing.venbhas_giftcard_code_listing_data_source</item>
-            <item name="deps" xsi:type="string">venbhas_giftcard_code_listing.venbhas_giftcard_code_listing_data_source</item>
+            <item name="provider" xsi:type="string">venbhas_giftcard_customer_transaction_listing.venbhas_giftcard_customer_transaction_listing_data_source</item>
+            <item name="deps" xsi:type="string">venbhas_giftcard_customer_transaction_listing.venbhas_giftcard_customer_transaction_listing_data_source</item>
         </item>
         <item name="spinner" xsi:type="string">listing_columns</item>
     </argument>
 
-    <dataSource name="venbhas_giftcard_code_listing_data_source">
+    <dataSource name="venbhas_giftcard_customer_transaction_listing_data_source">
         <argument name="dataProvider" xsi:type="configurableObject">
-            <argument name="class" xsi:type="string">Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider</argument>
-            <argument name="name" xsi:type="string">venbhas_giftcard_code_listing_data_source</argument>
+            <argument name="class" xsi:type="string">Venbhas\GiftCard\Ui\DataProvider\CustomerTransactionDataProvider</argument>
+            <argument name="name" xsi:type="string">venbhas_giftcard_customer_transaction_listing_data_source</argument>
             <argument name="primaryFieldName" xsi:type="string">entity_id</argument>
             <argument name="requestFieldName" xsi:type="string">entity_id</argument>
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
-                    <item name="aclResource" xsi:type="string">Venbhas_GiftCard::codes</item>
                     <item name="update_url" xsi:type="url" path="mui/index/render"/>
+                    <item name="filter_url_params" xsi:type="array">
+                        <item name="id" xsi:type="string">*</item>
+                    </item>
                     <item name="storageConfig" xsi:type="array">
                         <item name="indexField" xsi:type="string">entity_id</item>
                     </item>
@@ -68,11 +70,6 @@
     </listingToolbar>
 
     <columns name="listing_columns">
-        <selectionsColumn name="ids">
-            <settings>
-                <indexField>entity_id</indexField>
-            </settings>
-        </selectionsColumn>
         <column name="entity_id">
             <settings>
                 <filter>textRange</filter>
@@ -80,31 +77,45 @@
                 <sorting>desc</sorting>
             </settings>
         </column>
-        <column name="code">
+        <column name="giftcard_code">
             <settings>
                 <filter>text</filter>
-                <label translate="true">Code</label>
+                <label translate="true">Gift Card Code</label>
             </settings>
         </column>
-        <column name="amount" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminPrice">
+        <column name="transaction_type" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSentenceCase">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Transaction Type</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+            </settings>
+        </column>
+        <column name="description" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSentenceCase">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Description</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+            </settings>
+        </column>
+        <column name="amount" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSignedPrice">
             <settings>
                 <filter>textRange</filter>
                 <bodyTmpl>ui/grid/cells/html</bodyTmpl>
                 <label translate="true">Amount</label>
             </settings>
         </column>
-        <column name="is_reedemed" component="Magento_Ui/js/grid/columns/select">
+        <column name="previous_balance" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminPrice">
             <settings>
-                <filter>select</filter>
-                <dataType>select</dataType>
-                <label translate="true">Redeemed</label>
-                <options class="Venbhas\GiftCard\Model\Source\GiftCardStatus"/>
+                <filter>textRange</filter>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+                <label translate="true">Previous Balance</label>
             </settings>
         </column>
-        <column name="recipient_email">
+        <column name="current_balance" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminPrice">
             <settings>
-                <filter>text</filter>
-                <label translate="true">Recipient Email</label>
+                <filter>textRange</filter>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+                <label translate="true">Current Balance</label>
             </settings>
         </column>
         <column name="increment_id" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminOrderLink">

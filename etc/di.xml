@@ -7,6 +7,7 @@
             <argument name="collections" xsi:type="array">
                 <item name="venbhas_giftcard_code_listing_data_source" xsi:type="string">Venbhas\GiftCard\Model\ResourceModel\GiftCardCode\Grid\Collection</item>
                 <item name="venbhas_giftcard_transaction_listing_data_source" xsi:type="string">Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\Grid\Collection</item>
+                <item name="venbhas_giftcard_customer_transaction_listing_data_source" xsi:type="string">Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\Grid\Collection</item>
             </argument>
         </arguments>
     </type>

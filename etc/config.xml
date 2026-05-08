@@ -6,17 +6,15 @@
             <general>
                 <enabled>1</enabled>
                 <total_title>Gift Card</total_title>
-                <allow_custom_message>1</allow_custom_message>
             </general>
             <amount>
+                <allow_custom_message>1</allow_custom_message>
                 <allow_custom_amount>1</allow_custom_amount>
                 <presets>25,50,75,100</presets>
                 <min>1</min>
                 <max>10000</max>
+               <gift_delivery_type>both</gift_delivery_type> 
             </amount>
-            <delivery>
-                <gift_delivery_type>both</gift_delivery_type>
-            </delivery>
         </venbhas_giftcard>
     </default>
 </config>

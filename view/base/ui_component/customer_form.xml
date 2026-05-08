@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
-    <htmlContent name="venbhas_giftcard_customer_transactions_tab">
-        <block class="Venbhas\GiftCard\Block\Adminhtml\Customer\Edit\Tab\GiftCardTransactions"
-               name="venbhas_giftcard_customer_transactions">
-            <arguments>
-                <argument name="sort_order" xsi:type="number">96</argument>
-                <argument name="tab_label" xsi:type="string" translate="true">Gift Card Transactions</argument>
-            </arguments>
-        </block>
+    <htmlContent name="venbhas_giftcard_transactions_content">
+        <block acl="Venbhas_GiftCard::transactions"
+               class="Venbhas\GiftCard\Block\Adminhtml\Customer\GiftCardTransactionsTab"
+               name="venbhas_giftcard_transactions"/>
     </htmlContent>
 </form>

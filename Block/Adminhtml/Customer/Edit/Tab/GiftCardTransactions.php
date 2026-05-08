@@ -82,6 +82,7 @@ class GiftCardTransactions extends Template implements TabInterface
 
         parent::__construct($context, $data);
 
+        // Render as an admin grid-style table inside the ajax-loaded tab.
         $this->setTemplate('Venbhas_GiftCard::customer/giftcard_transactions.phtml');
     }
 
@@ -93,6 +94,9 @@ class GiftCardTransactions extends Template implements TabInterface
     public function getTransactions(): array
     {
         $cid = (int) $this->_registry->registry(RegistryConstants::CURRENT_CUSTOMER_ID);
+        if ($cid <= 0) {
+            $cid = (int) $this->getRequest()->getParam('id');
+        }
         if ($cid <= 0) {
             return [];
         }
@@ -140,6 +144,9 @@ class GiftCardTransactions extends Template implements TabInterface
     public function getWalletBalance(): float
     {
         $cid = (int) $this->_registry->registry(RegistryConstants::CURRENT_CUSTOMER_ID);
+        if ($cid <= 0) {
+            $cid = (int) $this->getRequest()->getParam('id');
+        }
         if ($cid <= 0) {
             return 0.0;
         }
@@ -224,7 +231,11 @@ class GiftCardTransactions extends Template implements TabInterface
      */
     public function canShowTab(): bool
     {
-        return (int) $this->_registry->registry(RegistryConstants::CURRENT_CUSTOMER_ID) > 0;
+        $cid = (int) $this->_registry->registry(RegistryConstants::CURRENT_CUSTOMER_ID);
+        if ($cid <= 0) {
+            $cid = (int) $this->getRequest()->getParam('id');
+        }
+        return $cid > 0;
     }
 
     /**
