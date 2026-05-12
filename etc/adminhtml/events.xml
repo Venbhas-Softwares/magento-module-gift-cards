@@ -5,4 +5,8 @@
         <observer name="venbhas_giftcard_save_use_config"
                   instance="Venbhas\GiftCard\Observer\SaveGiftCardOptionsOnProduct"/>
     </event>
+    <event name="sales_quote_product_add_after">
+        <observer name="venbhas_giftcard_persist_fields_admin"
+                  instance="Venbhas\GiftCard\Observer\Adminhtml\PersistGiftCardFieldsOnAdminQuoteItem"/>
+    </event>
 </config>

@@ -100,11 +100,26 @@ class Fields extends Template
      */
     public function shouldRender(): bool
     {
-        if (!$this->config->isEnabled((int) $this->_storeManager->getStore()->getId())) {
+        $p = $this->getProduct();
+        if (!$p || (string) $p->getTypeId() !== GiftCard::TYPE_CODE) {
             return false;
         }
+        $storeId = (int) $p->getStoreId() ?: (int) $this->_storeManager->getStore()->getId();
+        return $this->config->isEnabled($storeId);
+    }
+
+    /**
+     * Resolve the effective store ID (prefer product's store, fallback to current store).
+     *
+     * @return int
+     */
+    private function resolveStoreId(): int
+    {
         $p = $this->getProduct();
-        return $p && (string) $p->getTypeId() === GiftCard::TYPE_CODE;
+        if ($p && (int) $p->getStoreId()) {
+            return (int) $p->getStoreId();
+        }
+        return (int) $this->_storeManager->getStore()->getId();
     }
 
     /**
@@ -115,10 +130,11 @@ class Fields extends Template
     public function isCustomAmountAllowed(): bool
     {
         $p = $this->getProduct();
+        $storeId = $this->resolveStoreId();
         if (!$p) {
-            return $this->config->isCustomAmountAllowed((int) $this->_storeManager->getStore()->getId());
+            return $this->config->isCustomAmountAllowed($storeId);
         }
-        return $this->giftOptionsResolver->isCustomAmountAllowed($p, (int) $this->_storeManager->getStore()->getId());
+        return $this->giftOptionsResolver->isCustomAmountAllowed($p, $storeId);
     }
 
     /**
@@ -129,7 +145,7 @@ class Fields extends Template
     public function isCustomMessageAllowed(): bool
     {
         $p = $this->getProduct();
-        $storeId = (int) $this->_storeManager->getStore()->getId();
+        $storeId = $this->resolveStoreId();
         if (!$p) {
             return $this->config->isCustomMessageAllowedByDefault($storeId);
         }
@@ -144,7 +160,7 @@ class Fields extends Template
     public function getGiftDeliveryType(): string
     {
         $p = $this->getProduct();
-        $storeId = (int) $this->_storeManager->getStore()->getId();
+        $storeId = $this->resolveStoreId();
         if (!$p) {
             return $this->config->getGiftDeliveryType($storeId);
         }
@@ -159,7 +175,7 @@ class Fields extends Template
     public function isDeliveryChoiceOnStorefront(): bool
     {
         $p = $this->getProduct();
-        $storeId = (int) $this->_storeManager->getStore()->getId();
+        $storeId = $this->resolveStoreId();
         if (!$p) {
             return $this->config->isDeliveryChoiceOnStorefront($storeId);
         }
@@ -174,7 +190,7 @@ class Fields extends Template
     public function isPhysicalDeliveryOffered(): bool
     {
         $p = $this->getProduct();
-        $storeId = (int) $this->_storeManager->getStore()->getId();
+        $storeId = $this->resolveStoreId();
         if (!$p) {
             $t = $this->config->getGiftDeliveryType($storeId);
             return in_array($t, [Config::GIFT_DELIVERY_PHYSICAL, Config::GIFT_DELIVERY_BOTH], true);
@@ -190,7 +206,7 @@ class Fields extends Template
     public function getAmountPresets(): array
     {
         $p = $this->getProduct();
-        $storeId = (int) $this->_storeManager->getStore()->getId();
+        $storeId = $this->resolveStoreId();
         if (!$p) {
             return $this->config->getAmountPresets($storeId);
         }
@@ -205,7 +221,7 @@ class Fields extends Template
     public function getMinAmount(): float
     {
         $p = $this->getProduct();
-        $storeId = (int) $this->_storeManager->getStore()->getId();
+        $storeId = $this->resolveStoreId();
         if (!$p) {
             return $this->config->getMinAmount($storeId);
         }
@@ -220,7 +236,7 @@ class Fields extends Template
     public function getMaxAmount(): float
     {
         $p = $this->getProduct();
-        $storeId = (int) $this->_storeManager->getStore()->getId();
+        $storeId = $this->resolveStoreId();
         if (!$p) {
             return $this->config->getMaxAmount($storeId);
         }
@@ -255,5 +271,24 @@ class Fields extends Template
             PriceCurrencyInterface::DEFAULT_PRECISION,
             $this->_storeManager->getStore()
         );
+    }
+
+    /**
+     * Get preconfigured gift card values (for re-opening configure popup on already-added items).
+     *
+     * @return array
+     */
+    public function getPreconfiguredGiftCardValues(): array
+    {
+        $p = $this->getProduct();
+        if (!$p) {
+            return [];
+        }
+        $preconfigured = $p->getPreconfiguredValues();
+        if (!$preconfigured) {
+            return [];
+        }
+        $data = $preconfigured->getData('venbhas_giftcard');
+        return is_array($data) ? $data : [];
     }
 }

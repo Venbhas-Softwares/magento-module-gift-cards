@@ -25,4 +25,11 @@
                 type="Venbhas\GiftCard\Plugin\Quote\Item\ToOrderItemPlugin"
                 sortOrder="100"/>
     </type>
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="venbhas_giftcard_recalc_wallet" xsi:type="object">Venbhas\GiftCard\Console\Command\RecalculateWalletBalances</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

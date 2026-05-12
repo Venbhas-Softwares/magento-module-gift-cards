@@ -1,0 +1,367 @@
+<?php
+/** @var \Venbhas\GiftCard\Block\Product\View\Fields $block */
+/** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
+if (!$block->shouldRender()) {
+    return;
+}
+$product = $block->getProduct();
+$presets = $block->getAmountPresets();
+$allowCustom = $block->isCustomAmountAllowed();
+$deliveryType = $block->getGiftDeliveryType();
+$deliveryVirtual = \Venbhas\GiftCard\Model\Config::GIFT_DELIVERY_VIRTUAL;
+$deliveryPhysical = \Venbhas\GiftCard\Model\Config::GIFT_DELIVERY_PHYSICAL;
+$deliveryBoth = \Venbhas\GiftCard\Model\Config::GIFT_DELIVERY_BOTH;
+$allowMessage = $block->isCustomMessageAllowed();
+$offerPhysicalAddress = $block->isPhysicalDeliveryOffered();
+$currencySymbol = $block->getCurrencySymbol();
+
+$preconfigured = $block->getPreconfiguredGiftCardValues();
+$preAmount = isset($preconfigured['amount']) ? (float) $preconfigured['amount'] : 0.0;
+$defaultAmount = $preAmount > 0 ? $preAmount : ($presets[0] ?? $block->getMinAmount());
+$preDeliveryType = trim((string) ($preconfigured['delivery_type'] ?? ''));
+$preRecipientName = $escaper->escapeHtmlAttr((string) ($preconfigured['recipient_name'] ?? ''));
+$preRecipientEmail = $escaper->escapeHtmlAttr((string) ($preconfigured['recipient_email'] ?? ''));
+$preSenderName = $escaper->escapeHtmlAttr((string) ($preconfigured['sender_name'] ?? ''));
+$preMessage = $escaper->escapeHtml((string) ($preconfigured['message'] ?? ''));
+$preDeliveryStreet = $escaper->escapeHtmlAttr((string) ($preconfigured['delivery_street'] ?? ''));
+$preDeliveryCity = $escaper->escapeHtmlAttr((string) ($preconfigured['delivery_city'] ?? ''));
+$preDeliveryRegion = $escaper->escapeHtmlAttr((string) ($preconfigured['delivery_region'] ?? ''));
+$preDeliveryPostcode = $escaper->escapeHtmlAttr((string) ($preconfigured['delivery_postcode'] ?? ''));
+$preDeliveryCountry = $escaper->escapeHtmlAttr((string) ($preconfigured['delivery_country'] ?? ''));
+
+$addressVisibleInitially = $offerPhysicalAddress && (
+    ($deliveryType === $deliveryPhysical) ||
+    ($deliveryType === $deliveryBoth && $preDeliveryType === $deliveryPhysical)
+);
+?>
+<fieldset id="catalog_product_composite_configure_fields_giftcard" class="fieldset admin__fieldset">
+    <legend class="legend admin__legend">
+        <span><?= $escaper->escapeHtml(__('Gift Card Options')) ?></span>
+    </legend>
+
+    <div class="field admin__field" id="venbhas_giftcard_price_display_wrap">
+        <label class="label admin__field-label">
+            <span><?= $escaper->escapeHtml(__('Card Price')) ?></span>
+        </label>
+        <div class="control admin__field-control">
+            <span id="venbhas_giftcard_price_display"
+                  style="font-size:18px;font-weight:600;color:#333;line-height:32px;">
+                <?= $escaper->escapeHtml($block->formatAmount((float)$defaultAmount)) ?>
+            </span>
+        </div>
+    </div>
+
+    <div class="field admin__field required">
+        <label class="label admin__field-label" for="venbhas_giftcard_amount">
+            <span><?= $escaper->escapeHtml(__('Amount')) ?></span>
+        </label>
+        <div class="control admin__field-control">
+            <?php if (!empty($presets)):
+                $isCustomAmount = $preAmount > 0 && !in_array((string)$preAmount, array_map('strval', $presets));
+                ?>
+                <select id="venbhas_giftcard_amount_select"
+                        name="venbhas_giftcard_amount_preset"
+                        class="admin__control-select"
+                        style="margin-bottom:8px;">
+                    <?php foreach ($presets as $amt): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($amt) ?>"
+                                <?= ((float)$amt === (float)$defaultAmount && !$isCustomAmount) ? 'selected' : '' ?>>
+                            <?= $escaper->escapeHtml($block->formatAmount((float)$amt)) ?>
+                        </option>
+                    <?php endforeach; ?>
+                    <?php if ($allowCustom): ?>
+                        <option value="custom" <?= $isCustomAmount ? 'selected' : '' ?>>
+                            <?= $escaper->escapeHtml(__('Other amount...')) ?>
+                        </option>
+                    <?php endif; ?>
+                </select>
+            <?php endif; ?>
+            <?php
+            $showAmountInput = empty($presets) || (isset($isCustomAmount) && $isCustomAmount);
+            ?>
+            <input type="<?= $showAmountInput ? 'number' : 'hidden' ?>"
+                   name="venbhas_giftcard[amount]"
+                   id="venbhas_giftcard_amount"
+                   value="<?= $escaper->escapeHtmlAttr($defaultAmount) ?>"
+                   <?php
+                    $minAmt = $block->getMinAmount();
+                    $maxAmt = $block->getMaxAmount();
+                    $rangeClass = 'admin__control-text required-entry validate-number'
+                       . ' validate-number-range number-range-' . $minAmt . '-' . $maxAmt;
+                    ?>
+                   class="<?= $escaper->escapeHtmlAttr($rangeClass) ?>"
+                   min="<?= $escaper->escapeHtmlAttr($block->getMinAmount()) ?>"
+                   max="<?= $escaper->escapeHtmlAttr($block->getMaxAmount()) ?>"
+                   step="0.01"
+                   <?= $showAmountInput ? '' : 'style="display:none;"' ?> />
+            <?php if (empty($presets) || $allowCustom): ?>
+                <p class="note admin__field-note">
+                    <?php $minFormatted = $block->formatAmount($block->getMinAmount()); ?>
+                    <?php $maxFormatted = $block->formatAmount($block->getMaxAmount()); ?>
+                    <?= $escaper->escapeHtml(__('Min: %1 / Max: %2', $minFormatted, $maxFormatted)) ?>
+                </p>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="field admin__field required">
+        <label class="label admin__field-label">
+            <span><?= $escaper->escapeHtml(__('Delivery Type')) ?></span>
+        </label>
+        <div class="control admin__field-control">
+            <?php if ($deliveryType === $deliveryBoth): ?>
+                <select name="venbhas_giftcard[delivery_type]"
+                        id="venbhas_giftcard_delivery_type"
+                        class="admin__control-select required-entry">
+                    <option value="<?= $escaper->escapeHtmlAttr($deliveryVirtual) ?>"
+                            <?= $preDeliveryType === $deliveryVirtual ? 'selected' : '' ?>>
+                        <?= $escaper->escapeHtml(__('Email / Virtual')) ?>
+                    </option>
+                    <option value="<?= $escaper->escapeHtmlAttr($deliveryPhysical) ?>"
+                            <?= $preDeliveryType === $deliveryPhysical ? 'selected' : '' ?>>
+                        <?= $escaper->escapeHtml(__('Physical (shipping required)')) ?>
+                    </option>
+                </select>
+            <?php else: ?>
+                <span class="admin__control-static" style="line-height:32px;">
+                    <?php if ($deliveryType === $deliveryVirtual): ?>
+                        <?= $escaper->escapeHtml(__('Email / Virtual')) ?>
+                    <?php else: ?>
+                        <?= $escaper->escapeHtml(__('Physical (shipping required)')) ?>
+                    <?php endif; ?>
+                </span>
+                <input type="hidden"
+                       name="venbhas_giftcard[delivery_type]"
+                       value="<?= $escaper->escapeHtmlAttr($deliveryType) ?>"/>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="field admin__field required">
+        <label class="label admin__field-label" for="venbhas_giftcard_recipient_name">
+            <span><?= $escaper->escapeHtml(__('Recipient Name')) ?></span>
+        </label>
+        <div class="control admin__field-control">
+            <input type="text"
+                   name="venbhas_giftcard[recipient_name]"
+                   id="venbhas_giftcard_recipient_name"
+                   class="admin__control-text required-entry"
+                   value="<?= /* @noEscape */ $preRecipientName ?>" />
+        </div>
+    </div>
+
+    <div class="field admin__field required">
+        <label class="label admin__field-label" for="venbhas_giftcard_recipient_email">
+            <span><?= $escaper->escapeHtml(__('Recipient Email')) ?></span>
+        </label>
+        <div class="control admin__field-control">
+            <input type="email"
+                   name="venbhas_giftcard[recipient_email]"
+                   id="venbhas_giftcard_recipient_email"
+                   class="admin__control-text required-entry validate-email"
+                   value="<?= /* @noEscape */ $preRecipientEmail ?>" />
+        </div>
+    </div>
+
+    <div class="field admin__field required">
+        <label class="label admin__field-label" for="venbhas_giftcard_sender_name">
+            <span><?= $escaper->escapeHtml(__('Sender Name')) ?></span>
+        </label>
+        <div class="control admin__field-control">
+            <input type="text"
+                   name="venbhas_giftcard[sender_name]"
+                   id="venbhas_giftcard_sender_name"
+                   class="admin__control-text required-entry"
+                   value="<?= /* @noEscape */ $preSenderName ?>" />
+        </div>
+    </div>
+
+    <?php if ($allowMessage): ?>
+        <div class="field admin__field required">
+            <label class="label admin__field-label" for="venbhas_giftcard_message">
+                <span><?= $escaper->escapeHtml(__('Message')) ?></span>
+            </label>
+            <div class="control admin__field-control">
+                <textarea name="venbhas_giftcard[message]"
+                          id="venbhas_giftcard_message"
+                          class="admin__control-textarea required-entry"
+                          rows="4"><?= /* @noEscape */ $preMessage ?></textarea>
+            </div>
+        </div>
+    <?php else: ?>
+        <input type="hidden" name="venbhas_giftcard[message]" value="" />
+    <?php endif; ?>
+
+    <?php if ($offerPhysicalAddress): ?>
+        <div id="venbhas_giftcard_address_wrap" style="<?= $addressVisibleInitially ? '' : 'display:none;' ?>">
+            <div class="admin__fieldset" style="margin-top:10px;padding-top:10px;border-top:1px solid #e3e3e3;">
+                <span class="admin__legend" style="font-weight:600;margin-bottom:10px;display:block;">
+                    <?= $escaper->escapeHtml(__('Physical Delivery Address')) ?>
+                </span>
+
+                <div class="field admin__field required venbhas-gc-addr-field">
+                    <label class="label admin__field-label" for="venbhas_giftcard_delivery_street">
+                        <span><?= $escaper->escapeHtml(__('Street Address')) ?></span>
+                    </label>
+                    <div class="control admin__field-control">
+                        <input type="text"
+                               name="venbhas_giftcard[delivery_street]"
+                               id="venbhas_giftcard_delivery_street"
+                               class="admin__control-text <?= $addressVisibleInitially ? 'required-entry' : '' ?>"
+                               value="<?= /* @noEscape */ $preDeliveryStreet ?>"
+                               <?= $addressVisibleInitially ? '' : 'disabled="disabled"' ?> />
+                    </div>
+                </div>
+
+                <div class="field admin__field required venbhas-gc-addr-field">
+                    <label class="label admin__field-label" for="venbhas_giftcard_delivery_city">
+                        <span><?= $escaper->escapeHtml(__('City')) ?></span>
+                    </label>
+                    <div class="control admin__field-control">
+                        <input type="text"
+                               name="venbhas_giftcard[delivery_city]"
+                               id="venbhas_giftcard_delivery_city"
+                               class="admin__control-text <?= $addressVisibleInitially ? 'required-entry' : '' ?>"
+                               value="<?= /* @noEscape */ $preDeliveryCity ?>"
+                               <?= $addressVisibleInitially ? '' : 'disabled="disabled"' ?> />
+                    </div>
+                </div>
+
+                <div class="field admin__field required venbhas-gc-addr-field">
+                    <label class="label admin__field-label" for="venbhas_giftcard_delivery_region">
+                        <span><?= $escaper->escapeHtml(__('State / Province')) ?></span>
+                    </label>
+                    <div class="control admin__field-control">
+                        <input type="text"
+                               name="venbhas_giftcard[delivery_region]"
+                               id="venbhas_giftcard_delivery_region"
+                               class="admin__control-text <?= $addressVisibleInitially ? 'required-entry' : '' ?>"
+                               value="<?= /* @noEscape */ $preDeliveryRegion ?>"
+                               <?= $addressVisibleInitially ? '' : 'disabled="disabled"' ?> />
+                    </div>
+                </div>
+
+                <div class="field admin__field required venbhas-gc-addr-field">
+                    <label class="label admin__field-label" for="venbhas_giftcard_delivery_postcode">
+                        <span><?= $escaper->escapeHtml(__('ZIP / Postal Code')) ?></span>
+                    </label>
+                    <div class="control admin__field-control">
+                        <input type="text"
+                               name="venbhas_giftcard[delivery_postcode]"
+                               id="venbhas_giftcard_delivery_postcode"
+                               class="admin__control-text <?= $addressVisibleInitially ? 'required-entry' : '' ?>"
+                               value="<?= /* @noEscape */ $preDeliveryPostcode ?>"
+                               <?= $addressVisibleInitially ? '' : 'disabled="disabled"' ?> />
+                    </div>
+                </div>
+
+                <div class="field admin__field required venbhas-gc-addr-field">
+                    <label class="label admin__field-label" for="venbhas_giftcard_delivery_country">
+                        <span><?= $escaper->escapeHtml(__('Country')) ?></span>
+                    </label>
+                    <div class="control admin__field-control">
+                        <input type="text"
+                               name="venbhas_giftcard[delivery_country]"
+                               id="venbhas_giftcard_delivery_country"
+                               class="admin__control-text <?= $addressVisibleInitially ? 'required-entry' : '' ?>"
+                               value="<?= /* @noEscape */ $preDeliveryCountry ?>"
+                               <?= $addressVisibleInitially ? '' : 'disabled="disabled"' ?> />
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+</fieldset>
+
+<?php
+$escapedCurrency = $escaper->escapeJs($currencySymbol);
+$scriptString = <<<SCRIPT
+require(['jquery'], function ($) {
+    'use strict';
+
+    var amountSelect = $('#venbhas_giftcard_amount_select'),
+        amountInput = $('#venbhas_giftcard_amount'),
+        priceDisplay = $('#venbhas_giftcard_price_display'),
+        deliverySelect = $('#venbhas_giftcard_delivery_type'),
+        addressWrap = $('#venbhas_giftcard_address_wrap'),
+        currencySymbol = '{$escapedCurrency}';
+
+    function formatPrice(amount) {
+        return currencySymbol + parseFloat(amount).toFixed(2);
+    }
+
+    function updatePriceDisplay(amount) {
+        amount = parseFloat(amount);
+        if (isNaN(amount) || amount <= 0) {
+            return;
+        }
+        priceDisplay.text(formatPrice(amount));
+    }
+
+    function syncSelectToInput() {
+        if (!amountSelect.length || !amountInput.length) {
+            return;
+        }
+        var currentVal = amountInput.val();
+        if (!currentVal) {
+            return;
+        }
+        var found = false;
+        amountSelect.find('option').each(function () {
+            if ($(this).val() !== 'custom' && parseFloat($(this).val()) === parseFloat(currentVal)) {
+                found = true;
+                amountSelect.val($(this).val());
+                amountInput.attr('type', 'hidden').hide();
+                return false;
+            }
+        });
+        if (!found && amountSelect.find('option[value="custom"]').length) {
+            amountSelect.val('custom');
+            amountInput.attr('type', 'number').show();
+        }
+    }
+
+    if (amountSelect.length) {
+        amountSelect.on('change', function () {
+            var val = $(this).val();
+            if (val === 'custom') {
+                amountInput.attr('type', 'number').show().val('').trigger('focus');
+            } else {
+                amountInput.attr('type', 'hidden').hide().val(val);
+                updatePriceDisplay(val);
+            }
+        });
+        syncSelectToInput();
+        if (amountSelect.val() && amountSelect.val() !== 'custom') {
+            amountInput.val(amountSelect.val());
+        }
+    }
+
+    amountInput.on('change input', function () {
+        var v = parseFloat($(this).val());
+        if (!isNaN(v) && v > 0) {
+            updatePriceDisplay(v);
+        }
+    });
+
+    if (amountInput.val()) {
+        updatePriceDisplay(amountInput.val());
+    }
+
+    if (deliverySelect.length && addressWrap.length) {
+        deliverySelect.on('change', function () {
+            var isPhysical = ($(this).val() === 'physical');
+            if (isPhysical) {
+                addressWrap.show();
+                addressWrap.find('input').prop('disabled', false).addClass('required-entry');
+            } else {
+                addressWrap.hide();
+                addressWrap.find('input').prop('disabled', true).removeClass('required-entry').val('');
+            }
+        });
+        deliverySelect.trigger('change');
+    }
+});
+SCRIPT;
+?>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', [], $scriptString, false) ?>

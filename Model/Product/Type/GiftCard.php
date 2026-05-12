@@ -115,4 +115,41 @@ class GiftCard extends \Magento\Catalog\Model\Product\Type\Simple
     {
         return true;
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function processBuyRequest($product, $buyRequest)
+    {
+        $result = [];
+        $gcData = $buyRequest->getData('venbhas_giftcard');
+        if (is_array($gcData)) {
+            $result['venbhas_giftcard'] = $gcData;
+        }
+        return $result;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function _prepareProduct(\Magento\Framework\DataObject $buyRequest, $product, $processMode)
+    {
+        $result = parent::_prepareProduct($buyRequest, $product, $processMode);
+        if (is_string($result)) {
+            return $result;
+        }
+
+        if ($processMode === self::PROCESS_MODE_FULL) {
+            $gcData = $buyRequest->getData('venbhas_giftcard');
+            if (!is_array($gcData) || empty($gcData['amount'])) {
+                return __('Please configure the gift card options (amount is required).')->render();
+            }
+            $amount = (float) $gcData['amount'];
+            if ($amount <= 0) {
+                return __('Please specify a valid gift card amount.')->render();
+            }
+        }
+
+        return $result;
+    }
 }

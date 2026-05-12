@@ -1,239 +1,94 @@
-# Venbhas Gift Card (`Venbhas_GiftCard`)
+# Venbhas_GiftCard
 
-Magento 2 gift card module with:
+Gift Card product type module for Magento 2.
 
-- gift card product purchase flow
-- wallet-based gift amount usage in checkout
-- transaction ledger for wallet credits/debits
-- customer account transaction history
-- admin grids and admin customer tab
-- invoice / credit memo totals integration
+## Features
 
-## Current behavior
+- Custom `giftcard` product type extending Simple product
+- Configurable gift card amount (presets and/or custom amount)
+- Delivery type support: Virtual (email), Physical (shipping), or Both
+- Recipient and sender fields (name, email, message)
+- Physical delivery address collection when applicable
+- Gift card code generation on invoice
+- Balance management and transaction history
+- Apply gift card in checkout
+- Admin order creation support with full configuration popup
+- Hyva compatibility for PDP and checkout
 
-This module no longer uses the old per-code checkout redemption flow.
+## Admin Order Creation
 
-Current model:
+The module fully supports creating gift card orders from the admin panel:
 
-- Gift card **products** create rows in `venbhas_giftcard_code`
-- Customers **add a code to their wallet** from My Account or checkout popup
-- Checkout applies a **wallet amount**, not individual gift card codes
-- Wallet movements are tracked in `venbhas_giftcard_transaction`
+- **Product visibility**: Gift card products appear in the admin order search grid
+- **Configuration popup**: Custom fields (amount, delivery type, recipient info, message) are displayed in the product configure modal
+- **Price update**: Selected amount is applied as custom price on the quote item
+- **Pre-population**: When re-opening the configure popup for an already-added item, all previously selected values are restored
+- **Validation**: Product cannot be added without configuring the required amount field
 
-## Main features
+## Configuration
 
-- **Gift card product type** with configurable amount and recipient/delivery fields
-- **Gift card code issuance on invoice payment only**
-  - no placeholder or `pending-*` rows on order placement
-- **Wallet flow**
-  - adding a valid gift code creates a `credit` transaction
-  - applying wallet amount in checkout creates a `debit` transaction on order placement
-- **Cancel / refund credit-back**
-  - canceling an order credits the wallet back with description `order canceled`
-  - refunding an order credits the wallet back with description `order refunded (...)`
-- **Refund protection for gift card products**
-  - if any issued code from the order is already redeemed, refund is blocked
-- **Canceled gift cards are invalid**
-  - refunded gift-card-product codes are marked `is_cancelled = 1`
-  - canceled codes cannot be added again from checkout or My Account
-- **Admin totals integration**
-  - Gift Card row is shown on invoice create / view
-  - Gift Card row is shown on credit memo create / view
+Store-level settings are available under:
+**Stores > Configuration > Venbhas > Gift Card**
 
-## Accounting model
+Key options:
+- Enable/disable module
+- Minimum and maximum gift card amount
+- Allow custom amount
+- Delivery type (virtual / physical / both)
+- Allow custom message
+- Email templates for purchase and usage notifications
 
-| Step | What happens |
-|------|--------------|
-| Gift card product ordered | No row is inserted into `venbhas_giftcard_code` yet |
-| Invoice paid for gift card product | Actual gift card code row is created in `venbhas_giftcard_code` |
-| Customer adds code to wallet | `credit` row inserted into `venbhas_giftcard_transaction` |
-| Customer applies wallet amount in checkout | Quote/order stores `venbhas_giftcard_amount`; order placement logs `debit` row |
-| Order canceled | Wallet is credited back with `credit` row and description `order canceled` |
-| Credit memo refund | Wallet is credited back with `credit` row and description `order refunded (...)` |
-| Gift card product refunded | Issued code rows for that order are marked `is_cancelled = 1` |
+## Product Setup
 
-## Tables
+1. Create a new product with type **Gift Card**
+2. Configure amount presets (comma-separated) or enable custom amount
+3. Set delivery type at product level or use store config default
+4. Save and assign to categories
 
-### `venbhas_giftcard_code`
+## Technical Architecture
 
-Main fields used by current flow:
+### Product Type
+- `Venbhas\GiftCard\Model\Product\Type\GiftCard` — Extends `Magento\Catalog\Model\Product\Type\Simple`
+- `canConfigure()` returns `true` to enable the admin configure popup
+- `_prepareProduct()` validates that amount is provided before adding to cart/quote
+- `processBuyRequest()` returns gift card data for preconfigured values (enables field pre-population)
 
-- `code`
-- `amount`
-- `purchased_by`
-- `purchased_by_email`
-- `redeemed_by`
-- `redeemed_email`
-- `product_id`
-- `order_id`
-- recipient / sender / delivery fields
-- `is_reedemed`
-- `is_cancelled`
+### Observers
 
-Notes:
+| Event | Scope | Observer | Purpose |
+|-------|-------|----------|---------|
+| `checkout_cart_product_add_before` | Global | `ValidateGiftCardFieldsOnAddToCart` | Validates required fields on frontend |
+| `checkout_cart_product_add_after` | Global | `PersistGiftCardFieldsOnQuoteItem` | Saves fields to quote item additional_options |
+| `checkout_cart_product_add_after` | Global | `ApplyGiftCardAmountToQuoteItem` | Sets custom price from selected amount |
+| `sales_quote_product_add_after` | Adminhtml | `PersistGiftCardFieldsOnAdminQuoteItem` | Handles persistence and pricing in admin |
+| `catalog_product_save_before` | Adminhtml | `SaveGiftCardOptionsOnProduct` | Processes product-level gift card config |
 
-- `amount` is the issued value for the gift card code
-- `is_reedemed` means the code was already added to a wallet
-- `is_cancelled` means the code became invalid because the related gift card product order was refunded
+### Layout Handles (Adminhtml)
 
-### `venbhas_giftcard_transaction`
+- `catalog_product_view_type_giftcard` — Adds gift card fields to the admin composite configure popup
+- `sales_order_create_index` — Fixes giftmessage.js initialization error on order create page
 
-Main fields used by current flow:
+### Key Files
 
-- `giftcard_id`
-- `transaction_type`
-- `description`
-- `amount`
-- `previous_balance`
-- `current_balance`
-- `order_id`
-- `customer_id`
-- `customer_email`
-- `store_id`
-
-Transaction types currently used:
-
-- `credit`
-- `debit`
-- legacy `checkout_apply`
-- legacy `redeem`
-
-Current wallet math:
-
-- `credit` adds to wallet
-- `debit`, `checkout_apply`, and `redeem` subtract from wallet
-
-## Sales entity fields
-
-### `quote`
-
-- `venbhas_giftcard_amount`
-- `base_venbhas_giftcard_amount`
-
-### `sales_order`
-
-- `venbhas_giftcard_amount`
-- `base_venbhas_giftcard_amount`
-
-### `sales_invoice`
-
-- `venbhas_giftcard_amount`
-- `base_venbhas_giftcard_amount`
-
-These invoice fields are used so invoice create/view can show the Gift Card row and support partial invoicing.
-
-## Important classes
-
-| Area | Class |
-|------|-------|
-| Gift card issuance | `Model/GiftCardIssuer.php` |
-| Checkout wallet debit logging | `Model/GiftCardCheckoutTransactionLogger.php` |
-| Wallet balance loader | `Model/CustomerGiftCardTransactionsLoader.php` |
-| Wallet ledger writer | `Model/WalletLedger.php` |
-| Quote total collector | `Model/Total/Quote/GiftCard.php` |
-| Invoice total collector | `Model/Total/Invoice/GiftCard.php` |
-| Credit memo total collector | `Model/Total/Creditmemo/GiftCard.php` |
-| Add code to wallet | `Controller/Account/AddGiftcard.php` |
-| Checkout apply wallet amount | `Controller/Checkout/Apply.php` |
-| Checkout remove wallet amount | `Controller/Checkout/Remove.php` |
-| Checkout wallet balance API | `Controller/Checkout/Wallet.php` |
-
-## Events / observers
-
-- `sales_model_service_quote_submit_before`
-  - `Observer/ConvertQuoteToOrder.php`
-  - copies gift amount fields from quote to order
-
-- `sales_model_service_quote_submit_success`
-  - `Observer/LogGiftCardCheckoutUsageOnOrderPlace.php`
-  - logs checkout wallet usage to transaction table
-
-- `sales_order_place_after`
-  - `Observer/LogGiftCardCheckoutUsageOnOrderPlace.php`
-  - fallback for usage logging
-
-- `sales_order_invoice_pay`
-  - `Observer/GenerateGiftCardOnInvoicePay.php`
-  - issues purchased gift card codes and sends emails
-
-- `order_cancel_after`
-  - `Observer/CreditWalletOnOrderCancel.php`
-  - credits wallet back when applied gift amount order is canceled
-
-- `sales_order_creditmemo_save_before`
-  - `Observer/PreventGiftCardRefundIfRedeemed.php`
-  - blocks refund of gift card products when issued codes were already redeemed
-
-- `sales_order_creditmemo_refund`
-  - `Observer/CreditWalletOnCreditmemoRefund.php`
-  - credits wallet back for refund
-  - marks gift card product codes as canceled
-
-## Frontend behavior
-
-### Product page
-
-- gift card fields render on gift card product page
-- amount, recipient, message, and delivery data are stored on quote item options
-- invoicing later issues the real code
-
-### My Account
-
-- customers can add a gift card code to wallet
-- canceled codes are rejected with `Card is not valid.`
-- transaction page shows:
-  - wallet balance
-  - signed amount (`+` credit / `-` debit)
-  - balance after transaction
-  - order links where available
-
-### Checkout
-
-- customer sees wallet balance
-- can apply amount from wallet
-- can remove applied amount
-- can add a new gift card from popup
-- add popup uses same backend validation as My Account
-- canceled codes are rejected with `Card is not valid.`
-
-## Admin behavior
-
-- Gift Card Codes grid
-- Gift Card Transactions grid
-- clickable order and customer links
-- amount shown with currency formatting
-- customer edit tab shows transaction history
-- invoice create / view shows Gift Card row
-- credit memo create / view shows Gift Card row
-
-## Commands
-
-### Recalculate wallet balances
-
-```bash
-bin/magento venbhas:giftcard:recalc-wallet
+```
+app/code/Venbhas/GiftCard/
+├── Block/Product/View/Fields.php                         # Gift card fields block
+├── Model/Product/Type/GiftCard.php                       # Product type model
+├── Model/Product/GiftOptionsResolver.php                 # Resolves config/product options
+├── Model/Config.php                                      # Module configuration
+├── Observer/Adminhtml/PersistGiftCardFieldsOnAdminQuoteItem.php
+├── etc/
+│   ├── product_types.xml                                 # Registers giftcard product type
+│   ├── sales.xml                                         # Registers available_product_type for admin grid
+│   ├── events.xml                                        # Frontend observers
+│   └── adminhtml/events.xml                              # Admin observers
+└── view/adminhtml/
+    ├── layout/catalog_product_view_type_giftcard.xml     # Configure popup layout
+    └── templates/catalog/product/composite/fieldset/giftcard.phtml
 ```
 
-Rebuilds `previous_balance` and `current_balance` for existing transaction rows.
 
-## Deploy / upgrade
+## Requirements
 
-```bash
-bin/magento setup:upgrade
-bin/magento cache:clean
-```
-
-If running production mode and DI changed:
-
-```bash
-bin/magento setup:di:compile
-```
-
-## Quick verification checklist
-
-- place order using wallet amount
-- invoice order and verify invoice total excludes gift amount
-- cancel pending order and verify wallet gets `order canceled` credit row
-- refund invoiced order and verify wallet gets `order refunded (...)` credit row
-- refund gift card product order and verify code row gets `is_cancelled = 1`
-- try adding canceled code in checkout / My Account and verify `Card is not valid.`
+- Magento 2.4.x
+- PHP 8.1+

@@ -1,0 +1,15 @@
+<?php
+/**
+ * Ensures the gift_options_configure_new element exists to prevent giftmessage.js TypeError
+ * when Magento_GiftMessage popup block renders no child content.
+ */
+?>
+<script>
+    if (!document.getElementById('gift_options_configure_new')) {
+        var el = document.createElement('div');
+        el.id = 'gift_options_configure_new';
+        el.className = 'no-display';
+        el.style.display = 'none';
+        document.body.appendChild(el);
+    }
+</script>
