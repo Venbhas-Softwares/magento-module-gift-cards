@@ -111,7 +111,8 @@ $walletBalance = (float) $block->getWalletBalance();
                         $transactionType = str_replace('_', ' ', trim($type));
                         if ($transactionType !== '') {
                             $transactionType = mb_strtolower($transactionType);
-                            $transactionType = mb_strtoupper(mb_substr($transactionType, 0, 1)) . mb_substr($transactionType, 1);
+                            $transactionType = mb_strtoupper(mb_substr($transactionType, 0, 1))
+                                . mb_substr($transactionType, 1);
                         }
 
                         $desc = str_replace('_', ' ', trim((string) $trx->getData('description')));
@@ -146,7 +147,8 @@ $walletBalance = (float) $block->getWalletBalance();
                                     <?= $escaper->escapeHtml(__('—')) ?>
                                 <?php endif; ?>
                             </td>
-                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Gift card code')) ?>" class="col-giftcard-code">
+                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Gift card code')) ?>"
+                                class="col-giftcard-code">
                                 <?= $escaper->escapeHtml($code) ?>
                             </td>
                             <td data-th="<?= $escaper->escapeHtmlAttr(__('Amount')) ?>" class="col-amount">

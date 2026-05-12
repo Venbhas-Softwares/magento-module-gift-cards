@@ -25,7 +25,7 @@ class GiftDeliveryTypeWithConfig extends AbstractSource
             ['value' => '', 'label' => __('Use configuration defaults')],
             [
                 'value' => Config::GIFT_DELIVERY_VIRTUAL,
-                'label' => __('Virtual (email delivery)'),
+                'label' => __('Virtual (email delivery only)'),
             ],
             [
                 'value' => Config::GIFT_DELIVERY_PHYSICAL,

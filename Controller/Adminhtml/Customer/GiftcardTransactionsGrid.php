@@ -13,6 +13,9 @@ class GiftcardTransactionsGrid extends Action
 {
     public const ADMIN_RESOURCE = 'Venbhas_GiftCard::transactions';
 
+    /**
+     * @inheritdoc
+     */
     public function execute()
     {
         /** @var \Magento\Framework\Controller\Result\Raw $resultRaw */
@@ -26,4 +29,3 @@ class GiftcardTransactionsGrid extends Action
         return $resultRaw->setContents($grid->toHtml());
     }
 }
-

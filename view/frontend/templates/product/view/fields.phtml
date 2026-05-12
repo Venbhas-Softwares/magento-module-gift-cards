@@ -15,7 +15,7 @@ $allowMessage = $block->isCustomMessageAllowed();
 $offerPhysicalAddress = $block->isPhysicalDeliveryOffered();
 $addressVisibleInitially = $offerPhysicalAddress && ($deliveryType === $deliveryPhysical);
 $directoryBlock = $block->getLayout()->createBlock(\Magento\Directory\Block\Data::class);
-$directoryHelper = \Magento\Framework\App\ObjectManager::getInstance()->get(\Magento\Directory\Helper\Data::class);
+$directoryHelper = $block->getDirectoryHelper();
 
 // Build region JSON compatible with `Magento_Directory/js/region-updater` (expects `id` inside each region node).
 $regionJsonForUpdater = '{}';
@@ -113,6 +113,19 @@ try {
                name="venbhas_giftcard[delivery_type]"
                value="<?= $escaper->escapeHtmlAttr($deliveryType) ?>"/>
     <?php endif; ?>
+    <div class="venbhas-giftcard-delivery-notice"
+         style="margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e8;">
+        <div class="venbhas-gc-delivery-available" style="font-size:13px;color:#333;">
+            <?php if ($deliveryType === $deliveryVirtual): ?>
+                <?= $escaper->escapeHtml(__('Available delivery: Email / virtual only.')) ?>
+            <?php elseif ($deliveryType === $deliveryPhysical): ?>
+                <?= $escaper->escapeHtml(__('Available delivery: Physical shipping only.')) ?>
+            <?php else: ?>
+                <?= $escaper->escapeHtml(__('Available delivery: Email / virtual or physical')) ?>
+            <?php endif; ?>
+        </div>
+        
+    </div>
 
     <div class="field required">
         <label class="label" for="venbhas_giftcard_recipient_name">
@@ -263,7 +276,9 @@ try {
                         class="select venbhas-gc-addr-input"
                         <?= $addressVisibleInitially ? 'required' : '' ?>
                         <?= $addressVisibleInitially ? '' : 'disabled' ?>>
-                    <option value=""><?= $escaper->escapeHtml(__('Please select a region, state or province.')) ?></option>
+                    <option value="">
+                        <?= $escaper->escapeHtml(__('Please select a region, state or province.')) ?>
+                    </option>
                 </select>
                 <input type="text"
                        name="venbhas_giftcard[delivery_region]"
@@ -315,7 +330,9 @@ require(['jquery', 'jquery-ui-modules/widget', 'Magento_Directory/js/region-upda
         }
 
         var productId = String($priceBox.data('product-id') || '');
-        var $wrapper = productId ? $('#product-price-' + productId) : $priceBox.find('[data-price-type="finalPrice"]').first();
+        var $wrapper = productId
+            ? $('#product-price-' + productId)
+            : $priceBox.find('[data-price-type="finalPrice"]').first();
         if (!$wrapper.length) {
             $wrapper = $priceBox.find('[data-price-type="finalPrice"]').first();
         }
@@ -444,7 +461,12 @@ require(['jquery', 'jquery-ui-modules/widget', 'Magento_Directory/js/region-upda
             postcodeId: '#venbhas_giftcard_delivery_postcode',
             form: '#product_addtocart_form',
             regionJson: <?= /* @noEscape */ $regionJsonForUpdater ?>,
-            countriesWithOptionalZip: <?= $directoryHelper ? $directoryHelper->getCountriesWithOptionalZip(true) : '[]' ?>,
+            <?php
+            $optionalZip = $directoryHelper
+                ? $directoryHelper->getCountriesWithOptionalZip(true)
+                : '[]';
+            ?>
+            countriesWithOptionalZip: <?= /* @noEscape */ $optionalZip ?>,
             defaultRegion: '',
             optionalRegionAllowed: true
         });

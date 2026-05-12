@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Block\Product\View;
 
 use Magento\Catalog\Model\Product;
+use Magento\Directory\Helper\Data as DirectoryHelper;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\View\Element\Template;
@@ -39,6 +40,11 @@ class Fields extends Template
     private PriceCurrencyInterface $priceCurrency;
 
     /**
+     * @var DirectoryHelper
+     */
+    private DirectoryHelper $directoryHelper;
+
+    /**
      * Initialize block.
      *
      * @param Context $context Block context
@@ -46,6 +52,7 @@ class Fields extends Template
      * @param Config $config Module config
      * @param GiftOptionsResolver $giftOptionsResolver Gift options resolver
      * @param PriceCurrencyInterface $priceCurrency Price currency formatter
+     * @param DirectoryHelper $directoryHelper Directory helper
      * @param array $data Additional data
      */
     public function __construct(
@@ -54,6 +61,7 @@ class Fields extends Template
         Config $config,
         GiftOptionsResolver $giftOptionsResolver,
         PriceCurrencyInterface $priceCurrency,
+        DirectoryHelper $directoryHelper,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -61,6 +69,17 @@ class Fields extends Template
         $this->config = $config;
         $this->giftOptionsResolver = $giftOptionsResolver;
         $this->priceCurrency = $priceCurrency;
+        $this->directoryHelper = $directoryHelper;
+    }
+
+    /**
+     * Get the directory helper instance.
+     *
+     * @return DirectoryHelper
+     */
+    public function getDirectoryHelper(): DirectoryHelper
+    {
+        return $this->directoryHelper;
     }
 
     /**

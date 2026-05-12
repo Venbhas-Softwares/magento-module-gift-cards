@@ -83,10 +83,12 @@ $walletBalance = (float) $block->getWalletBalance();
                         <?php } ?>
                     </td>   
                     <td>
-                        <?= $escaper->escapeHtml($block->formatAmount((float) $trx->getData('previous_balance'), null)) ?>
+                        <?php $prevBal = (float) $trx->getData('previous_balance'); ?>
+                        <?= $escaper->escapeHtml($block->formatAmount($prevBal, null)) ?>
                     </td>
                     <td>
-                        <?= $escaper->escapeHtml($block->formatAmount((float) $trx->getData('current_balance'), null)) ?>
+                        <?php $curBal = (float) $trx->getData('current_balance'); ?>
+                        <?= $escaper->escapeHtml($block->formatAmount($curBal, null)) ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

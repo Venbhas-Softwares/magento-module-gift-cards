@@ -22,12 +22,40 @@ use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\Grid\Collection as 
  */
 class GiftCardTransactionsGrid extends Extended implements TabInterface
 {
+    /**
+     * @var Registry
+     */
     private Registry $registry;
+
+    /**
+     * @var \Magento\Framework\ObjectManagerInterface
+     */
     private \Magento\Framework\ObjectManagerInterface $objectManager;
+
+    /**
+     * @var PriceCurrencyInterface
+     */
     private PriceCurrencyInterface $priceCurrency;
+
+    /**
+     * @var StoreManagerInterface
+     */
     private StoreManagerInterface $storeManager;
+
+    /**
+     * @var TimezoneInterface
+     */
     private TimezoneInterface $localeDate;
 
+    /**
+     * @param Context $context
+     * @param BackendHelper $backendHelper
+     * @param Registry $registry
+     * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param PriceCurrencyInterface $priceCurrency
+     * @param StoreManagerInterface $storeManager
+     * @param array $data
+     */
     public function __construct(
         Context $context,
         BackendHelper $backendHelper,
@@ -45,6 +73,9 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         parent::__construct($context, $backendHelper, $data);
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function _construct()
     {
         parent::_construct();
@@ -63,6 +94,9 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         $this->setSaveParametersInSession(false);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getGridUrl()
     {
         return $this->getUrl(
@@ -74,6 +108,11 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         );
     }
 
+    /**
+     * Retrieve current customer ID from registry or request.
+     *
+     * @return int
+     */
     private function getCustomerId(): int
     {
         $cid = (int) $this->registry->registry(RegistryConstants::CURRENT_CUSTOMER_ID);
@@ -83,6 +122,9 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         return $cid;
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function _prepareCollection()
     {
         $cid = $this->getCustomerId();
@@ -100,6 +142,9 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         return parent::_prepareCollection();
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function _prepareColumns()
     {
         $this->addColumn('created_at', [
@@ -164,6 +209,12 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         return parent::_prepareColumns();
     }
 
+    /**
+     * Render created_at column value with locale formatting.
+     *
+     * @param string $value
+     * @return string
+     */
     public function renderCreatedAt($value): string
     {
         $raw = trim((string) $value);
@@ -178,6 +229,12 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         }
     }
 
+    /**
+     * Render column value in sentence case.
+     *
+     * @param string $value
+     * @return string
+     */
     public function renderSentenceCase($value): string
     {
         $v = str_replace('_', ' ', trim((string) $value));
@@ -189,6 +246,15 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         return $this->escapeHtml($out);
     }
 
+    /**
+     * Render price column with store currency.
+     *
+     * @param mixed $value
+     * @param \Magento\Framework\DataObject $row
+     * @param \Magento\Backend\Block\Widget\Grid\Column|null $column
+     * @param bool $isExport
+     * @return string
+     */
     public function renderPrice($value, $row, $column = null, $isExport = false): string
     {
         $index = $column && method_exists($column, 'getIndex') ? (string) $column->getIndex() : '';
@@ -208,6 +274,15 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         );
     }
 
+    /**
+     * Render signed amount (+/-) with colored badge.
+     *
+     * @param mixed $value
+     * @param \Magento\Framework\DataObject $row
+     * @param \Magento\Backend\Block\Widget\Grid\Column|null $column
+     * @param bool $isExport
+     * @return string
+     */
     public function renderSignedAmount($value, $row, $column = null, $isExport = false): string
     {
         $amount = (float) $row->getData('amount');
@@ -216,7 +291,7 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
             return $formatted;
         }
 
-        $type = (string) $row->getData('transaction_type');
+        $type = mb_strtolower((string) $row->getData('transaction_type'));
         $sign = '+';
         if ($type === GiftCardTransaction::ACTION_DEBIT
             || $type === GiftCardTransaction::ACTION_CHECKOUT_APPLY
@@ -232,39 +307,59 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         return '<span class="venbhas-gc-sign ' . $signClass . '">[' . $sign . ']</span>&nbsp;' . $formatted;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getTabLabel(): \Magento\Framework\Phrase
     {
         return __('Gift Card Transactions');
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getTabTitle(): \Magento\Framework\Phrase
     {
         return __('Gift Card Transactions');
     }
 
+    /**
+     * @inheritdoc
+     */
     public function canShowTab(): bool
     {
         return $this->getCustomerId() > 0;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function isHidden(): bool
     {
         return !$this->canShowTab();
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getTabUrl(): string
     {
         return '';
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getTabClass(): string
     {
         return '';
     }
 
+    /**
+     * @inheritdoc
+     */
     public function isAjaxLoaded(): bool
     {
         return false;
     }
 }
-

@@ -58,6 +58,9 @@ class GiftCardTransactions extends Template implements TabInterface
      */
     private PriceCurrencyInterface $_priceCurrency;
 
+    /**
+     * @var TimezoneInterface
+     */
     private TimezoneInterface $localeDate;
 
     /**
@@ -90,6 +93,11 @@ class GiftCardTransactions extends Template implements TabInterface
         $this->setTemplate('Venbhas_GiftCard::customer/giftcard_transactions_ui.phtml');
     }
 
+    /**
+     * Get the current customer ID from registry or request.
+     *
+     * @return int
+     */
     public function getCurrentCustomerId(): int
     {
         $cid = (int) $this->_registry->registry(RegistryConstants::CURRENT_CUSTOMER_ID);
@@ -99,6 +107,12 @@ class GiftCardTransactions extends Template implements TabInterface
         return $cid;
     }
 
+    /**
+     * Format a created_at timestamp for display.
+     *
+     * @param string|null $createdAt
+     * @return string
+     */
     public function formatCreatedAt($createdAt): string
     {
         $value = trim((string) $createdAt);

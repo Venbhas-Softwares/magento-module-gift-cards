@@ -10,6 +10,9 @@ use Magento\Ui\Component\Listing\Columns\Column;
  */
 class AdminSentenceCase extends Column
 {
+    /**
+     * @inheritdoc
+     */
     public function prepareDataSource(array $dataSource): array
     {
         if (!isset($dataSource['data']['items']) || !is_array($dataSource['data']['items'])) {
@@ -32,4 +35,3 @@ class AdminSentenceCase extends Column
         return $dataSource;
     }
 }
-

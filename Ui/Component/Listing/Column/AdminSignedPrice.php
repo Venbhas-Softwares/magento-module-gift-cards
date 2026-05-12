@@ -17,9 +17,24 @@ use Venbhas\GiftCard\Model\GiftCardTransaction;
  */
 class AdminSignedPrice extends Column
 {
+    /**
+     * @var PriceCurrencyInterface
+     */
     private PriceCurrencyInterface $priceCurrency;
+
+    /**
+     * @var StoreManagerInterface
+     */
     private StoreManagerInterface $storeManager;
 
+    /**
+     * @param \Magento\Framework\View\Element\UiComponent\ContextInterface $context
+     * @param \Magento\Framework\View\Element\UiComponentFactory $uiComponentFactory
+     * @param PriceCurrencyInterface $priceCurrency
+     * @param StoreManagerInterface $storeManager
+     * @param array $components
+     * @param array $data
+     */
     public function __construct(
         \Magento\Framework\View\Element\UiComponent\ContextInterface $context,
         \Magento\Framework\View\Element\UiComponentFactory $uiComponentFactory,
@@ -33,6 +48,9 @@ class AdminSignedPrice extends Column
         parent::__construct($context, $uiComponentFactory, $components, $data);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function prepareDataSource(array $dataSource): array
     {
         if (!isset($dataSource['data']['items']) || !is_array($dataSource['data']['items'])) {
@@ -68,9 +86,10 @@ class AdminSignedPrice extends Column
             }
 
             $sign = '+';
-            if ($type === GiftCardTransaction::ACTION_DEBIT
-                || $type === GiftCardTransaction::ACTION_CHECKOUT_APPLY
-                || $type === GiftCardTransaction::ACTION_REDEEM
+            $typeLower = mb_strtolower($type);
+            if ($typeLower === GiftCardTransaction::ACTION_DEBIT
+                || $typeLower === GiftCardTransaction::ACTION_CHECKOUT_APPLY
+                || $typeLower === GiftCardTransaction::ACTION_REDEEM
             ) {
                 $sign = '-';
             }
@@ -86,4 +105,3 @@ class AdminSignedPrice extends Column
         return $dataSource;
     }
 }
-
