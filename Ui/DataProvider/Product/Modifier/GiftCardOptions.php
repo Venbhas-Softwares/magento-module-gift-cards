@@ -155,6 +155,7 @@ class GiftCardOptions extends AbstractModifier
                             'breakLine' => false,
                             'sortOrder' => $sortOrder,
                             'dataScope' => '',
+                            'additionalClasses' => 'venbhas-giftcard-toggle-group',
                         ],
                     ],
                 ],
@@ -171,7 +172,6 @@ class GiftCardOptions extends AbstractModifier
                             'data' => [
                                 'config' => [
                                     'dataScope' => $fieldName,
-                                    'additionalClasses' => 'admin__field-x-small',
                                     'component' => 'Magento_Ui/js/form/element/single-checkbox-use-config',
                                     'componentType' => Field::NAME,
                                     'prefer' => 'toggle',

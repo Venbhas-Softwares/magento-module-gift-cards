@@ -74,7 +74,6 @@ class CartTotalRepositoryPlugin
             $ext = $this->totalsExtensionFactory->create();
         }
         $ext->setVenbhasGiftcardCodes((string) $quote->getData('venbhas_giftcard_codes'));
-        $ext->setVenbhasGiftcardBalanceDetails((string) $quote->getData('venbhas_giftcard_balance_details'));
         $result->setExtensionAttributes($ext);
 
         return $result;

@@ -95,6 +95,24 @@ class GiftOptionsResolver
     }
 
     /**
+     * Lowest storefront amount for PLP/category "from" price (first preset, else configured minimum).
+     *
+     * @param Product $product Product
+     * @param int|null $storeId Store ID
+     *
+     * @return float
+     */
+    public function getListingFromAmount(Product $product, ?int $storeId = null): float
+    {
+        $presets = $this->getAmountPresets($product, $storeId);
+        if ($presets !== []) {
+            return $presets[0];
+        }
+
+        return $this->getMinAmount($product, $storeId);
+    }
+
+    /**
      * Check whether custom message is allowed (product override or store config).
      *
      * @param Product $product Product

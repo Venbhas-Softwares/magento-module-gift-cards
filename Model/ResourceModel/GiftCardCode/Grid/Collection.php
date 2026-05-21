@@ -63,9 +63,14 @@ class Collection extends SearchResult
 
         // Prevent ambiguous field errors once we join other tables that also have same column names.
         $this->addFilterToMap('entity_id', 'main_table.entity_id');
+        $this->addFilterToMap('code', 'main_table.code');
         $this->addFilterToMap('amount', 'main_table.amount');
+        $this->addFilterToMap('order_id', 'main_table.order_id');
         $this->addFilterToMap('created_at', 'main_table.created_at');
+        $this->addFilterToMap('updated_at', 'main_table.updated_at');
         $this->addFilterToMap('store_id', 'main_table.store_id');
+        $this->addFilterToMap('is_reedemed', 'main_table.is_reedemed');
+        $this->addFilterToMap('is_cancelled', 'main_table.is_cancelled');
 
         $soTable = $this->getTable('sales_order');
         $this->getSelect()->joinLeft(

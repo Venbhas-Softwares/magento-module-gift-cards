@@ -77,6 +77,7 @@ class ValidateGiftCardFieldsOnAddToCart implements ObserverInterface
             'recipient_name' => __('Recipient Name'),
             'recipient_email' => __('Recipient Email'),
             'sender_name' => __('Sender Name'),
+            'sender_email' => __('Sender Email'),
         ];
 
         foreach ($required as $key => $label) {

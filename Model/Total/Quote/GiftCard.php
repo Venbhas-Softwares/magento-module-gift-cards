@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Venbhas\GiftCard\Model\Total\Quote;
 
-use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Api\Data\ShippingAssignmentInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address\Total;
 use Magento\Quote\Model\Quote\Address\Total\AbstractTotal;
 use Venbhas\GiftCard\Model\Config;
+use Venbhas\GiftCard\Model\CustomerGiftCardTransactionsLoader;
 
 /**
  * Quote total collector for gift card discount.
@@ -25,30 +24,20 @@ class GiftCard extends AbstractTotal
     private $config;
 
     /**
-     * @var Json
+     * @var CustomerGiftCardTransactionsLoader
      */
-    private $json;
+    private $walletLoader;
 
     /**
-     * @var ResourceConnection
-     */
-    private $resource;
-
-    /**
-     * Initialize total collector.
-     *
      * @param Config $config Module config
-     * @param Json $json JSON serializer
-     * @param ResourceConnection $resource Resource connection
+     * @param CustomerGiftCardTransactionsLoader $walletLoader Wallet balance loader
      */
     public function __construct(
         Config $config,
-        Json $json,
-        ResourceConnection $resource
+        CustomerGiftCardTransactionsLoader $walletLoader
     ) {
         $this->config = $config;
-        $this->json = $json;
-        $this->resource = $resource;
+        $this->walletLoader = $walletLoader;
         $this->setCode(self::CODE);
     }
 
@@ -77,7 +66,18 @@ class GiftCard extends AbstractTotal
             return $this;
         }
 
+        $address = $shippingAssignment->getShipping()->getAddress();
+        if (!$address || !$address->getCountryId()) {
+            $address = $quote->getShippingAddress();
+            if (!$address->getCountryId()) {
+                $address = $quote->getBillingAddress();
+            }
+        }
+
         $baseGrandTotal = (float) $total->getBaseGrandTotal();
+        if ($baseGrandTotal <= 0.0001 && $address) {
+            $baseGrandTotal = (float) $address->getBaseGrandTotal();
+        }
         if ($baseGrandTotal <= 0.0001) {
             $baseGrandTotal = (float) $total->getData('base_subtotal_with_discount')
                 + (float) $total->getData('base_shipping_amount')
@@ -87,7 +87,10 @@ class GiftCard extends AbstractTotal
             return $this;
         }
 
-        $walletBalance = $this->getWalletBalance($quote);
+        $customerId = $quote->getCustomerId() ? (int) $quote->getCustomerId() : 0;
+        $email = strtolower(trim((string) $quote->getCustomerEmail()));
+        $email = $email !== '' ? $email : null;
+        $walletBalance = $this->walletLoader->getWalletBalance($customerId, $email);
         $baseToApply = min($requestedBase, $walletBalance, $baseGrandTotal);
         if ($baseToApply <= 0.0001) {
             // Nothing available; clear request so UI reflects reality.
@@ -107,51 +110,6 @@ class GiftCard extends AbstractTotal
         $quote->setData('base_venbhas_giftcard_amount', $baseToApply);
 
         return $this;
-    }
-
-    /**
-     * Load wallet balance for the quote customer.
-     *
-     * @param Quote $quote Quote
-     *
-     * @return float
-     */
-    private function getWalletBalance(Quote $quote): float
-    {
-        $customerId = $quote->getCustomerId() ? (int) $quote->getCustomerId() : 0;
-        $email = strtolower(trim((string) $quote->getCustomerEmail()));
-        $email = $email !== '' ? $email : null;
-        if ($customerId <= 0 && !$email) {
-            return 0.0;
-        }
-
-        $conn = $this->resource->getConnection();
-        $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
-
-        $where = [];
-        if ($customerId > 0) {
-            $where[] = 'customer_id = ' . (int) $customerId;
-        }
-        if ($email) {
-            $where[] = 'customer_email = ' . $conn->quote($email);
-        }
-
-        $sql =
-            // phpcs:ignore Magento2.SQL.RawQuery.RawQuery
-            'SELECT COALESCE(SUM(CASE '
-            . 'WHEN transaction_type = '
-            . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_CREDIT)
-            . ' THEN amount '
-            . 'WHEN transaction_type = '
-            . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_CHECKOUT_APPLY)
-            . ' THEN -amount '
-            . 'WHEN transaction_type = '
-            . $conn->quote(\Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_REDEEM)
-            . ' THEN -amount '
-            . 'ELSE 0 END), 0) '
-            . 'FROM ' . $trxTable . ' WHERE (' . implode(' OR ', $where) . ')';
-
-        return max(0.0, (float) $conn->fetchOne($sql));
     }
 
     /**

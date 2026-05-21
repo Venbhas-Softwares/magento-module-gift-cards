@@ -6,13 +6,11 @@ namespace Venbhas\GiftCard\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\Data\InvoiceInterface;
-use Venbhas\GiftCard\Model\Email\GiftCardRedemptionReceiptSender;
 use Venbhas\GiftCard\Model\Email\GiftCardSender;
 use Venbhas\GiftCard\Model\GiftCardIssuer;
-use Venbhas\GiftCard\Model\GiftCardRedeemer;
 
 /**
- * Observer to issue gift cards and redeem applied gift cards when an invoice is paid.
+ * Observer to issue gift cards when an invoice is paid.
  */
 class GenerateGiftCardOnInvoicePay implements ObserverInterface
 {
@@ -27,40 +25,21 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
     private $sender;
 
     /**
-     * @var GiftCardRedeemer
-     */
-    private $redeemer;
-
-    /**
-     * @var GiftCardRedemptionReceiptSender
-     */
-    private $redemptionReceiptSender;
-
-    /**
-     * Initialize observer.
-     *
      * @param GiftCardIssuer $issuer Gift card issuer
      * @param GiftCardSender $sender Gift card email sender
-     * @param GiftCardRedeemer $redeemer Gift card redeemer
-     * @param GiftCardRedemptionReceiptSender $redemptionReceiptSender Redemption receipt sender
      */
     public function __construct(
         GiftCardIssuer $issuer,
-        GiftCardSender $sender,
-        GiftCardRedeemer $redeemer,
-        GiftCardRedemptionReceiptSender $redemptionReceiptSender
+        GiftCardSender $sender
     ) {
         $this->issuer = $issuer;
         $this->sender = $sender;
-        $this->redeemer = $redeemer;
-        $this->redemptionReceiptSender = $redemptionReceiptSender;
     }
 
     /**
-     * Execute observer.
+     * Generate and email gift cards when an invoice is paid.
      *
      * @param Observer $observer Observer
-     *
      * @return void
      */
     public function execute(Observer $observer): void
@@ -76,22 +55,15 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
             return;
         }
 
-        // Redeem applied gift cards (discount) on invoice payment (skipped if already redeemed at order placement).
-        $this->redeemer->redeemOnInvoicePay($order, $invoice);
-
-        // Email customer a summary of gift cards applied to this order (code, amount used, initial, balance).
-        $this->redemptionReceiptSender->sendForOrder($order);
-
         foreach ($invoice->getItems() as $invoiceItem) {
             $orderItem = $invoiceItem->getOrderItem();
             if (!$orderItem) {
                 continue;
             }
-            $qtyThisInvoice = (int)max(0, (float)$invoiceItem->getQty());
+            $qtyThisInvoice = (int) max(0, (float) $invoiceItem->getQty());
             if ($qtyThisInvoice < 1) {
                 continue;
             }
-            // Activate pending rows (or create legacy rows) for this invoice line only
             $codes = $this->issuer->issueForOrderItem($order, $orderItem, $qtyThisInvoice);
             foreach ($codes as $code) {
                 $this->sender->send($code);

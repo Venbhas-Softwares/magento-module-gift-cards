@@ -129,6 +129,7 @@ class GiftCardIssuer
         $recipientEmail = $this->readOption($options, 'recipient_email');
         $recipientName = $this->readOption($options, 'recipient_name');
         $senderName = $this->readOption($options, 'sender_name');
+        $senderEmail = $this->readOption($options, 'sender_email');
         $message = $this->readOption($options, 'message');
         $deliveryType = $this->readOption($options, 'delivery_type');
         $deliveryStreet = $this->readOption($options, 'delivery_street');
@@ -147,6 +148,7 @@ class GiftCardIssuer
                 (int) $item->getProductId() ?: null,
                 $orderId,
                 $senderName,
+                $senderEmail,
                 $recipientName,
                 $recipientEmail,
                 $message,
@@ -232,6 +234,7 @@ class GiftCardIssuer
      * @param int|null $productId Product ID
      * @param int|null $orderId Order ID
      * @param string|null $senderName Sender name
+     * @param string|null $senderEmail Sender email
      * @param string|null $recipientName Recipient name
      * @param string|null $recipientEmail Recipient email
      * @param string|null $message Message
@@ -253,6 +256,7 @@ class GiftCardIssuer
         ?int $productId,
         ?int $orderId,
         ?string $senderName,
+        ?string $senderEmail,
         ?string $recipientName,
         ?string $recipientEmail,
         ?string $message,
@@ -273,6 +277,7 @@ class GiftCardIssuer
                 'product_id' => $productId,
                 'order_id' => $orderId,
                 'sender_name' => $senderName,
+                'sender_email' => $senderEmail,
                 'recipient_name' => $recipientName,
                 'recipient_email' => $recipientEmail,
                 'message' => $message,

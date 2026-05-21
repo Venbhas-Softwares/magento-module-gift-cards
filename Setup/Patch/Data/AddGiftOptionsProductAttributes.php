@@ -80,7 +80,7 @@ class AddGiftOptionsProductAttributes implements DataPatchInterface
 
         $attributeSetId = $setup->getDefaultAttributeSetId($entity);
 
-        $setup->addAttributeGroup($entity, $attributeSetId, 'Gift Options', 110);
+        $setup->addAttributeGroup($entity, $attributeSetId, 'Gift Options', 14);
 
         $setup->addAttribute(
             $entity,
@@ -147,7 +147,7 @@ class AddGiftOptionsProductAttributes implements DataPatchInterface
                 'filterable' => false,
                 'comparable' => false,
                 'visible_on_front' => false,
-                'used_in_product_listing' => false,
+                'used_in_product_listing' => true,
                 'unique' => false,
                 'apply_to' => GiftCard::TYPE_CODE,
                 'group' => 'Gift Options',

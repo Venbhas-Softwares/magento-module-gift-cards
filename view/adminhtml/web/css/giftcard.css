@@ -10,3 +10,24 @@
     color: #d20000;
 }
 
+/**
+ * Gift Options Yes/No rows: keep toggle + "Use Config" inline without constraining attribute notes.
+ * (admin__field-x-small forces the whole field, including .admin__field-note, into a narrow column.)
+ */
+.venbhas-giftcard-toggle-group > .admin__field-control {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem 2rem;
+}
+
+.venbhas-giftcard-toggle-group > .admin__field-control > .admin__field {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.venbhas-giftcard-toggle-group > .admin__field-control > .admin__field .admin__field-note {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+}

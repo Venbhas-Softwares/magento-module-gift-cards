@@ -13,10 +13,17 @@
 
         <div class="field" style="margin-bottom: 10px;">
             <strong data-bind="i18n: 'Available Gift Amount:'"></strong>
-            <span data-bind="text: Number(walletBalance()).toFixed(2)"></span>
+            <span data-bind="text: getFormattedWalletBalance()"></span>
         </div>
 
-        <form class="form form-giftcard" id="giftcard-form" data-bind="submit: apply">
+        <!-- ko if: isApplied() -->
+        <div class="field" style="margin-bottom: 10px;">
+            <strong data-bind="i18n: 'Applied Gift Amount:'"></strong>
+            <span data-bind="text: getFormattedAppliedAmount()"></span>
+        </div>
+        <!-- /ko -->
+
+        <form class="form form-giftcard" id="giftcard-form">
             <div class="payment-option-inner">
                 <div class="field">
                     <label class="label" for="giftcard-amount">
@@ -28,15 +35,25 @@
                                id="giftcard-amount"
                                name="amount"
                                data-validate="{'required-entry':true}"
-                               data-bind="value: applyAmount, attr:{placeholder: $t('Enter amount')}">
+                               data-bind="value: applyAmount, attr:{placeholder: $t('Enter amount'), disabled: isApplied()}">
                     </div>
                 </div>
             </div>
             <div class="actions-toolbar">
                 <div class="primary">
-                    <button class="action action-apply" type="submit">
+                    <!-- ko ifnot: isApplied() -->
+                    <button class="action action-apply" type="button" data-bind="click: apply">
                         <span><!-- ko i18n: 'Apply'--><!-- /ko --></span>
                     </button>
+                    <!-- /ko -->
+                    <!-- ko if: showAddButton() -->
+                    <button type="button"
+                            class="action secondary"
+                            style="margin-left: 10px;"
+                            data-bind="click: openAddGiftcard">
+                        <span data-bind="i18n: 'Add a new gift card'"></span>
+                    </button>
+                    <!-- /ko -->
                 </div>
                 <!-- ko if: isApplied() -->
                 <div class="secondary" style="margin-left: 10px;">
@@ -47,14 +64,6 @@
                 <!-- /ko -->
             </div>
         </form>
-
-        <!-- ko if: showAddButton() -->
-        <div style="margin-top: 12px;">
-            <button type="button" class="action secondary" data-bind="click: openAddGiftcard">
-                <span data-bind="i18n: 'Add a new gift card'"></span>
-            </button>
-        </div>
-        <!-- /ko -->
 
         <!-- Hidden modal used for checkout add-giftcard -->
         <div id="venbhas-add-giftcard-modal-checkout" style="display:none">
@@ -71,4 +80,3 @@
     </div>
 </div>
 <!-- /ko -->
-

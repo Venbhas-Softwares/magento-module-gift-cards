@@ -80,19 +80,6 @@
                 <sorting>desc</sorting>
             </settings>
         </column>
-        <column name="giftcard_code">
-            <settings>
-                <filter>text</filter>
-                <label translate="true">Gift Card Code</label>
-            </settings>
-        </column>
-        <column name="transaction_type" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSentenceCase">
-            <settings>
-                <filter>text</filter>
-                <label translate="true"> Transaction Type</label>
-                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
-            </settings>
-        </column>
          <column name="description" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSentenceCase">
             <settings>
                 <filter>text</filter>
@@ -121,11 +108,10 @@
                 <label translate="true">Current Balance</label>
             </settings>
         </column>
-        <column name="increment_id" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminOrderLink">
+        <column name="customer_email">
             <settings>
                 <filter>text</filter>
-                <label translate="true">Order #</label>
-                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+                <label translate="true">Customer Email</label>
             </settings>
         </column>
         <column name="customer_name" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminCustomerLink">

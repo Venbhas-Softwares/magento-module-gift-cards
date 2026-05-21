@@ -93,18 +93,16 @@
                 <label translate="true">Amount</label>
             </settings>
         </column>
-        <column name="is_reedemed" component="Magento_Ui/js/grid/columns/select">
-            <settings>
-                <filter>select</filter>
-                <dataType>select</dataType>
-                <label translate="true">Redeemed</label>
-                <options class="Venbhas\GiftCard\Model\Source\GiftCardStatus"/>
-            </settings>
-        </column>
-        <column name="recipient_email">
+        <column name="purchased_by_email">
             <settings>
                 <filter>text</filter>
-                <label translate="true">Recipient Email</label>
+                <label translate="true">Purchased By Email</label>
+            </settings>
+        </column>
+        <column name="redeemed_email">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Redeemed Email</label>
             </settings>
         </column>
         <column name="increment_id" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminOrderLink">
@@ -114,11 +112,101 @@
                 <bodyTmpl>ui/grid/cells/html</bodyTmpl>
             </settings>
         </column>
+        <column name="sender_name">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Sender Name</label>
+            </settings>
+        </column>
+        <column name="sender_email">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Sender Email</label>
+            </settings>
+        </column>
+        <column name="recipient_name">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Recipient Name</label>
+            </settings>
+        </column>
+        <column name="recipient_email">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Recipient Email</label>
+            </settings>
+        </column>
+        <column name="message">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Message</label>
+            </settings>
+        </column>
+        <column name="delivery_type" class="Venbhas\GiftCard\Ui\Component\Listing\Column\AdminSentenceCase">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Delivery Type</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+            </settings>
+        </column>
+        <column name="delivery_street">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Delivery Street</label>
+            </settings>
+        </column>
+        <column name="delivery_city">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Delivery City</label>
+            </settings>
+        </column>
+        <column name="delivery_region">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Delivery Region</label>
+            </settings>
+        </column>
+        <column name="delivery_postcode">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Delivery Postcode</label>
+            </settings>
+        </column>
+        <column name="delivery_country">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Delivery Country</label>
+            </settings>
+        </column>
+        <column name="is_reedemed" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Redeemed</label>
+                <options class="Venbhas\GiftCard\Model\Source\GiftCardStatus"/>
+            </settings>
+        </column>
+        <column name="is_cancelled" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Cancelled</label>
+                <options class="Venbhas\GiftCard\Model\Source\GiftCardStatus"/>
+            </settings>
+        </column>
         <column name="created_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Venbhas_GiftCard/js/grid/columns/date-with-comma">
             <settings>
                 <filter>dateRange</filter>
                 <dataType>date</dataType>
                 <label translate="true">Created At</label>
+            </settings>
+        </column>
+        <column name="updated_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Venbhas_GiftCard/js/grid/columns/date-with-comma">
+            <settings>
+                <filter>dateRange</filter>
+                <dataType>date</dataType>
+                <label translate="true">Updated At</label>
             </settings>
         </column>
         <column name="store_id" class="Magento\Store\Ui\Component\Listing\Column\Store">

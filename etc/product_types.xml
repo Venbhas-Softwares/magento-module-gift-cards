@@ -8,6 +8,8 @@
           sortOrder="80"
           isQty="true"
           canUseQtyDecimals="false"
-          composite="false" />
+          composite="false">
+        <priceModel instance="Venbhas\GiftCard\Model\Product\Type\Price" />
+    </type>
 </config>
 

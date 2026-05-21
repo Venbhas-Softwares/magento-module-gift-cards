@@ -25,11 +25,24 @@
                 type="Venbhas\GiftCard\Plugin\Quote\Item\ToOrderItemPlugin"
                 sortOrder="100"/>
     </type>
-    <type name="Magento\Framework\Console\CommandListInterface">
-        <arguments>
-            <argument name="commands" xsi:type="array">
-                <item name="venbhas_giftcard_recalc_wallet" xsi:type="object">Venbhas\GiftCard\Console\Command\RecalculateWalletBalances</item>
-            </argument>
-        </arguments>
+    <type name="Magento\Sales\Block\Order\Totals">
+        <plugin name="venbhas_giftcard_sales_totals"
+                type="Venbhas\GiftCard\Plugin\Sales\Order\TotalsPlugin"
+                sortOrder="100"/>
+    </type>
+    <type name="Magento\Sales\Block\Order\Email\Shipment\Items">
+        <plugin name="venbhas_giftcard_shipment_email_totals"
+                type="Venbhas\GiftCard\Plugin\Sales\Order\Email\ShipmentItemsPlugin"
+                sortOrder="100"/>
+    </type>
+    <type name="Magento\Sales\Block\Order\PrintOrder\Shipment">
+        <plugin name="venbhas_giftcard_print_shipment_totals"
+                type="Venbhas\GiftCard\Plugin\Sales\Order\PrintShipmentPlugin"
+                sortOrder="100"/>
+    </type>
+    <type name="Magento\Shipping\Block\Adminhtml\View\Form">
+        <plugin name="venbhas_giftcard_admin_shipment_order_totals"
+                type="Venbhas\GiftCard\Plugin\Shipping\Adminhtml\View\FormPlugin"
+                sortOrder="100"/>
     </type>
 </config>

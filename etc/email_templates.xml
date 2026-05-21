@@ -7,11 +7,5 @@
               type="html"
               module="Venbhas_GiftCard"
               area="frontend"/>
-    <template id="venbhas_giftcard_redemption_receipt_template"
-              label="Venbhas Gift Card Redemption Receipt"
-              file="giftcard_redemption_receipt.html"
-              type="html"
-              module="Venbhas_GiftCard"
-              area="frontend"/>
 </config>
 

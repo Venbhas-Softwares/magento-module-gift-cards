@@ -12,6 +12,7 @@
       "product_id": true,
       "order_id": true,
       "sender_name": true,
+      "sender_email": true,
       "recipient_name": true,
       "recipient_email": true,
       "message": true,

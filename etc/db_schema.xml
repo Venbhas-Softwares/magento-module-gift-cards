@@ -14,6 +14,7 @@
         <column xsi:type="int" name="product_id" unsigned="true" nullable="true" comment="Source Product ID"/>
         <column xsi:type="int" name="order_id" unsigned="true" nullable="true" comment="Order ID"/>
         <column xsi:type="varchar" name="sender_name" length="255" nullable="true" comment="Sender Name"/>
+        <column xsi:type="varchar" name="sender_email" length="255" nullable="true" comment="Sender Email"/>
         <column xsi:type="varchar" name="recipient_name" length="255" nullable="true" comment="Recipient Name"/>
         <column xsi:type="varchar" name="recipient_email" length="255" nullable="true" comment="Recipient Email"/>
         <column xsi:type="text" name="message" nullable="true" comment="Message"/>
@@ -45,7 +46,7 @@
     <table name="venbhas_giftcard_transaction" resource="default" engine="innodb" comment="Venbhas Gift Card Transactions">
         <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
         <column xsi:type="int" name="giftcard_id" unsigned="true" nullable="true" comment="Gift Card ID"/>
-        <column xsi:type="varchar" name="transaction_type" length="32" nullable="false" comment="Transaction Type"/>
+        <column xsi:type="smallint" name="transaction_type" unsigned="true" nullable="false" default="0" comment="Transaction Type (0=credit, 1=debit)"/>
         <column xsi:type="text" name="description" nullable="true" comment="Description"/>
         <column xsi:type="decimal" name="amount" precision="12" scale="2" nullable="false" default="0.00" comment="Amount"/>
         <column xsi:type="decimal" name="previous_balance" precision="12" scale="2" nullable="false" default="0.00" comment="Previous Balance"/>

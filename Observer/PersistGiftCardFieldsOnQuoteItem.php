@@ -72,7 +72,7 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
         $data = (array)$this->_request->getParam('venbhas_giftcard', []);
 
         $mapped = [
-            'amount' => isset($data['amount']) ? (string)(float)$data['amount'] : '',
+           // 'amount' => isset($data['amount']) ? (string)(float)$data['amount'] : '',
             'recipient_name' => trim((string)($data['recipient_name'] ?? '')),
             'recipient_email' => trim((string)($data['recipient_email'] ?? '')),
             'sender_name' => trim((string)($data['sender_name'] ?? '')),
@@ -134,6 +134,11 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
     {
         return match ($k) {
             'amount' => (string) __('Amount'),
+            'sender_name' => (string) __('Sender Name'),
+            'sender_email' => (string) __('Sender Email'),
+            'recipient_name' => (string) __('Recipient Name'),
+            'recipient_email' => (string) __('Recipient Email'),
+            'message' => (string) __('Message'),
             'delivery_type' => (string) __('Gift card delivery'),
             'delivery_street' => (string) __('Delivery street'),
             'delivery_city' => (string) __('Delivery city'),

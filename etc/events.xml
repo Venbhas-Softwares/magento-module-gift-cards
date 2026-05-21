@@ -17,10 +17,6 @@
         <observer name="venbhas_giftcard_log_checkout_usage_on_quote_submit_success"
                   instance="Venbhas\GiftCard\Observer\LogGiftCardCheckoutUsageOnOrderPlace"/>
     </event>
-    <event name="sales_order_place_after">
-        <observer name="venbhas_giftcard_log_checkout_usage_on_order_place"
-                  instance="Venbhas\GiftCard\Observer\LogGiftCardCheckoutUsageOnOrderPlace"/>
-    </event>
     <event name="sales_order_invoice_pay">
         <observer name="venbhas_giftcard_generate_on_invoice" instance="Venbhas\GiftCard\Observer\GenerateGiftCardOnInvoicePay"/>
     </event>

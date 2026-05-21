@@ -48,7 +48,16 @@ try {
     <legend class="legend"><span><?= $escaper->escapeHtml(__('Gift Card')) ?></span></legend>
 
     <div class="field required">
-        <label class="label"><span><?= $escaper->escapeHtml(__('Amount')) ?></span></label>
+        <label class="label">
+            <span><?= $escaper->escapeHtml(__('Amount')) ?></span>
+            <?php
+            $minFormatted = $block->formatAmount($block->getMinAmount());
+            $maxFormatted = $block->formatAmount($block->getMaxAmount());
+            ?>
+        </label>
+        <span class="note">
+                <?= $escaper->escapeHtml(__('from: %1  to: %2', $minFormatted, $maxFormatted)) ?>
+            </span>
         <div class="control venbhas-giftcard-amounts">
             <input type="hidden"
                    name="venbhas_giftcard[amount]"
@@ -82,51 +91,6 @@ try {
             </div>
         </div>
     </div>
-
-    <?php if ($deliveryType === $deliveryBoth): ?>
-        <div class="field required">
-            <label class="label"><span><?= $escaper->escapeHtml(__('Delivery')) ?></span></label>
-            <div class="control">
-                <div class="field choice">
-                    <input type="radio"
-                           name="venbhas_giftcard[delivery_type]"
-                           id="venbhas_giftcard_delivery_virtual"
-                           value="<?= $escaper->escapeHtmlAttr($deliveryVirtual) ?>"
-                           checked="checked"/>
-                    <label for="venbhas_giftcard_delivery_virtual" class="label">
-                        <span><?= $escaper->escapeHtml(__('Email / virtual delivery')) ?></span>
-                    </label>
-                </div>
-                <div class="field choice">
-                    <input type="radio"
-                           name="venbhas_giftcard[delivery_type]"
-                           id="venbhas_giftcard_delivery_physical"
-                           value="<?= $escaper->escapeHtmlAttr($deliveryPhysical) ?>"/>
-                    <label for="venbhas_giftcard_delivery_physical" class="label">
-                        <span><?= $escaper->escapeHtml(__('Physical delivery (shipping address required)')) ?></span>
-                    </label>
-                </div>
-            </div>
-        </div>
-    <?php else: ?>
-        <input type="hidden"
-               name="venbhas_giftcard[delivery_type]"
-               value="<?= $escaper->escapeHtmlAttr($deliveryType) ?>"/>
-    <?php endif; ?>
-    <div class="venbhas-giftcard-delivery-notice"
-         style="margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e8;">
-        <div class="venbhas-gc-delivery-available" style="font-size:13px;color:#333;">
-            <?php if ($deliveryType === $deliveryVirtual): ?>
-                <?= $escaper->escapeHtml(__('Available delivery: Email / virtual only.')) ?>
-            <?php elseif ($deliveryType === $deliveryPhysical): ?>
-                <?= $escaper->escapeHtml(__('Available delivery: Physical shipping only.')) ?>
-            <?php else: ?>
-                <?= $escaper->escapeHtml(__('Available delivery: Email / virtual or physical')) ?>
-            <?php endif; ?>
-        </div>
-        
-    </div>
-
     <div class="field required">
         <label class="label" for="venbhas_giftcard_recipient_name">
             <span><?= $escaper->escapeHtml(__('Recipient Name')) ?></span>
@@ -166,6 +130,19 @@ try {
         </div>
     </div>
 
+    <div class="field required">
+        <label class="label" for="venbhas_giftcard_sender_email">
+            <span><?= $escaper->escapeHtml(__('Sender Email')) ?></span>
+        </label>
+        <div class="control">
+            <input type="email"
+                   name="venbhas_giftcard[sender_email]"
+                   id="venbhas_giftcard_sender_email"
+                   class="input-text"
+                   required />
+        </div>
+    </div>
+
     <?php if ($allowMessage): ?>
     <div class="field required">
         <label class="label" for="venbhas_giftcard_message">
@@ -182,7 +159,55 @@ try {
     <?php else: ?>
         <input type="hidden" name="venbhas_giftcard[message]" value="" />
     <?php endif; ?>
-
+    <?php if ($deliveryType === $deliveryBoth): ?>
+        <div class="field required">
+            <label class="label"><span><?= $escaper->escapeHtml(__('Delivery')) ?></span></label>
+            <div class="control">
+                <div class="field choice">
+                    <input type="radio"
+                           name="venbhas_giftcard[delivery_type]"
+                           id="venbhas_giftcard_delivery_virtual"
+                           value="<?= $escaper->escapeHtmlAttr($deliveryVirtual) ?>"
+                           checked="checked"/>
+                    <label for="venbhas_giftcard_delivery_virtual" class="label">
+                        <span><?= $escaper->escapeHtml(__('Email / virtual delivery')) ?></span>
+                    </label>
+                </div>
+                <div class="field choice">
+                    <input type="radio"
+                           name="venbhas_giftcard[delivery_type]"
+                           id="venbhas_giftcard_delivery_physical"
+                           value="<?= $escaper->escapeHtmlAttr($deliveryPhysical) ?>"/>
+                    <label for="venbhas_giftcard_delivery_physical" class="label">
+                        <span><?= $escaper->escapeHtml(__('Physical delivery (shipping address required)')) ?></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    <?php else:
+        $singleDeliveryId = $deliveryType === $deliveryPhysical
+            ? 'venbhas_giftcard_delivery_physical'
+            : 'venbhas_giftcard_delivery_virtual';
+        $singleDeliveryLabel = $deliveryType === $deliveryPhysical
+            ? __('Physical delivery (shipping address required)')
+            : __('Email / virtual delivery');
+        ?>
+        <div class="field">
+            <label class="label"><span><?= $escaper->escapeHtml(__('Delivery')) ?></span></label>
+            <div class="control">
+                <div class="field choice">
+                    <input type="radio"
+                           name="venbhas_giftcard[delivery_type]"
+                           id="<?= $escaper->escapeHtmlAttr($singleDeliveryId) ?>"
+                           value="<?= $escaper->escapeHtmlAttr($deliveryType) ?>"
+                           checked="checked"/>
+                    <label for="<?= $escaper->escapeHtmlAttr($singleDeliveryId) ?>" class="label">
+                        <span><?= $escaper->escapeHtml($singleDeliveryLabel) ?></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
     <?php if ($offerPhysicalAddress): ?>
     <fieldset class="fieldset venbhas-giftcard-delivery-address"
               id="venbhas_giftcard_address_wrap"

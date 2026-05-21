@@ -1,0 +1,58 @@
+<?php
+/**
+ * @var \Magento\Catalog\Pricing\Render\FinalPriceBox $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+
+use Venbhas\GiftCard\Model\Product\Type\GiftCard;
+
+/** @var \Magento\Framework\Pricing\Price\PriceInterface $priceModel */
+$priceModel = $block->getPriceType('regular_price');
+/** @var \Magento\Framework\Pricing\Price\PriceInterface $finalPriceModel */
+$finalPriceModel = $block->getPriceType('final_price');
+$idSuffix = $block->getIdSuffix() ? $block->getIdSuffix() : '';
+$schema = ($block->getZone() == 'item_view') ? true : false;
+$product = $block->getSaleableItem();
+$isGiftCard = $product && (string) $product->getTypeId() === GiftCard::TYPE_CODE;
+$fromLabel = ($isGiftCard && $block->isProductList()) ? (string) __('From') : '';
+
+$finalAmountArgs = [
+    'price_id' => $block->getPriceId('product-price-' . $idSuffix),
+    'price_type' => 'finalPrice',
+    'include_container' => true,
+    'schema' => $schema,
+];
+if ($fromLabel !== '') {
+    $finalAmountArgs['display_label'] = $fromLabel;
+}
+?>
+<?php if ($block->hasSpecialPrice()): ?>
+    <span class="special-price">
+        <?= /* @noEscape */ $block->renderAmount($finalPriceModel->getAmount(), array_merge($finalAmountArgs, [
+            'display_label' => $fromLabel !== '' ? $fromLabel : (string) __('Special Price'),
+        ])) ?>
+    </span>
+    <span class="old-price">
+        <?= /* @noEscape */ $block->renderAmount($priceModel->getAmount(), [
+            'display_label' => (string) __('Regular Price'),
+            'price_id' => $block->getPriceId('old-price-' . $idSuffix),
+            'price_type' => 'oldPrice',
+            'include_container' => true,
+            'skip_adjustments' => false,
+        ]) ?>
+    </span>
+<?php else: ?>
+    <?= /* @noEscape */ $block->renderAmount($finalPriceModel->getAmount(), $finalAmountArgs) ?>
+<?php endif; ?>
+
+<?php if ($block->showMinimalPrice()): ?>
+    <?php if ($block->getUseLinkForAsLowAs()): ?>
+        <a href="<?= $escaper->escapeUrl($block->getSaleableItem()->getProductUrl()) ?>" class="minimal-price-link">
+            <?= /* @noEscape */ $block->renderAmountMinimal() ?>
+        </a>
+    <?php else: ?>
+        <span class="minimal-price-link">
+            <?= /* @noEscape */ $block->renderAmountMinimal() ?>
+        </span>
+    <?php endif ?>
+<?php endif; ?>

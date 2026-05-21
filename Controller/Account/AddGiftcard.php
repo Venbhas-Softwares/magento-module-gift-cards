@@ -15,6 +15,8 @@ use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Store\Model\StoreManagerInterface;
 use Venbhas\GiftCard\Model\GiftCardCode;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
+use Venbhas\GiftCard\Model\GiftCardTransactionDescription;
+use Venbhas\GiftCard\Model\GiftCardWalletBalanceCalculator;
 
 class AddGiftcard extends AbstractAccount
 {
@@ -201,27 +203,12 @@ class AddGiftcard extends AbstractAccount
                     throw new LocalizedException(__('Gift card amount is invalid.'));
                 }
 
-                // Wallet balance before this credit (sum of credits - usage).
-                // Important: customer_email can be NULL; do not use `customer_email = NULL` in SQL.
-                $whereParts = ['customer_id = ?'];
-                $bind = [$customerId];
-                if ($customerEmail !== null && $customerEmail !== '') {
-                    $whereParts[] = 'customer_email = ?';
-                    $bind[] = $customerEmail;
-                }
-                $previousBalance = (float) $conn->fetchOne(
-                    'SELECT COALESCE(SUM(CASE '
-                    . 'WHEN transaction_type = ? THEN amount '
-                    . 'WHEN transaction_type IN(?, ?) THEN -amount '
-                    . 'WHEN transaction_type = ? THEN -amount '
-                    . 'ELSE 0 END), 0) '
-                    . 'FROM ' . $trxTable . ' WHERE (' . implode(' OR ', $whereParts) . ')',
-                    array_merge([
-                        GiftCardTransaction::ACTION_CREDIT,
-                        GiftCardTransaction::ACTION_DEBIT,
-                        GiftCardTransaction::ACTION_CHECKOUT_APPLY,
-                        GiftCardTransaction::ACTION_REDEEM,
-                    ], $bind)
+                $previousBalance = GiftCardWalletBalanceCalculator::fetchBalance(
+                    $conn,
+                    $trxTable,
+                    $this->resource->getTableName('sales_order'),
+                    $customerId,
+                    $customerEmail
                 );
 
                 $update = ['updated_at' => $now];
@@ -265,13 +252,13 @@ class AddGiftcard extends AbstractAccount
 
                 $conn->insert($trxTable, [
                     'giftcard_id' => $giftcardId,
-                    'transaction_type' => GiftCardTransaction::ACTION_CREDIT,
+                    'transaction_type' => GiftCardTransaction::TYPE_CREDIT,
                     'amount' => $creditAmount,
                     'previous_balance' => $previousBalance,
                     'current_balance' => $currentBalance,
                     'description' => $source === 'checkout'
-                        ? 'added a new giftcard at checkout'
-                        : 'added a new giftcard in my account',
+                        ? GiftCardTransactionDescription::addedInCheckout($code)
+                        : GiftCardTransactionDescription::addedInAccount($code),
                     'order_id' => null,
                     'customer_id' => $customerId,
                     'customer_email' => $customerEmail,

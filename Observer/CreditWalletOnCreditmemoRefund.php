@@ -8,6 +8,7 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\Data\CreditmemoInterface;
 use Magento\Sales\Api\Data\OrderInterface;
+use Venbhas\GiftCard\Model\GiftCardTransactionDescription;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard as GiftCardType;
 use Venbhas\GiftCard\Model\WalletLedger;
 
@@ -71,9 +72,10 @@ class CreditWalletOnCreditmemoRefund implements ObserverInterface
         }
 
         $creditmemoId = (int) $creditmemo->getEntityId();
-        $desc = $creditmemoId > 0
-            ? sprintf('order refunded (creditmemo %d)', $creditmemoId)
-            : 'order refunded';
+        $desc = GiftCardTransactionDescription::creditedForRefund(
+            (string) $order->getIncrementId(),
+            $creditmemoId > 0 ? $creditmemoId : null
+        );
 
         // Allow multiple partial refunds; ensure idempotency per creditmemo.
         if ($this->ledger->hasCreditForOrder($orderId, $desc)) {

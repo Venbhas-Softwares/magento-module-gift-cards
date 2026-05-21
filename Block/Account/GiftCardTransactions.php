@@ -16,8 +16,9 @@ use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Framework\Phrase;
-use Venbhas\GiftCard\Model\GiftCardTransaction;
 use Venbhas\GiftCard\Model\CustomerGiftCardTransactionsLoader;
+use Venbhas\GiftCard\Model\GiftCardTransaction;
+use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\Collection;
 
 /**
  * Customer account block for gift card transactions history.
@@ -27,6 +28,11 @@ use Venbhas\GiftCard\Model\CustomerGiftCardTransactionsLoader;
  */
 class GiftCardTransactions extends Template
 {
+    private const DEFAULT_PAGE_SIZE = 10;
+
+    /** @var array<int, int> */
+    private const PAGE_LIMITS = [10 => 10, 20 => 20, 50 => 50];
+
     /**
      * Customer session model.
      *
@@ -52,6 +58,11 @@ class GiftCardTransactions extends Template
      * @var FormKey
      */
     private FormKey $formKey;
+
+    /**
+     * @var Collection|null
+     */
+    private ?Collection $transactionsCollection = null;
 
     /**
      * Initialize block.
@@ -80,42 +91,290 @@ class GiftCardTransactions extends Template
     }
 
     /**
-     * Get gift card transactions for the current customer.
+     * Get pager HTML for the transactions table.
+     *
+     * @return string
+     */
+    public function getPagerHtml(): string
+    {
+        if ($this->getTransactionsCollection()->getSize() <= 0) {
+            return '';
+        }
+
+        return (string) $this->getLayout()
+            ->createBlock(Template::class)
+            ->setTemplate('Venbhas_GiftCard::account/transactions-pager.phtml')
+            ->setData('account_block', $this)
+            ->toHtml();
+    }
+
+    /**
+     * Get page size for the transactions grid.
+     *
+     * @return int
+     */
+    public function getPageSize(): int
+    {
+        return $this->resolvePageLimit();
+    }
+
+    /**
+     * Get allowed page size options for the transactions pager.
+     *
+     * @return int[]
+     */
+    public function getAvailablePageLimits(): array
+    {
+        return array_values(self::PAGE_LIMITS);
+    }
+
+    /**
+     * Whether multiple page-size options are available.
+     *
+     * @return bool
+     */
+    public function showPagerLimitOptions(): bool
+    {
+        return count(self::PAGE_LIMITS) > 1;
+    }
+
+    /**
+     * First item number on the current page.
+     *
+     * @return int
+     */
+    public function getPagerFirstNum(): int
+    {
+        $collection = $this->getTransactionsCollection();
+
+        return (int) ($collection->getPageSize() * ($collection->getCurPage() - 1) + 1);
+    }
+
+    /**
+     * Last item number on the current page.
+     *
+     * @return int
+     */
+    public function getPagerLastNum(): int
+    {
+        $collection = $this->getTransactionsCollection();
+
+        return (int) ($collection->getPageSize() * ($collection->getCurPage() - 1) + $collection->count());
+    }
+
+    /**
+     * Total number of transactions.
+     *
+     * @return int
+     */
+    public function getPagerTotalNum(): int
+    {
+        return (int) $this->getTransactionsCollection()->getSize();
+    }
+
+    /**
+     * Last page number.
+     *
+     * @return int
+     */
+    public function getPagerLastPageNum(): int
+    {
+        return (int) $this->getTransactionsCollection()->getLastPageNumber();
+    }
+
+    /**
+     * Current page number.
+     *
+     * @return int
+     */
+    public function getPagerCurrentPage(): int
+    {
+        return (int) $this->getTransactionsCollection()->getCurPage();
+    }
+
+    /**
+     * Page numbers to display in the pager frame.
+     *
+     * @return int[]
+     */
+    public function getPagerPages(): array
+    {
+        $lastPage = $this->getPagerLastPageNum();
+        if ($lastPage <= 1) {
+            return [1];
+        }
+
+        $current = $this->getPagerCurrentPage();
+        $frame = 5;
+        $half = (int) floor($frame / 2);
+        $start = max(1, min($current - $half, $lastPage - $frame + 1));
+        $end = min($lastPage, $start + $frame - 1);
+        $start = max(1, $end - $frame + 1);
+
+        return range($start, $end);
+    }
+
+    /**
+     * Whether the current page is the first page.
+     *
+     * @return bool
+     */
+    public function isPagerFirstPage(): bool
+    {
+        return $this->getPagerCurrentPage() <= 1;
+    }
+
+    /**
+     * Whether the current page is the last page.
+     *
+     * @return bool
+     */
+    public function isPagerLastPage(): bool
+    {
+        return $this->getPagerCurrentPage() >= $this->getPagerLastPageNum();
+    }
+
+    /**
+     * URL for a specific pager page.
+     *
+     * @param int $page
+     * @return string
+     */
+    public function getPagerPageUrl(int $page): string
+    {
+        return $this->buildPagerUrl([
+            'p' => $page > 1 ? $page : null,
+        ]);
+    }
+
+    /**
+     * URL for the previous pager page.
+     *
+     * @return string
+     */
+    public function getPagerPreviousPageUrl(): string
+    {
+        return $this->getPagerPageUrl(max(1, $this->getPagerCurrentPage() - 1));
+    }
+
+    /**
+     * URL for the next pager page.
+     *
+     * @return string
+     */
+    public function getPagerNextPageUrl(): string
+    {
+        return $this->getPagerPageUrl(
+            min($this->getPagerLastPageNum(), $this->getPagerCurrentPage() + 1)
+        );
+    }
+
+    /**
+     * URL for changing the page size limit.
+     *
+     * @param int $limit
+     * @return string
+     */
+    public function getPagerLimitUrl(int $limit): string
+    {
+        $params = ['limit' => $limit];
+        $availablePages = (int) ceil($this->getPagerTotalNum() / max(1, $limit));
+        $currentPage = $this->getPagerCurrentPage();
+        if ($currentPage > 1 && $availablePages > 0 && $currentPage > $availablePages) {
+            $params['p'] = $availablePages > 1 ? $availablePages : null;
+        }
+
+        return $this->buildPagerUrl($params);
+    }
+
+    /**
+     * Whether the given limit is the active page size.
+     *
+     * @param int $limit
+     * @return bool
+     */
+    public function isPagerLimitCurrent(int $limit): bool
+    {
+        return $limit === $this->resolvePageLimit();
+    }
+
+    /**
+     * Resolve the active page size from request or default.
+     *
+     * @return int
+     */
+    private function resolvePageLimit(): int
+    {
+        $default = max(1, (int) ($this->getData('page_size') ?: self::DEFAULT_PAGE_SIZE));
+        $limit = (int) $this->getRequest()->getParam('limit', $default);
+
+        return array_key_exists($limit, self::PAGE_LIMITS) ? $limit : $default;
+    }
+
+    /**
+     * Resolve the current page number, capped at last page.
+     *
+     * @param int $lastPage
+     * @return int
+     */
+    private function resolveCurrentPage(int $lastPage): int
+    {
+        $page = max(1, (int) $this->getRequest()->getParam('p', 1));
+
+        return $lastPage > 0 ? min($page, $lastPage) : $page;
+    }
+
+    /**
+     * Build a pager URL with the given query parameters.
+     *
+     * @param array $params Query parameters
+     * @return string
+     */
+    private function buildPagerUrl(array $params): string
+    {
+        $query = array_filter(
+            $params,
+            static fn ($value): bool => $value !== null && $value !== ''
+        );
+
+        return $this->getUrl('*/*/*', ['_current' => true, '_use_rewrite' => true, '_query' => $query]);
+    }
+
+    /**
+     * Get paginated transaction collection for the current customer.
+     *
+     * @return Collection
+     */
+    public function getTransactionsCollection(): Collection
+    {
+        if ($this->transactionsCollection !== null) {
+            return $this->transactionsCollection;
+        }
+
+        $cid = (int) $this->_customerSession->getCustomerId();
+        $email = $this->resolveCustomerEmail();
+
+        $limit = $this->resolvePageLimit();
+        $this->transactionsCollection = $this->_transactionsLoader->createCollection(
+            $cid,
+            $email !== '' ? $email : null,
+            $limit
+        );
+
+        $lastPage = max(1, (int) $this->transactionsCollection->getLastPageNumber());
+        $this->transactionsCollection->setCurPage($this->resolveCurrentPage($lastPage));
+
+        return $this->transactionsCollection;
+    }
+
+    /**
+     * Get gift card transactions for the current page.
      *
      * @return GiftCardTransaction[]
      */
     public function getTransactions(): array
     {
-        $cid = (int) $this->_customerSession->getCustomerId();
-        if ($cid <= 0) {
-            return [];
-        }
-
-        $email = '';
-        try {
-            $customerData = method_exists($this->_customerSession, 'getCustomerData')
-                ? $this->_customerSession->getCustomerData()
-                : null;
-            if ($customerData && $customerData->getEmail()) {
-                $email = trim((string) $customerData->getEmail());
-            }
-            if ($email === '') {
-                $customer = $this->_customerSession->getCustomer();
-                if ($customer && $customer->getEmail()) {
-                    $email = trim((string) $customer->getEmail());
-                }
-            }
-        } catch (\Exception $e) {
-            $email = '';
-        }
-
-        $collection = $this->_transactionsLoader->createCollection(
-            $cid,
-            $email !== '' ? $email : null,
-            100
-        );
-
-        return $collection->getItems();
+        return $this->getTransactionsCollection()->getItems();
     }
 
     /**
@@ -128,25 +387,32 @@ class GiftCardTransactions extends Template
             return 0.0;
         }
 
-        $email = '';
+        $email = $this->resolveCustomerEmail();
+
+        return $this->_transactionsLoader->getWalletBalance($cid, $email !== '' ? $email : null);
+    }
+
+    /**
+     * Resolve logged-in customer email for ledger lookups.
+     */
+    private function resolveCustomerEmail(): string
+    {
         try {
             $customerData = method_exists($this->_customerSession, 'getCustomerData')
                 ? $this->_customerSession->getCustomerData()
                 : null;
             if ($customerData && $customerData->getEmail()) {
-                $email = trim((string) $customerData->getEmail());
+                return trim((string) $customerData->getEmail());
             }
-            if ($email === '') {
-                $customer = $this->_customerSession->getCustomer();
-                if ($customer && $customer->getEmail()) {
-                    $email = trim((string) $customer->getEmail());
-                }
+            $customer = $this->_customerSession->getCustomer();
+            if ($customer && $customer->getEmail()) {
+                return trim((string) $customer->getEmail());
             }
         } catch (\Throwable $e) {
-            $email = '';
+            return '';
         }
 
-        return $this->_transactionsLoader->getWalletBalance($cid, $email !== '' ? $email : null);
+        return '';
     }
 
     /**
@@ -158,19 +424,15 @@ class GiftCardTransactions extends Template
      */
     public function formatSignedAmount(GiftCardTransaction $trx): string
     {
-        $type = (string) $trx->getData('transaction_type');
         $amount = (float) $trx->getData('amount');
         if ($amount <= 0.0001) {
             return $this->formatAmount(0.0, null);
         }
 
-        $sign = '+';
-        if ($type === GiftCardTransaction::ACTION_DEBIT
-            || $type === GiftCardTransaction::ACTION_CHECKOUT_APPLY
-            || $type === GiftCardTransaction::ACTION_REDEEM
-        ) {
-            $sign = '-';
-        }
+        $sign = GiftCardTransaction::isDebit(
+            $trx->getData('transaction_type'),
+            (string) $trx->getData('description')
+        ) ? '-' : '+';
 
         return $sign . $this->formatAmount($amount, null);
     }
@@ -184,17 +446,21 @@ class GiftCardTransactions extends Template
      */
     public function getActionLabel(GiftCardTransaction $trx): Phrase
     {
-        $type = (string) $trx->getData('transaction_type');
-        if ($type === GiftCardTransaction::ACTION_DEBIT) {
-            return __('Debited at checkout');
+        $description = (string) $trx->getData('description');
+
+        if (GiftCardTransaction::isDebit($trx->getData('transaction_type'), $description)) {
+            if (str_starts_with(mb_strtolower($description), 'debited for')) {
+                return __('Debited at checkout');
+            }
+
+            return __('Debit');
         }
-        if ($type === GiftCardTransaction::ACTION_CHECKOUT_APPLY) {
-            return __('Applied at checkout');
-        }
-        if ($type === GiftCardTransaction::ACTION_REDEEM) {
-            return __('Redeemed');
-        }
-        if ($type === GiftCardTransaction::ACTION_CREDIT) {
+
+        if (GiftCardTransaction::isCredit($trx->getData('transaction_type'), $description)) {
+            if (str_contains($description, 'Added a new giftcard')) {
+                return __('Redeemed');
+            }
+
             return __('Credit');
         }
 

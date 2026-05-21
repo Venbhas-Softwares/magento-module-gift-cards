@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Model;
 
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Sales\Api\Data\OrderInterface;
 use Psr\Log\LoggerInterface;
 
@@ -19,11 +18,6 @@ class GiftCardCheckoutTransactionLogger
     private $resource;
 
     /**
-     * @var Json
-     */
-    private $json;
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -34,21 +28,16 @@ class GiftCardCheckoutTransactionLogger
     private $salesOrderEntityIdResolver;
 
     /**
-     * Initialize logger.
-     *
      * @param ResourceConnection $resource Resource connection
-     * @param Json $json JSON serializer
      * @param LoggerInterface $logger Logger
      * @param SalesOrderEntityIdResolver $salesOrderEntityIdResolver Order ID resolver
      */
     public function __construct(
         ResourceConnection $resource,
-        Json $json,
         LoggerInterface $logger,
         SalesOrderEntityIdResolver $salesOrderEntityIdResolver
     ) {
         $this->resource = $resource;
-        $this->json = $json;
         $this->logger = $logger;
         $this->salesOrderEntityIdResolver = $salesOrderEntityIdResolver;
     }
@@ -81,8 +70,8 @@ class GiftCardCheckoutTransactionLogger
         $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
 
         $existing = (int)$conn->fetchOne(
-            'SELECT COUNT(*) FROM ' . $trxTable . ' WHERE order_id = ? AND transaction_type IN(?, ?)',
-            [$orderId, GiftCardTransaction::ACTION_DEBIT, GiftCardTransaction::ACTION_CHECKOUT_APPLY]
+            'SELECT COUNT(*) FROM ' . $trxTable . ' WHERE order_id = ? AND transaction_type = ?',
+            [$orderId, GiftCardTransaction::TYPE_DEBIT]
         );
         if ($existing > 0) {
             return;
@@ -100,11 +89,13 @@ class GiftCardCheckoutTransactionLogger
 
             $conn->insert($trxTable, [
                 'giftcard_id' => null,
-                'transaction_type' => GiftCardTransaction::ACTION_DEBIT,
+                'transaction_type' => GiftCardTransaction::TYPE_DEBIT,
                 'amount' => $usedAmount,
                 'previous_balance' => $previousBalance,
                 'current_balance' => $currentBalance,
-                'description' => 'debited gift amount at checkout',
+                'description' => GiftCardTransactionDescription::debitedForOrder(
+                    (string) $order->getIncrementId()
+                ),
                 'order_id' => $orderId,
                 'customer_id' => $orderCustomerId,
                 'customer_email' => $customerEmail,
@@ -136,29 +127,17 @@ class GiftCardCheckoutTransactionLogger
         ?int $customerId,
         ?string $customerEmail
     ): float {
-        $where = [];
         $cid = $customerId ? (int) $customerId : 0;
-        if ($cid > 0) {
-            $where[] = 'customer_id = ' . $cid;
-        }
-        $email = $customerEmail !== null ? strtolower(trim($customerEmail)) : '';
-        if ($email !== '') {
-            $where[] = 'customer_email = ' . $conn->quote($email);
-        }
-        if (!$where) {
+        if ($cid <= 0) {
             return 0.0;
         }
 
-        $sql =
-            // phpcs:ignore Magento2.SQL.RawQuery.RawQuery
-            'SELECT COALESCE(SUM(CASE '
-            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CREDIT) . ' THEN amount '
-            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_DEBIT) . ' THEN -amount '
-            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CHECKOUT_APPLY) . ' THEN -amount '
-            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_REDEEM) . ' THEN -amount '
-            . 'ELSE 0 END), 0) '
-            . 'FROM ' . $trxTable . ' WHERE (' . implode(' OR ', $where) . ')';
-
-        return (float) $conn->fetchOne($sql);
+        return GiftCardWalletBalanceCalculator::fetchBalance(
+            $conn,
+            $trxTable,
+            $this->resource->getTableName('sales_order'),
+            $cid,
+            $customerEmail
+        );
     }
 }

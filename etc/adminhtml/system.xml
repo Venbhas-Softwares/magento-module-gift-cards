@@ -22,12 +22,7 @@
                 
             </group>
             <group id="amount" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Amount (product page settings)</label>
-                <field id="allow_custom_message" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Allow Custom Message (default)</label>
-                    <comment>Default when a gift card product uses “Use configuration defaults” for Custom Message Allowed.</comment>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>          
+                <label>Amount (product page settings)</label>          
                 <field id="allow_custom_amount" translate="label comment" type="select" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Allow Custom Amount</label>
                     <comment>When Yes, customers can use “Other amount” (within min/max). When No, only preset amounts can be selected.</comment>
@@ -43,7 +38,12 @@
                 <field id="max" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Maximum Amount</label>
                 </field>
-               <field id="gift_delivery_type" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="allow_custom_message" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allow Custom Message (default)</label>
+                    <comment>Default when a gift card product uses “Use configuration defaults” for Custom Message Allowed.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+               <field id="gift_delivery_type" translate="label comment" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Allowed delivery types</label>
                     <comment>Virtual: email delivery only (no shipping). Physical: treat as shippable. Both: customer chooses on the product page.</comment>
                     <source_model>Venbhas\GiftCard\Model\Config\Source\GiftDeliveryType</source_model>

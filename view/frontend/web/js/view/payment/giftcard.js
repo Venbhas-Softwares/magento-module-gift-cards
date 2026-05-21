@@ -7,18 +7,42 @@ define([
     'Magento_Checkout/js/model/quote',
     'Magento_SalesRule/js/model/payment/discount-messages',
     'Magento_Customer/js/customer-data',
+    'Magento_Customer/js/model/customer',
     'Magento_Ui/js/modal/modal',
     'Magento_Checkout/js/action/get-payment-information',
     'Magento_Checkout/js/model/totals',
-    'Magento_Checkout/js/model/full-screen-loader'
-], function ($, ko, Component, applyAction, removeAction, quote, messageContainer, customerData, modal, getPaymentInformationAction, totals, fullScreenLoader) {
+    'Magento_Checkout/js/model/full-screen-loader',
+    'Magento_Catalog/js/price-utils'
+], function ($, ko, Component, applyAction, removeAction, quote, messageContainer, customerData, customerModel, modal, getPaymentInformationAction, totals, fullScreenLoader, priceUtils) {
     'use strict';
 
-    function readAppliedAmount(totals) {
-        if (!totals || typeof totals !== 'object') {
+    function readAppliedAmount(totalsData) {
+        var i, segment;
+
+        if (!totalsData || typeof totalsData !== 'object') {
             return 0;
         }
-        return Number(totals.base_venbhas_giftcard_amount || totals.venbhas_giftcard_amount || 0) || 0;
+
+        if (totalsData.total_segments && totalsData.total_segments.length) {
+            for (i = 0; i < totalsData.total_segments.length; i++) {
+                segment = totalsData.total_segments[i];
+                if (segment && segment.code === 'venbhas_giftcard') {
+                    return Math.abs(parseFloat(segment.value) || 0);
+                }
+            }
+        }
+
+        return Math.abs(
+            Number(totalsData.base_venbhas_giftcard_amount || totalsData.venbhas_giftcard_amount || 0) || 0
+        );
+    }
+
+    function readOrderTotalDue(totalsData) {
+        if (!totalsData || typeof totalsData !== 'object') {
+            return 0;
+        }
+
+        return (parseFloat(totalsData.grand_total) || 0) + readAppliedAmount(totalsData);
     }
 
     function getFormKey() {
@@ -62,32 +86,110 @@ define([
             }, this);
 
             this._syncLoginState();
+            this._bindLoginStateUpdates();
             this._loadWallet();
 
             return this;
         },
 
-        _syncFromTotals: function (totals) {
-            var applied = readAppliedAmount(totals);
+        /**
+         * Whether the shopper can add gift cards (logged-in customers only).
+         *
+         * @returns {boolean}
+         */
+        isCustomerLoggedIn: function () {
+            if (customerModel.isLoggedIn && customerModel.isLoggedIn()) {
+                return true;
+            }
+
+            if (window.checkoutConfig && window.checkoutConfig.isCustomerLoggedIn) {
+                return true;
+            }
+
+            if (typeof window.isCustomerLoggedIn !== 'undefined' && window.isCustomerLoggedIn) {
+                return true;
+            }
+
+            var quoteData = window.checkoutConfig && window.checkoutConfig.quoteData;
+
+            if (quoteData && parseInt(quoteData.customer_id, 10) > 0) {
+                return true;
+            }
+
+            var section = customerData.get('customer')();
+
+            return !!(section && (section.firstname || section.fullname || section.email));
+        },
+
+        _bindLoginStateUpdates: function () {
+            if (customerModel.isLoggedIn && typeof customerModel.isLoggedIn.subscribe === 'function') {
+                customerModel.isLoggedIn.subscribe(this._syncLoginState, this);
+            }
+
+            customerData.get('customer').subscribe(this._syncLoginState, this);
+
+            customerData.getInitCustomerData().done(function () {
+                this._syncLoginState();
+            }.bind(this));
+        },
+
+        _syncFromTotals: function (totalsData) {
+            var applied = readAppliedAmount(totalsData);
+
             this.appliedAmount(applied);
             this.isApplied(applied > 0.0001);
+            if (applied > 0.0001) {
+                this.applyAmount(String(applied));
+            } else {
+                this.applyAmount('');
+            }
+        },
+
+        getFormattedWalletBalance: function () {
+            return priceUtils.formatPriceLocale(this.walletBalance(), quote.getPriceFormat());
+        },
+
+        getFormattedAppliedAmount: function () {
+            return priceUtils.formatPriceLocale(this.appliedAmount(), quote.getPriceFormat());
+        },
+
+        getMaxApplicableAmount: function () {
+            var totalsData = quote.getTotals()();
+
+            return readOrderTotalDue(totalsData);
         },
 
         apply: function () {
             var amt = Number((this.applyAmount() || '').toString().replace(/[^0-9.]/g, '')) || 0;
+
             if (!amt || amt <= 0.0001) {
                 messageContainer.addErrorMessage({message: $.mage.__('Please enter a gift amount.')});
-                return;
+                return false;
             }
+
             var wallet = Number(this.walletBalance()) || 0;
+
             if (amt > wallet + 0.009) {
                 messageContainer.addErrorMessage({
                     message: $.mage.__('The amount cannot exceed your available gift balance (%1).')
-                        .replace('%1', wallet.toFixed(2))
+                        .replace('%1', priceUtils.formatPriceLocale(wallet, quote.getPriceFormat()))
                 });
-                return;
+                return false;
             }
+
+            var orderDue = this.getMaxApplicableAmount();
+
+            if (orderDue > 0.0001 && amt > orderDue + 0.009) {
+                messageContainer.addErrorMessage({
+                    message: $.mage.__('The amount cannot exceed the order total (%1).')
+                        .replace('%1', priceUtils.formatPriceLocale(orderDue, quote.getPriceFormat()))
+                });
+                return false;
+            }
+
             applyAction(amt);
+
+            return false;
         },
 
         remove: function () {
@@ -96,9 +198,7 @@ define([
         },
 
         _syncLoginState: function () {
-            var customer = customerData.get('customer');
-            var c = customer && customer();
-            this.showAddButton(!!(c && c.firstname));
+            this.showAddButton(this.isCustomerLoggedIn());
         },
 
         /**

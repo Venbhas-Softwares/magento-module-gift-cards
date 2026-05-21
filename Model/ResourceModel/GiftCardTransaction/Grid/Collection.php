@@ -68,6 +68,10 @@ class Collection extends SearchResult
         $this->addFilterToMap('current_balance', 'main_table.current_balance');
         $this->addFilterToMap('created_at', 'main_table.created_at');
         $this->addFilterToMap('store_id', 'main_table.store_id');
+        $this->addFilterToMap('giftcard_id', 'main_table.giftcard_id');
+        $this->addFilterToMap('transaction_type', 'main_table.transaction_type');
+        $this->addFilterToMap('description', 'main_table.description');
+        $this->addFilterToMap('order_id', 'main_table.order_id');
         $this->addFilterToMap('customer_id', 'main_table.customer_id');
         $this->addFilterToMap('customer_email', 'main_table.customer_email');
 

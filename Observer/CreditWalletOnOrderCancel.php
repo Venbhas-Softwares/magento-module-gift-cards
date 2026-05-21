@@ -6,6 +6,7 @@ namespace Venbhas\GiftCard\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\Data\OrderInterface;
+use Venbhas\GiftCard\Model\GiftCardTransactionDescription;
 use Venbhas\GiftCard\Model\WalletLedger;
 
 class CreditWalletOnOrderCancel implements ObserverInterface
@@ -48,7 +49,9 @@ class CreditWalletOnOrderCancel implements ObserverInterface
         }
 
         $orderId = (int) $order->getEntityId();
-        $desc = 'order canceled';
+        $desc = GiftCardTransactionDescription::creditedForCancelledOrder(
+            (string) $order->getIncrementId()
+        );
         if ($this->ledger->hasCreditForOrder($orderId, $desc)) {
             return;
         }

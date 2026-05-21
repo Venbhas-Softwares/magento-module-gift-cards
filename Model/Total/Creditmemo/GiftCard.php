@@ -7,6 +7,7 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Sales\Model\Order\Creditmemo;
 use Magento\Sales\Model\Order\Creditmemo\Total\AbstractTotal;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
+use Venbhas\GiftCard\Model\GiftCardTransactionDescription;
 
 /**
  * Creditmemo total collector: treat wallet gift amount like a discount (not refundable to payment).
@@ -62,8 +63,15 @@ class GiftCard extends AbstractTotal
         $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
         $creditedBack = (float) $conn->fetchOne(
             'SELECT COALESCE(SUM(amount),0) FROM ' . $trxTable
-            . ' WHERE order_id = ? AND transaction_type = ? AND (description = ? OR description LIKE ?)',
-            [$orderId, GiftCardTransaction::ACTION_CREDIT, 'order canceled', 'order refunded%']
+            . ' WHERE order_id = ? AND transaction_type = ? AND ('
+            . 'description = ? OR description LIKE ? OR description LIKE ?)',
+            [
+                $orderId,
+                GiftCardTransaction::TYPE_CREDIT,
+                GiftCardTransactionDescription::LEGACY_CANCEL,
+                GiftCardTransactionDescription::LEGACY_REFUND_PREFIX . '%',
+                GiftCardTransactionDescription::creditBackLikePattern(),
+            ]
         );
 
         $remaining = max(0.0, $orderGift - $creditedBack);

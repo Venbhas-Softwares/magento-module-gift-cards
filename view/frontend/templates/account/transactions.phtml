@@ -1,7 +1,9 @@
 <?php
 /** @var \Venbhas\GiftCard\Block\Account\GiftCardTransactions $block */
+$collection = $block->getTransactionsCollection();
 $rows = $block->getTransactions();
 $walletBalance = (float) $block->getWalletBalance();
+$hasTransactions = (int) $collection->getSize() > 0;
 ?>
 <div class="block block-giftcard-transactions">
     <style>
@@ -38,6 +40,86 @@ $walletBalance = (float) $block->getWalletBalance();
         .block-giftcard-transactions td.col-giftcard-code,
         .block-giftcard-transactions td.col-amount { white-space: nowrap; }
         .block-giftcard-transactions td.col-giftcard-code { overflow-wrap: normal; word-break: keep-all; }
+
+        .block-giftcard-transactions th.col-previous-balance,
+        .block-giftcard-transactions th.col-current-balance,
+        .block-giftcard-transactions td.col-previous-balance,
+        .block-giftcard-transactions td.col-current-balance {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .block-giftcard-transactions .giftcard-transactions-toolbar {
+            margin: 1rem 0;
+            clear: both;
+        }
+        .block-giftcard-transactions .venbhas-gc-pager {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-areas:
+                "amount amount"
+                "pages limiter";
+            align-items: center;
+            gap: .75rem 1rem;
+        }
+        @media (min-width: 640px) {
+            .block-giftcard-transactions .venbhas-gc-pager {
+                grid-template-columns: 1fr auto auto;
+                grid-template-areas: "amount pages limiter";
+            }
+        }
+        .block-giftcard-transactions .venbhas-gc-pager__amount {
+            grid-area: amount;
+            margin: 0;
+        }
+        .block-giftcard-transactions .venbhas-gc-pager__pages {
+            grid-area: pages;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .35rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .block-giftcard-transactions .venbhas-gc-pager__link,
+        .block-giftcard-transactions .venbhas-gc-pager__current {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.25rem;
+            min-height: 2.25rem;
+            padding: .25rem .55rem;
+            border: 1px solid rgba(0, 0, 0, .15);
+            border-radius: .25rem;
+            text-decoration: none;
+            line-height: 1.2;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        .block-giftcard-transactions .venbhas-gc-pager__link {
+            background: #fff;
+            color: inherit;
+        }
+        .block-giftcard-transactions .venbhas-gc-pager__link:hover {
+            border-color: rgba(0, 0, 0, .35);
+            text-decoration: none;
+        }
+        .block-giftcard-transactions .venbhas-gc-pager__current {
+            font-weight: 700;
+            background: rgba(0, 0, 0, .06);
+        }
+        .block-giftcard-transactions .venbhas-gc-pager__limiter {
+            grid-area: limiter;
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            white-space: nowrap;
+        }
+        .block-giftcard-transactions .venbhas-gc-pager__limiter-select {
+            min-height: 2.25rem;
+            padding: .2rem .4rem;
+        }
     </style>
     <div class="block-title header-row">
         <strong><?= $escaper->escapeHtml(__('Gift card usage history')) ?></strong>
@@ -80,7 +162,7 @@ $walletBalance = (float) $block->getWalletBalance();
         }
         </script>
 
-        <?php if (!$rows): ?>
+        <?php if (!$hasTransactions): ?>
             <p><?= $escaper->escapeHtml(__('You have no gift card transactions yet.')) ?></p>
         <?php else: ?>
             <div class="table-wrapper">
@@ -89,31 +171,21 @@ $walletBalance = (float) $block->getWalletBalance();
                     <thead>
                     <tr>
                         <th scope="col"><?= $escaper->escapeHtml(__('Date')) ?></th>
-                        <th scope="col"><?= $escaper->escapeHtml(__('Transaction Type')) ?></th>
                         <th scope="col"><?= $escaper->escapeHtml(__('Description')) ?></th>
-                        <th scope="col"><?= $escaper->escapeHtml(__('Order')) ?></th>
-                        <th scope="col"><?= $escaper->escapeHtml(__('Gift card code')) ?></th>
                         <th scope="col"><?= $escaper->escapeHtml(__('Amount')) ?></th>
-                        <th scope="col"><?= $escaper->escapeHtml(__('Previous Balance')) ?></th>
-                        <th scope="col"><?= $escaper->escapeHtml(__('Current Balance')) ?></th>
+                        <th scope="col" class="col-previous-balance">
+                            <?= $escaper->escapeHtml(__('Previous Balance')) ?>
+                        </th>
+                        <th scope="col" class="col-current-balance">
+                            <?= $escaper->escapeHtml(__('Current Balance')) ?>
+                        </th>
                         
                     </tr>
                     </thead>
                     <tbody>
                     <?php foreach ($rows as $trx): ?>
                         <?php
-                        $orderId = (int) $trx->getData('order_id');
-                        $incrementId = (string) $trx->getData('increment_id');
-                        $code = (string) $trx->getData('giftcard_code');
-                        $type = (string) $trx->getData('transaction_type');
                         $amount = (float) $trx->getData('amount');
-
-                        $transactionType = str_replace('_', ' ', trim($type));
-                        if ($transactionType !== '') {
-                            $transactionType = mb_strtolower($transactionType);
-                            $transactionType = mb_strtoupper(mb_substr($transactionType, 0, 1))
-                                . mb_substr($transactionType, 1);
-                        }
 
                         $desc = str_replace('_', ' ', trim((string) $trx->getData('description')));
                         if ($desc !== '') {
@@ -132,24 +204,8 @@ $walletBalance = (float) $block->getWalletBalance();
                                         : '—'
                                 ) ?>
                             </td>
-                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Transaction Type')) ?>">
-                                <?= $escaper->escapeHtml($transactionType) ?>
-                            </td>
                             <td data-th="<?= $escaper->escapeHtmlAttr(__('Description')) ?>">
                                 <?= $escaper->escapeHtml($desc) ?>
-                            </td>
-                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Order')) ?>">
-                                <?php if ($orderId && $incrementId !== ''): ?>
-                                    <a href="<?= $escaper->escapeUrl($block->getOrderViewUrl($orderId)) ?>">
-                                        <?= $escaper->escapeHtml($incrementId) ?>
-                                    </a>
-                                <?php else: ?>
-                                    <?= $escaper->escapeHtml(__('—')) ?>
-                                <?php endif; ?>
-                            </td>
-                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Gift card code')) ?>"
-                                class="col-giftcard-code">
-                                <?= $escaper->escapeHtml($code) ?>
                             </td>
                             <td data-th="<?= $escaper->escapeHtmlAttr(__('Amount')) ?>" class="col-amount">
                                 <?php
@@ -157,13 +213,10 @@ $walletBalance = (float) $block->getWalletBalance();
                                 if ($amount <= 0.0001) {
                                     echo $escaper->escapeHtml($formattedAmount);
                                 } else {
-                                    $sign = '+';
-                                    if ($type === \Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_DEBIT
-                                        || $type === \Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_CHECKOUT_APPLY
-                                        || $type === \Venbhas\GiftCard\Model\GiftCardTransaction::ACTION_REDEEM
-                                    ) {
-                                        $sign = '-';
-                                    }
+                                    $sign = \Venbhas\GiftCard\Model\GiftCardTransaction::isDebit(
+                                        $trx->getData('transaction_type'),
+                                        (string) $trx->getData('description')
+                                    ) ? '-' : '+';
                                     $signClass = $sign === '+' ? 'venbhas-gc-sign--plus' : 'venbhas-gc-sign--minus';
                                     echo '<span class="venbhas-gc-sign ' . $escaper->escapeHtmlAttr($signClass) . '">'
                                         . $escaper->escapeHtml('[' . $sign . ']')
@@ -172,12 +225,14 @@ $walletBalance = (float) $block->getWalletBalance();
                                 }
                                 ?>
                             </td>
-                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Previous Balance')) ?>">
+                            <td class="col-previous-balance"
+                                data-th="<?= $escaper->escapeHtmlAttr(__('Previous Balance')) ?>">
                                 <?= $escaper->escapeHtml(
                                     $block->formatAmount((float) $trx->getData('previous_balance'), null)
                                 ) ?>
                             </td>
-                            <td data-th="<?= $escaper->escapeHtmlAttr(__('Current Balance')) ?>">
+                            <td class="col-current-balance"
+                                data-th="<?= $escaper->escapeHtmlAttr(__('Current Balance')) ?>">
                                 <?= $escaper->escapeHtml(
                                     $block->formatAmount((float) $trx->getData('current_balance'), null)
                                 ) ?>
@@ -187,6 +242,11 @@ $walletBalance = (float) $block->getWalletBalance();
                     </tbody>
                 </table>
             </div>
+            <?php if ($block->getPagerHtml()): ?>
+                <div class="giftcard-transactions-toolbar toolbar bottom">
+                    <?= $block->getPagerHtml() ?>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>

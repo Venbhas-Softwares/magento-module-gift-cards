@@ -54,15 +54,7 @@ class CustomerGiftCardTransactionsLoader
         $collection->joinSalesOrder();
         $collection->addFieldToFilter(
             'main_table.transaction_type',
-            // Backward compat: older rows used `checkout_apply` before wallet debits were renamed to `debit`.
-            [
-                'in' => [
-                    GiftCardTransaction::ACTION_REDEEM,
-                    GiftCardTransaction::ACTION_DEBIT,
-                    GiftCardTransaction::ACTION_CHECKOUT_APPLY,
-                    GiftCardTransaction::ACTION_CREDIT,
-                ],
-            ]
+            ['in' => [GiftCardTransaction::TYPE_CREDIT, GiftCardTransaction::TYPE_DEBIT]]
         );
         $collection->setOrder('main_table.created_at', 'DESC');
         $collection->setOrder('main_table.entity_id', 'DESC');
@@ -109,37 +101,18 @@ class CustomerGiftCardTransactionsLoader
      */
     public function getWalletBalance(int $customerId, ?string $customerEmail = null): float
     {
-        if ($customerId <= 0 && (!$customerEmail || trim($customerEmail) === '')) {
+        if ($customerId <= 0) {
             return 0.0;
         }
 
         $conn = $this->resource->getConnection();
-        $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
 
-        $cid = (int) $customerId;
-        $email = $customerEmail !== null ? strtolower(trim($customerEmail)) : '';
-
-        $where = [];
-        if ($cid > 0) {
-            $where[] = 'customer_id = ' . $cid;
-        }
-        if ($email !== '') {
-            $where[] = 'customer_email = ' . $conn->quote($email);
-        }
-        if (!$where) {
-            return 0.0;
-        }
-
-        $sql =
-            // phpcs:ignore Magento2.SQL.RawQuery.RawQuery
-            'SELECT COALESCE(SUM(CASE '
-            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CREDIT) . ' THEN amount '
-            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_DEBIT) . ' THEN -amount '
-            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_CHECKOUT_APPLY) . ' THEN -amount '
-            . 'WHEN transaction_type = ' . $conn->quote(GiftCardTransaction::ACTION_REDEEM) . ' THEN -amount '
-            . 'ELSE 0 END), 0) '
-            . 'FROM ' . $trxTable . ' WHERE (' . implode(' OR ', $where) . ')';
-
-        return (float) $conn->fetchOne($sql);
+        return GiftCardWalletBalanceCalculator::fetchBalance(
+            $conn,
+            $this->resource->getTableName('venbhas_giftcard_transaction'),
+            $this->resource->getTableName('sales_order'),
+            $customerId,
+            $customerEmail
+        );
     }
 }

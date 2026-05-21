@@ -12,8 +12,8 @@ use Venbhas\GiftCard\Model\GiftCardTransaction;
  * Render signed amount (+/-) with store currency for admin grids.
  *
  * Mirrors the customer/admin-customer "Gift Card Transactions" signed display:
- * - credit: +amount
- * - debit / checkout_apply / redeem: -amount
+ * - credit (0): +amount
+ * - debit (1): -amount
  */
 class AdminSignedPrice extends Column
 {
@@ -61,7 +61,6 @@ class AdminSignedPrice extends Column
 
         foreach ($dataSource['data']['items'] as &$item) {
             $raw = isset($item[$name]) ? (float) $item[$name] : 0.0;
-            $type = (string) ($item['transaction_type'] ?? '');
             $storeId = isset($item['store_id']) ? (int) $item['store_id'] : null;
 
             try {
@@ -86,11 +85,10 @@ class AdminSignedPrice extends Column
             }
 
             $sign = '+';
-            $typeLower = mb_strtolower($type);
-            if ($typeLower === GiftCardTransaction::ACTION_DEBIT
-                || $typeLower === GiftCardTransaction::ACTION_CHECKOUT_APPLY
-                || $typeLower === GiftCardTransaction::ACTION_REDEEM
-            ) {
+            if (GiftCardTransaction::isDebit(
+                $item['transaction_type'] ?? null,
+                isset($item['description']) ? (string) $item['description'] : null
+            )) {
                 $sign = '-';
             }
 

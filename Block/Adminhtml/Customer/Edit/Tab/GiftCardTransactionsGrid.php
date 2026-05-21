@@ -147,6 +147,13 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
      */
     protected function _prepareColumns()
     {
+        $this->addColumn('entity_id', [
+            'header' => __('ID'),
+            'index' => 'entity_id',
+            'type' => 'number',
+            'width' => 60,
+        ]);
+
         $this->addColumn('created_at', [
             'header' => __('Created At'),
             'index' => 'created_at',
@@ -154,26 +161,10 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
             'frame_callback' => [$this, 'renderCreatedAt'],
         ]);
 
-        $this->addColumn('transaction_type', [
-            'header' => __('Transaction Type'),
-            'index' => 'transaction_type',
-            'frame_callback' => [$this, 'renderSentenceCase'],
-        ]);
-
         $this->addColumn('description', [
             'header' => __('Description'),
             'index' => 'description',
             'frame_callback' => [$this, 'renderSentenceCase'],
-        ]);
-
-        $this->addColumn('increment_id', [
-            'header' => __('Order #'),
-            'index' => 'increment_id',
-        ]);
-
-        $this->addColumn('giftcard_code', [
-            'header' => __('Gift Card Code'),
-            'index' => 'giftcard_code',
         ]);
 
         $this->addColumn('amount', [
@@ -291,12 +282,11 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
             return $formatted;
         }
 
-        $type = mb_strtolower((string) $row->getData('transaction_type'));
         $sign = '+';
-        if ($type === GiftCardTransaction::ACTION_DEBIT
-            || $type === GiftCardTransaction::ACTION_CHECKOUT_APPLY
-            || $type === GiftCardTransaction::ACTION_REDEEM
-        ) {
+        if (GiftCardTransaction::isDebit(
+            $row->getData('transaction_type'),
+            (string) $row->getData('description')
+        )) {
             $sign = '-';
         }
 

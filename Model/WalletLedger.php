@@ -50,7 +50,7 @@ class WalletLedger
         $trxTable = $this->resource->getTableName('venbhas_giftcard_transaction');
         $cnt = (int) $conn->fetchOne(
             'SELECT COUNT(*) FROM ' . $trxTable . ' WHERE order_id = ? AND transaction_type = ? AND description = ?',
-            [$orderId, GiftCardTransaction::ACTION_CREDIT, $description]
+            [$orderId, GiftCardTransaction::TYPE_CREDIT, $description]
         );
         return $cnt > 0;
     }
@@ -83,7 +83,7 @@ class WalletLedger
 
         $conn->insert($trxTable, [
             'giftcard_id' => null,
-            'transaction_type' => GiftCardTransaction::ACTION_CREDIT,
+            'transaction_type' => GiftCardTransaction::TYPE_CREDIT,
             'amount' => $amount,
             'previous_balance' => $previous,
             'current_balance' => $current,
