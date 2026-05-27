@@ -45,8 +45,7 @@ try {
 }
 ?>
 <fieldset class="fieldset venbhas-giftcard-fields" style="margin-top: 12px;">
-    <legend class="legend"><span><?= $escaper->escapeHtml(__('Gift Card')) ?></span></legend>
-
+   
     <div class="field required">
         <label class="label">
             <span><?= $escaper->escapeHtml(__('Amount')) ?></span>
@@ -55,9 +54,7 @@ try {
             $maxFormatted = $block->formatAmount($block->getMaxAmount());
             ?>
         </label>
-        <span class="note">
-                <?= $escaper->escapeHtml(__('from: %1  to: %2', $minFormatted, $maxFormatted)) ?>
-            </span>
+        
         <div class="control venbhas-giftcard-amounts">
             <input type="hidden"
                    name="venbhas_giftcard[amount]"
@@ -88,6 +85,9 @@ try {
                        max="<?= $escaper->escapeHtmlAttr($block->getMaxAmount()) ?>"
                        step="0.01"
                        placeholder="<?= $escaper->escapeHtmlAttr(__('Enter amount')) ?>"/>
+                <br><br><span class="note">
+                <?= $escaper->escapeHtml(__('from: %1  to: %2', $minFormatted, $maxFormatted)) ?>
+            </span>
             </div>
         </div>
     </div>
