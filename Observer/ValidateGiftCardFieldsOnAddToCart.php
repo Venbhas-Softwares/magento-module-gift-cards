@@ -6,25 +6,20 @@ namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Venbhas\GiftCard\Model\Config;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 
 /**
  * Observer to validate gift card product fields on add-to-cart.
  */
-class ValidateGiftCardFieldsOnAddToCart implements ObserverInterface
+class ValidateGiftCardFieldsOnAddToCart extends AbstractObserver
 {
     /**
      * @var RequestInterface
      */
     private RequestInterface $_request;
-
-    /**
-     * @var Config
-     */
-    private Config $_config;
 
     /**
      * @var GiftOptionsResolver
@@ -34,28 +29,24 @@ class ValidateGiftCardFieldsOnAddToCart implements ObserverInterface
     /**
      * Initialize observer.
      *
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param RequestInterface $request Request
-     * @param Config $config Module config
      * @param GiftOptionsResolver $giftOptionsResolver Gift options resolver
      */
     public function __construct(
+        ModuleEnabledGuard $moduleEnabledGuard,
         RequestInterface $request,
-        Config $config,
         GiftOptionsResolver $giftOptionsResolver
     ) {
+        parent::__construct($moduleEnabledGuard);
         $this->_request = $request;
-        $this->_config = $config;
         $this->_giftOptionsResolver = $giftOptionsResolver;
     }
 
     /**
-     * Execute observer.
-     *
-     * @param Observer $observer Observer
-     *
-     * @return void
+     * @inheritdoc
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         $product = $observer->getData('product');
         if (!$product) {
@@ -67,9 +58,6 @@ class ValidateGiftCardFieldsOnAddToCart implements ObserverInterface
         }
 
         $storeId = (int) $product->getStoreId();
-        if (!$this->_config->isEnabled($storeId)) {
-            return;
-        }
 
         $data = (array) $this->_request->getParam('venbhas_giftcard', []);
 

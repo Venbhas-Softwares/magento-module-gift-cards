@@ -1,5 +1,8 @@
 <?php
 /** @var \Venbhas\GiftCard\Block\Cart\GiftCard $block */
+if (!$block->isModuleEnabled()) {
+    return;
+}
 $codes = $block->getCodes();
 ?>
 <div class="cart-discount giftcard-discount">

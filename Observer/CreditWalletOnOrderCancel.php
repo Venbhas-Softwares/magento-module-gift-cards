@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\Data\OrderInterface;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\GiftCardTransactionDescription;
 use Venbhas\GiftCard\Model\WalletLedger;
 
-class CreditWalletOnOrderCancel implements ObserverInterface
+class CreditWalletOnOrderCancel extends AbstractObserver
 {
     /**
      * @var WalletLedger
@@ -17,10 +17,12 @@ class CreditWalletOnOrderCancel implements ObserverInterface
     private $ledger;
 
     /**
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param WalletLedger $ledger Wallet credit-back helper
      */
-    public function __construct(WalletLedger $ledger)
+    public function __construct(ModuleEnabledGuard $moduleEnabledGuard, WalletLedger $ledger)
     {
+        parent::__construct($moduleEnabledGuard);
         $this->ledger = $ledger;
     }
 
@@ -31,7 +33,7 @@ class CreditWalletOnOrderCancel implements ObserverInterface
      *
      * @return void
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         /** @var OrderInterface|null $order */
         $order = $observer->getData('order') ?: $observer->getEvent()->getOrder();

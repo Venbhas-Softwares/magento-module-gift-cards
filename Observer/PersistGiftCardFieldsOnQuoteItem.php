@@ -5,17 +5,17 @@ namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Model\Quote\Item as QuoteItem;
 use Venbhas\GiftCard\Model\Config;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 
 /**
  * Observer to persist gift card form fields onto quote item additional options.
  */
-class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
+class PersistGiftCardFieldsOnQuoteItem extends AbstractObserver
 {
     /**
      * @var Json
@@ -35,28 +35,27 @@ class PersistGiftCardFieldsOnQuoteItem implements ObserverInterface
     /**
      * Initialize observer.
      *
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param Json $json JSON serializer
      * @param RequestInterface $request Request
      * @param GiftOptionsResolver $giftOptionsResolver Gift options resolver
      */
     public function __construct(
+        ModuleEnabledGuard $moduleEnabledGuard,
         Json $json,
         RequestInterface $request,
         GiftOptionsResolver $giftOptionsResolver
     ) {
+        parent::__construct($moduleEnabledGuard);
         $this->_json = $json;
         $this->_request = $request;
         $this->_giftOptionsResolver = $giftOptionsResolver;
     }
 
     /**
-     * Execute observer.
-     *
-     * @param Observer $observer Observer
-     *
-     * @return void
+     * @inheritdoc
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         /** @var QuoteItem|null $quoteItem */
         $quoteItem = $observer->getData('quote_item');

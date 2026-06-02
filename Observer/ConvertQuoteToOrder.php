@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Quote\Model\Quote;
 
 /**
@@ -14,7 +13,7 @@ use Magento\Quote\Model\Quote;
  * address after collect. mergeDataObjects(quote→order) only transfers OrderInterface fields,
  * so this observer must run on sales_model_service_quote_submit_before.
  */
-class ConvertQuoteToOrder implements ObserverInterface
+class ConvertQuoteToOrder extends AbstractObserver
 {
     private const FIELDS = [
         'venbhas_giftcard_amount',
@@ -22,13 +21,9 @@ class ConvertQuoteToOrder implements ObserverInterface
     ];
 
     /**
-     * Execute observer.
-     *
-     * @param Observer $observer Observer
-     *
-     * @return void
+     * @inheritdoc
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         $order = $observer->getEvent()->getOrder();
         $quote = $observer->getEvent()->getQuote();

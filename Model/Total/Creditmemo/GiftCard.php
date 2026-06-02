@@ -6,6 +6,7 @@ namespace Venbhas\GiftCard\Model\Total\Creditmemo;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Sales\Model\Order\Creditmemo;
 use Magento\Sales\Model\Order\Creditmemo\Total\AbstractTotal;
+use Venbhas\GiftCard\Model\Config;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
 use Venbhas\GiftCard\Model\GiftCardTransactionDescription;
 
@@ -23,11 +24,18 @@ class GiftCard extends AbstractTotal
     private $resource;
 
     /**
-     * @param ResourceConnection $resource Resource connection
+     * @var Config
      */
-    public function __construct(ResourceConnection $resource)
+    private Config $config;
+
+    /**
+     * @param ResourceConnection $resource Resource connection
+     * @param Config $config Module config
+     */
+    public function __construct(ResourceConnection $resource, Config $config)
     {
         $this->resource = $resource;
+        $this->config = $config;
     }
 
     /**
@@ -41,6 +49,10 @@ class GiftCard extends AbstractTotal
     {
         $order = $creditmemo->getOrder();
         if (!$order) {
+            return $this;
+        }
+
+        if (!$this->config->isEnabled((int) $order->getStoreId())) {
             return $this;
         }
 

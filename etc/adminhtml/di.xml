@@ -11,4 +11,16 @@
             </argument>
         </arguments>
     </virtualType>
+
+    <type name="Magento\Backend\Model\Menu\Builder">
+        <plugin name="venbhas_giftcard_hide_menu_when_disabled"
+                type="Venbhas\GiftCard\Plugin\Backend\Menu\HideWhenDisabledPlugin"
+                sortOrder="100"/>
+    </type>
+
+    <type name="Magento\Backend\App\AbstractAction">
+        <plugin name="venbhas_giftcard_admin_dispatch_guard"
+                type="Venbhas\GiftCard\Plugin\Backend\App\DispatchGuardPlugin"
+                sortOrder="10"/>
+    </type>
 </config>

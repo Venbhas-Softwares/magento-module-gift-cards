@@ -75,8 +75,12 @@ class GiftCardOptions extends AbstractModifier
             return $data;
         }
 
-        $modelId = $product->getId();
         $storeId = (int) $product->getStoreId();
+        if (!$this->config->isEnabled($storeId)) {
+            return $data;
+        }
+
+        $modelId = $product->getId();
 
         $allFields = array_merge(self::TOGGLE_FIELDS, self::STANDARD_FIELDS);
         foreach ($allFields as $fieldName) {
@@ -100,6 +104,10 @@ class GiftCardOptions extends AbstractModifier
     {
         $product = $this->locator->getProduct();
         if ($product->getTypeId() !== GiftCard::TYPE_CODE) {
+            return $meta;
+        }
+
+        if (!$this->config->isEnabled((int) $product->getStoreId())) {
             return $meta;
         }
 

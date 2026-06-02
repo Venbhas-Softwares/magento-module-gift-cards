@@ -5,12 +5,12 @@ namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Api\Data\CreditmemoInterface;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard as GiftCardType;
 
-class PreventGiftCardRefundIfRedeemed implements ObserverInterface
+class PreventGiftCardRefundIfRedeemed extends AbstractObserver
 {
     /**
      * @var ResourceConnection
@@ -18,10 +18,12 @@ class PreventGiftCardRefundIfRedeemed implements ObserverInterface
     private $resource;
 
     /**
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param ResourceConnection $resource Resource connection
      */
-    public function __construct(ResourceConnection $resource)
+    public function __construct(ModuleEnabledGuard $moduleEnabledGuard, ResourceConnection $resource)
     {
+        parent::__construct($moduleEnabledGuard);
         $this->resource = $resource;
     }
 
@@ -32,7 +34,7 @@ class PreventGiftCardRefundIfRedeemed implements ObserverInterface
      *
      * @return void
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         /** @var CreditmemoInterface|null $creditmemo */
         $creditmemo = $observer->getData('creditmemo') ?: $observer->getEvent()->getCreditmemo();

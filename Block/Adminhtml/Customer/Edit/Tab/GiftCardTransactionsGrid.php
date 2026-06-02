@@ -12,6 +12,7 @@ use Magento\Framework\Registry;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Ui\Component\Layout\Tabs\TabInterface;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\GiftCardTransaction;
 use Venbhas\GiftCard\Model\ResourceModel\GiftCardTransaction\Grid\Collection as TransactionGridCollection;
 
@@ -48,12 +49,18 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
     private TimezoneInterface $localeDate;
 
     /**
+     * @var ModuleEnabledGuard
+     */
+    private ModuleEnabledGuard $moduleEnabledGuard;
+
+    /**
      * @param Context $context
      * @param BackendHelper $backendHelper
      * @param Registry $registry
      * @param \Magento\Framework\ObjectManagerInterface $objectManager
      * @param PriceCurrencyInterface $priceCurrency
      * @param StoreManagerInterface $storeManager
+     * @param ModuleEnabledGuard $moduleEnabledGuard
      * @param array $data
      */
     public function __construct(
@@ -63,12 +70,14 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
         \Magento\Framework\ObjectManagerInterface $objectManager,
         PriceCurrencyInterface $priceCurrency,
         StoreManagerInterface $storeManager,
+        ModuleEnabledGuard $moduleEnabledGuard,
         array $data = []
     ) {
         $this->registry = $registry;
         $this->objectManager = $objectManager;
         $this->priceCurrency = $priceCurrency;
         $this->storeManager = $storeManager;
+        $this->moduleEnabledGuard = $moduleEnabledGuard;
         $this->localeDate = $context->getLocaleDate();
         parent::__construct($context, $backendHelper, $data);
     }
@@ -318,7 +327,7 @@ class GiftCardTransactionsGrid extends Extended implements TabInterface
      */
     public function canShowTab(): bool
     {
-        return $this->getCustomerId() > 0;
+        return $this->moduleEnabledGuard->isEnabledForAdmin() && $this->getCustomerId() > 0;
     }
 
     /**

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 
@@ -14,7 +13,7 @@ use Venbhas\GiftCard\Model\Product\Type\GiftCard;
  * field value is excluded from POST data. This observer explicitly resets
  * those attributes to empty string (the "use config" sentinel) before save.
  */
-class SaveGiftCardOptionsOnProduct implements ObserverInterface
+class SaveGiftCardOptionsOnProduct extends AbstractObserver
 {
     private const FIELDS = [
         GiftOptionsResolver::ATTR_DELIVERY_TYPE,
@@ -26,7 +25,7 @@ class SaveGiftCardOptionsOnProduct implements ObserverInterface
     /**
      * @inheritdoc
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         /** @var \Magento\Catalog\Model\Product $product */
         $product = $observer->getEvent()->getDataObject();

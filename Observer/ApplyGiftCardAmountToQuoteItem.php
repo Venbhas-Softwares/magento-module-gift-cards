@@ -5,14 +5,14 @@ namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Quote\Model\Quote\Item as QuoteItem;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 
 /**
  * Observer to apply selected gift card amount as custom price on quote item.
  */
-class ApplyGiftCardAmountToQuoteItem implements ObserverInterface
+class ApplyGiftCardAmountToQuoteItem extends AbstractObserver
 {
     /**
      * @var RequestInterface
@@ -22,22 +22,21 @@ class ApplyGiftCardAmountToQuoteItem implements ObserverInterface
     /**
      * Initialize observer.
      *
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param RequestInterface $request Request
      */
     public function __construct(
+        ModuleEnabledGuard $moduleEnabledGuard,
         RequestInterface $request
     ) {
+        parent::__construct($moduleEnabledGuard);
         $this->_request = $request;
     }
 
     /**
-     * Execute observer.
-     *
-     * @param Observer $observer Observer
-     *
-     * @return void
+     * @inheritdoc
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         /** @var QuoteItem|null $quoteItem */
         $quoteItem = $observer->getData('quote_item');

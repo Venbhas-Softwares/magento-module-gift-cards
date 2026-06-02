@@ -4,15 +4,15 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\Data\InvoiceInterface;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\Email\GiftCardSender;
 use Venbhas\GiftCard\Model\GiftCardIssuer;
 
 /**
  * Observer to issue gift cards when an invoice is paid.
  */
-class GenerateGiftCardOnInvoicePay implements ObserverInterface
+class GenerateGiftCardOnInvoicePay extends AbstractObserver
 {
     /**
      * @var GiftCardIssuer
@@ -25,13 +25,16 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
     private $sender;
 
     /**
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param GiftCardIssuer $issuer Gift card issuer
      * @param GiftCardSender $sender Gift card email sender
      */
     public function __construct(
+        ModuleEnabledGuard $moduleEnabledGuard,
         GiftCardIssuer $issuer,
         GiftCardSender $sender
     ) {
+        parent::__construct($moduleEnabledGuard);
         $this->issuer = $issuer;
         $this->sender = $sender;
     }
@@ -40,9 +43,10 @@ class GenerateGiftCardOnInvoicePay implements ObserverInterface
      * Generate and email gift cards when an invoice is paid.
      *
      * @param Observer $observer Observer
+     *
      * @return void
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         /** @var InvoiceInterface|null $invoice */
         $invoice = $observer->getData('invoice');

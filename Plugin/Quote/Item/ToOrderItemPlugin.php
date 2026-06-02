@@ -9,14 +9,16 @@ use Magento\Quote\Model\Quote\Item\AbstractItem;
 use Magento\Quote\Model\Quote\Item as QuoteItem;
 use Magento\Quote\Model\Quote\Item\ToOrderItem;
 use Magento\Sales\Api\Data\OrderItemInterface;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
+use Venbhas\GiftCard\Plugin\AbstractPlugin;
 
 /**
  * Copies gift card storefront options onto the sales order item so Admin → Order shows
  * Amount, recipients, Gift card delivery, etc. Magento often omits additional_options during convert
  * unless read from quote_item_option directly.
  */
-class ToOrderItemPlugin
+class ToOrderItemPlugin extends AbstractPlugin
 {
     /**
      * @var Json
@@ -26,10 +28,14 @@ class ToOrderItemPlugin
     /**
      * Initialize plugin.
      *
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param Json $json JSON serializer
      */
-    public function __construct(Json $json)
-    {
+    public function __construct(
+        ModuleEnabledGuard $moduleEnabledGuard,
+        Json $json
+    ) {
+        parent::__construct($moduleEnabledGuard);
         $this->json = $json;
     }
 
@@ -54,6 +60,12 @@ class ToOrderItemPlugin
         }
 
         if ($item->getProductType() !== GiftCard::TYPE_CODE) {
+            return $result;
+        }
+
+        $quote = $item->getQuote();
+        $storeId = $quote !== null ? (int) $quote->getStoreId() : null;
+        if (!$this->isModuleEnabled($storeId)) {
             return $result;
         }
 

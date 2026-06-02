@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Observer\Adminhtml;
 
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Model\Quote\Item as QuoteItem;
 use Venbhas\GiftCard\Model\Config;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\Product\GiftOptionsResolver;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard;
+use Venbhas\GiftCard\Observer\AbstractObserver;
 
 /**
  * Persists gift card fields and applies custom price when product is added via admin order creation.
  */
-class PersistGiftCardFieldsOnAdminQuoteItem implements ObserverInterface
+class PersistGiftCardFieldsOnAdminQuoteItem extends AbstractObserver
 {
     /**
      * @var Json
@@ -28,13 +29,16 @@ class PersistGiftCardFieldsOnAdminQuoteItem implements ObserverInterface
     private GiftOptionsResolver $giftOptionsResolver;
 
     /**
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param Json $json
      * @param GiftOptionsResolver $giftOptionsResolver
      */
     public function __construct(
+        ModuleEnabledGuard $moduleEnabledGuard,
         Json $json,
         GiftOptionsResolver $giftOptionsResolver
     ) {
+        parent::__construct($moduleEnabledGuard);
         $this->json = $json;
         $this->giftOptionsResolver = $giftOptionsResolver;
     }
@@ -42,7 +46,7 @@ class PersistGiftCardFieldsOnAdminQuoteItem implements ObserverInterface
     /**
      * @inheritdoc
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         $items = $observer->getData('items');
         if (!is_array($items)) {

@@ -7,6 +7,7 @@
             <block class="Venbhas\GiftCard\Block\Account\GiftCardTransactions"
                    name="venbhas.giftcard.account.transactions"
                    template="Venbhas_GiftCard::account/transactions.phtml"
+                   ifconfig="venbhas_giftcard/general/enabled"
                    cacheable="false"/>
         </referenceContainer>
     </body>

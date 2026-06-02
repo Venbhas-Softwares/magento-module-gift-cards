@@ -5,14 +5,14 @@ namespace Venbhas\GiftCard\Observer;
 
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Event\Observer;
-use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Api\Data\CreditmemoInterface;
 use Magento\Sales\Api\Data\OrderInterface;
+use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Model\GiftCardTransactionDescription;
 use Venbhas\GiftCard\Model\Product\Type\GiftCard as GiftCardType;
 use Venbhas\GiftCard\Model\WalletLedger;
 
-class CreditWalletOnCreditmemoRefund implements ObserverInterface
+class CreditWalletOnCreditmemoRefund extends AbstractObserver
 {
     /**
      * @var WalletLedger
@@ -25,11 +25,16 @@ class CreditWalletOnCreditmemoRefund implements ObserverInterface
     private $resource;
 
     /**
+     * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param WalletLedger $ledger Wallet credit-back helper
      * @param ResourceConnection $resource Resource connection
      */
-    public function __construct(WalletLedger $ledger, ResourceConnection $resource)
-    {
+    public function __construct(
+        ModuleEnabledGuard $moduleEnabledGuard,
+        WalletLedger $ledger,
+        ResourceConnection $resource
+    ) {
+        parent::__construct($moduleEnabledGuard);
         $this->ledger = $ledger;
         $this->resource = $resource;
     }
@@ -41,7 +46,7 @@ class CreditWalletOnCreditmemoRefund implements ObserverInterface
      *
      * @return void
      */
-    public function execute(Observer $observer): void
+    protected function executeWhenEnabled(Observer $observer): void
     {
         /** @var CreditmemoInterface|null $creditmemo */
         $creditmemo = $observer->getData('creditmemo') ?: $observer->getEvent()->getCreditmemo();

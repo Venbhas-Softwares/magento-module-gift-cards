@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\App\Action\Action">
+        <plugin name="venbhas_giftcard_frontend_dispatch_guard"
+                type="Venbhas\GiftCard\Plugin\Frontend\App\DispatchGuardPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="Magento\Catalog\Controller\Product\View">
+        <plugin name="venbhas_giftcard_product_view_guard"
+                type="Venbhas\GiftCard\Plugin\Catalog\Product\ViewGuardPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="Magento\Catalog\Model\Product">
+        <plugin name="venbhas_giftcard_product_salable_guard"
+                type="Venbhas\GiftCard\Plugin\Catalog\Product\SalablePlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="Magento\Checkout\Block\Onepage">
+        <arguments>
+            <argument name="layoutProcessors" xsi:type="array">
+                <item name="venbhas_giftcard" xsi:type="object">Venbhas\GiftCard\Model\Checkout\LayoutProcessor\Checkout</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Checkout\Block\Cart\Totals">
+        <arguments>
+            <argument name="layoutProcessors" xsi:type="array">
+                <item name="venbhas_giftcard" xsi:type="object">Venbhas\GiftCard\Model\Checkout\LayoutProcessor\Cart</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

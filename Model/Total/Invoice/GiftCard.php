@@ -6,6 +6,7 @@ namespace Venbhas\GiftCard\Model\Total\Invoice;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Sales\Model\Order\Invoice;
 use Magento\Sales\Model\Order\Invoice\Total\AbstractTotal;
+use Venbhas\GiftCard\Model\Config;
 
 /**
  * Invoice total collector: treat gift amount like a discount on invoice.
@@ -18,11 +19,18 @@ class GiftCard extends AbstractTotal
     private $resource;
 
     /**
-     * @param ResourceConnection $resource Resource connection
+     * @var Config
      */
-    public function __construct(ResourceConnection $resource)
+    private Config $config;
+
+    /**
+     * @param ResourceConnection $resource Resource connection
+     * @param Config $config Module config
+     */
+    public function __construct(ResourceConnection $resource, Config $config)
     {
         $this->resource = $resource;
+        $this->config = $config;
     }
 
     /**
@@ -36,6 +44,10 @@ class GiftCard extends AbstractTotal
     {
         $order = $invoice->getOrder();
         if (!$order) {
+            return $this;
+        }
+
+        if (!$this->config->isEnabled((int) $order->getStoreId())) {
             return $this;
         }
 
