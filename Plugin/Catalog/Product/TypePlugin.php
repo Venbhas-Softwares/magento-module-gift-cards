@@ -73,8 +73,9 @@ class TypePlugin
     }
 
     /**
-     * @param array $types Product types keyed by type id
+     * Remove gift card type from a type map when the module is disabled.
      *
+     * @param array $types Product types keyed by type id
      * @return array
      */
     private function removeGiftCardType(array $types): array

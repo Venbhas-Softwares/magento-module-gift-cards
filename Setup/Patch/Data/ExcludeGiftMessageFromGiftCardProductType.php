@@ -20,6 +20,11 @@ class ExcludeGiftMessageFromGiftCardProductType implements DataPatchInterface
 {
     private const ATTRIBUTE_CODE = 'gift_message_available';
 
+    /**
+     * @param ModuleDataSetupInterface $moduleDataSetup Module data setup
+     * @param CategorySetupFactory $categorySetupFactory Category setup factory
+     * @param Type $productType Product type model
+     */
     public function __construct(
         private readonly ModuleDataSetupInterface $moduleDataSetup,
         private readonly CategorySetupFactory $categorySetupFactory,
@@ -62,6 +67,8 @@ class ExcludeGiftMessageFromGiftCardProductType implements DataPatchInterface
     }
 
     /**
+     * Build apply_to attribute value excluding the gift card product type.
+     *
      * @return string
      */
     private function buildApplyToExcludingGiftCard(): string
