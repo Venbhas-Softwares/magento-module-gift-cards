@@ -70,6 +70,7 @@ define([
         isApplied: ko.observable(false),
         appliedAmount: ko.observable(0),
         showAddButton: ko.observable(false),
+        canShowSection: ko.observable(false),
         /** @type {boolean} Modal widget created (DOM for payment block may not exist at first init). */
         _addGiftcardModalReady: false,
 
@@ -87,13 +88,16 @@ define([
 
             this._syncLoginState();
             this._bindLoginStateUpdates();
-            this._loadWallet();
+
+            if (this.canShowSection()) {
+                this._loadWallet();
+            }
 
             return this;
         },
 
         /**
-         * Whether the shopper can add gift cards (logged-in customers only).
+         * Whether the shopper is logged in (wallet / apply gift card is customer-only).
          *
          * @returns {boolean}
          */
@@ -106,19 +110,7 @@ define([
                 return true;
             }
 
-            if (typeof window.isCustomerLoggedIn !== 'undefined' && window.isCustomerLoggedIn) {
-                return true;
-            }
-
-            var quoteData = window.checkoutConfig && window.checkoutConfig.quoteData;
-
-            if (quoteData && parseInt(quoteData.customer_id, 10) > 0) {
-                return true;
-            }
-
-            var section = customerData.get('customer')();
-
-            return !!(section && (section.firstname || section.fullname || section.email));
+            return typeof window.isCustomerLoggedIn !== 'undefined' && !!window.isCustomerLoggedIn;
         },
 
         _bindLoginStateUpdates: function () {
@@ -198,7 +190,16 @@ define([
         },
 
         _syncLoginState: function () {
-            this.showAddButton(this.isCustomerLoggedIn());
+            var loggedIn = this.isCustomerLoggedIn();
+
+            this.canShowSection(loggedIn);
+            this.showAddButton(loggedIn);
+
+            if (loggedIn) {
+                this._loadWallet();
+            } else {
+                this.walletBalance(0);
+            }
         },
 
         /**

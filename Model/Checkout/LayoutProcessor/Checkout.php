@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Venbhas\GiftCard\Model\Checkout\LayoutProcessor;
 
 use Magento\Checkout\Block\Checkout\LayoutProcessorInterface;
+use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Store\Model\StoreManagerInterface;
 use Venbhas\GiftCard\Model\Config;
 
@@ -24,15 +25,23 @@ class Checkout implements LayoutProcessorInterface
     private StoreManagerInterface $storeManager;
 
     /**
+     * @var CustomerSession
+     */
+    private CustomerSession $customerSession;
+
+    /**
      * @param Config $config Module config
      * @param StoreManagerInterface $storeManager Store manager
+     * @param CustomerSession $customerSession Customer session
      */
     public function __construct(
         Config $config,
-        StoreManagerInterface $storeManager
+        StoreManagerInterface $storeManager,
+        CustomerSession $customerSession
     ) {
         $this->config = $config;
         $this->storeManager = $storeManager;
+        $this->customerSession = $customerSession;
     }
 
     /**
@@ -40,7 +49,9 @@ class Checkout implements LayoutProcessorInterface
      */
     public function process($jsLayout)
     {
-        if (!$this->config->isEnabled((int) $this->storeManager->getStore()->getId())) {
+        $storeId = (int) $this->storeManager->getStore()->getId();
+
+        if (!$this->config->isEnabled($storeId) || !$this->customerSession->isLoggedIn()) {
             return $jsLayout;
         }
 

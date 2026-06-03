@@ -20,6 +20,11 @@ use Venbhas\GiftCard\Model\Product\Type\GiftCard;
 class GiftCardOptions extends AbstractModifier
 {
     /**
+     * Core Magento_GiftMessage attribute (not used on gift card products).
+     */
+    private const CORE_GIFT_MESSAGE_FIELD = 'gift_message_available';
+
+    /**
      * Yes/No fields converted to toggle + use_config checkbox (same as GiftMessage).
      */
     private const TOGGLE_FIELDS = [
@@ -75,12 +80,13 @@ class GiftCardOptions extends AbstractModifier
             return $data;
         }
 
+        $modelId = $product->getId() ?? '';
+        $data = $this->stripCoreGiftMessageFromData($data, $modelId);
+
         $storeId = (int) $product->getStoreId();
         if (!$this->config->isEnabled($storeId)) {
             return $data;
         }
-
-        $modelId = $product->getId();
 
         $allFields = array_merge(self::TOGGLE_FIELDS, self::STANDARD_FIELDS);
         foreach ($allFields as $fieldName) {
@@ -107,6 +113,8 @@ class GiftCardOptions extends AbstractModifier
             return $meta;
         }
 
+        $meta = $this->removeCoreGiftMessageField($meta);
+
         if (!$this->config->isEnabled((int) $product->getStoreId())) {
             return $meta;
         }
@@ -117,6 +125,51 @@ class GiftCardOptions extends AbstractModifier
 
         foreach (self::STANDARD_FIELDS as $fieldName) {
             $meta = $this->customizeStandardField($meta, $fieldName);
+        }
+
+        return $meta;
+    }
+
+    /**
+     * Remove Magento core "Allow Gift Message" from gift card product form data.
+     *
+     * @param array $data
+     * @param int|string $modelId
+     * @return array
+     */
+    private function stripCoreGiftMessageFromData(array $data, int|string $modelId): array
+    {
+        if (!isset($data[$modelId][static::DATA_SOURCE_DEFAULT])) {
+            return $data;
+        }
+
+        unset(
+            $data[$modelId][static::DATA_SOURCE_DEFAULT][self::CORE_GIFT_MESSAGE_FIELD],
+            $data[$modelId][static::DATA_SOURCE_DEFAULT]['use_config_' . self::CORE_GIFT_MESSAGE_FIELD]
+        );
+
+        return $data;
+    }
+
+    /**
+     * Remove Magento core "Allow Gift Message" from gift card product form meta.
+     *
+     * @param array $meta
+     * @return array
+     */
+    private function removeCoreGiftMessageField(array $meta): array
+    {
+        foreach (
+            [
+                self::CORE_GIFT_MESSAGE_FIELD,
+                'container_' . self::CORE_GIFT_MESSAGE_FIELD,
+                'use_config_' . self::CORE_GIFT_MESSAGE_FIELD,
+            ] as $fieldName
+        ) {
+            $path = $this->arrayManager->findPath($fieldName, $meta, null, 'children');
+            if ($path) {
+                $meta = $this->arrayManager->remove($path, $meta);
+            }
         }
 
         return $meta;
