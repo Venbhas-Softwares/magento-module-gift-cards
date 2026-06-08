@@ -159,13 +159,11 @@ class GiftCardOptions extends AbstractModifier
      */
     private function removeCoreGiftMessageField(array $meta): array
     {
-        foreach (
-            [
+        foreach ([
                 self::CORE_GIFT_MESSAGE_FIELD,
                 'container_' . self::CORE_GIFT_MESSAGE_FIELD,
                 'use_config_' . self::CORE_GIFT_MESSAGE_FIELD,
-            ] as $fieldName
-        ) {
+            ] as $fieldName) {
             $path = $this->arrayManager->findPath($fieldName, $meta, null, 'children');
             if ($path) {
                 $meta = $this->arrayManager->remove($path, $meta);

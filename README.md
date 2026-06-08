@@ -10,8 +10,8 @@ Gift Card product type module for Magento 2.
 - Recipient and sender fields (name, email, message)
 - Physical delivery address collection when applicable
 - Gift card code generation on invoice
+- Customer wallet: redeem codes to account balance, apply wallet amount at checkout
 - Balance management and transaction history
-- Apply gift card in checkout
 - Admin order creation support with full configuration popup
 - Hyva compatibility for PDP and checkout
 
@@ -36,7 +36,7 @@ Key options:
 - Allow custom amount
 - Delivery type (virtual / physical / both)
 - Allow custom message
-- Email templates for purchase and usage notifications
+- Email template for purchase notifications
 
 ## Product Setup
 
@@ -60,6 +60,12 @@ Key options:
 | `checkout_cart_product_add_before` | Global | `ValidateGiftCardFieldsOnAddToCart` | Validates required fields on frontend |
 | `checkout_cart_product_add_after` | Global | `PersistGiftCardFieldsOnQuoteItem` | Saves fields to quote item additional_options |
 | `checkout_cart_product_add_after` | Global | `ApplyGiftCardAmountToQuoteItem` | Sets custom price from selected amount |
+| `sales_model_service_quote_submit_before` | Global | `ConvertQuoteToOrder` | Copies wallet discount totals to order |
+| `sales_model_service_quote_submit_success` | Global | `LogGiftCardCheckoutUsageOnOrderPlace` | Logs wallet usage on order place |
+| `sales_order_invoice_pay` | Global | `GenerateGiftCardOnInvoicePay` | Issues gift card codes on invoice |
+| `order_cancel_after` | Global | `CreditWalletOnOrderCancel` | Credits wallet on order cancel |
+| `sales_order_creditmemo_save_before` | Global | `PreventGiftCardRefundIfRedeemed` | Blocks refund when code is redeemed |
+| `sales_order_creditmemo_refund` | Global | `CreditWalletOnCreditmemoRefund` | Credits wallet on refund |
 | `sales_quote_product_add_after` | Adminhtml | `PersistGiftCardFieldsOnAdminQuoteItem` | Handles persistence and pricing in admin |
 | `catalog_product_save_before` | Adminhtml | `SaveGiftCardOptionsOnProduct` | Processes product-level gift card config |
 

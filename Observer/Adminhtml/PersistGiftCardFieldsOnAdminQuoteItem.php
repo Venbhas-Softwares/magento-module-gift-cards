@@ -127,7 +127,6 @@ class PersistGiftCardFieldsOnAdminQuoteItem extends AbstractObserver
         }
 
         $mapped = [
-            //'amount' => isset($data['amount']) ? (string) (float) $data['amount'] : '',
             'delivery_type' => $deliveryType,
             'recipient_name' => trim((string) ($data['recipient_name'] ?? '')),
             'recipient_email' => trim((string) ($data['recipient_email'] ?? '')),

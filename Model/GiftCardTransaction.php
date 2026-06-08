@@ -19,12 +19,6 @@ class GiftCardTransaction extends AbstractModel
     /** Wallet debit (subtracts from balance). */
     public const TYPE_DEBIT = 1;
 
-    /** @deprecated Use TYPE_CREDIT */
-    public const ACTION_CREDIT = self::TYPE_CREDIT;
-
-    /** @deprecated Use TYPE_DEBIT */
-    public const ACTION_DEBIT = self::TYPE_DEBIT;
-
     /**
      * Initialize resource model.
      *

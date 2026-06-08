@@ -63,18 +63,13 @@
   "quote": {
     "column": {
       "venbhas_giftcard_amount": true,
-      "base_venbhas_giftcard_amount": true,
-      "venbhas_giftcard_codes": true,
-      "venbhas_giftcard_applied": true
+      "base_venbhas_giftcard_amount": true
     }
   },
   "sales_order": {
     "column": {
       "venbhas_giftcard_amount": true,
-      "base_venbhas_giftcard_amount": true,
-      "venbhas_giftcard_codes": true,
-      "venbhas_giftcard_applied": true,
-      "venbhas_giftcard_usage_details": true
+      "base_venbhas_giftcard_amount": true
     }
   },
   "sales_invoice": {
@@ -84,4 +79,3 @@
     }
   }
 }
-

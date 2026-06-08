@@ -7,7 +7,7 @@ use Magento\Framework\Event\Observer;
 use Magento\Quote\Model\Quote;
 
 /**
- * Persist gift card totals / codes from quote to order (same pattern as GiftDelivery sample).
+ * Persist gift card wallet totals from quote to order.
  *
  * Values are stored on the quote during totals collection; they may also exist on the shipping
  * address after collect. mergeDataObjects(quote→order) only transfers OrderInterface fields,

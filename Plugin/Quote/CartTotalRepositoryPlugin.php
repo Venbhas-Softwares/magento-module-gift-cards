@@ -6,13 +6,11 @@ namespace Venbhas\GiftCard\Plugin\Quote;
 
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\CartTotalRepositoryInterface;
-use Magento\Quote\Api\Data\TotalsExtensionFactory;
-use Magento\Quote\Api\Data\TotalsInterface;
 use Venbhas\GiftCard\Model\Config\ModuleEnabledGuard;
 use Venbhas\GiftCard\Plugin\AbstractPlugin;
 
 /**
- * Plugin to expose gift card data on cart totals.
+ * Ensures gift card wallet totals are collected before cart totals are read.
  */
 class CartTotalRepositoryPlugin extends AbstractPlugin
 {
@@ -22,29 +20,21 @@ class CartTotalRepositoryPlugin extends AbstractPlugin
     private $quoteRepository;
 
     /**
-     * @var TotalsExtensionFactory
-     */
-    private $totalsExtensionFactory;
-
-    /**
      * Initialize plugin.
      *
      * @param ModuleEnabledGuard $moduleEnabledGuard Module enabled guard
      * @param CartRepositoryInterface $quoteRepository Quote repository
-     * @param TotalsExtensionFactory $totalsExtensionFactory Totals extension factory
      */
     public function __construct(
         ModuleEnabledGuard $moduleEnabledGuard,
-        CartRepositoryInterface $quoteRepository,
-        TotalsExtensionFactory $totalsExtensionFactory
+        CartRepositoryInterface $quoteRepository
     ) {
         parent::__construct($moduleEnabledGuard);
         $this->quoteRepository = $quoteRepository;
-        $this->totalsExtensionFactory = $totalsExtensionFactory;
     }
 
     /**
-     * Ensure totals are collected so gift card amounts and balance JSON exist on the quote.
+     * Ensure totals are collected so wallet gift card amounts exist on the quote.
      *
      * @param CartTotalRepositoryInterface $subject Subject
      * @param int|string $cartId Cart ID
@@ -61,34 +51,5 @@ class CartTotalRepositoryPlugin extends AbstractPlugin
         $quote->collectTotals();
 
         return [$cartId];
-    }
-
-    /**
-     * Expose gift card codes and balance details on totals (checkout reads extension_attributes on root).
-     *
-     * @param CartTotalRepositoryInterface $subject Subject
-     * @param TotalsInterface $result Totals result
-     * @param int|string $cartId Cart ID
-     *
-     * @return TotalsInterface
-     */
-    public function afterGet(
-        CartTotalRepositoryInterface $subject,
-        TotalsInterface $result,
-        $cartId
-    ): TotalsInterface {
-        $quote = $this->quoteRepository->getActive((int) $cartId);
-        if (!$this->isModuleEnabled((int) $quote->getStoreId())) {
-            return $result;
-        }
-
-        $ext = $result->getExtensionAttributes();
-        if ($ext === null) {
-            $ext = $this->totalsExtensionFactory->create();
-        }
-        $ext->setVenbhasGiftcardCodes((string) $quote->getData('venbhas_giftcard_codes'));
-        $result->setExtensionAttributes($ext);
-
-        return $result;
     }
 }

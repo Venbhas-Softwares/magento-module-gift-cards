@@ -132,7 +132,6 @@ class GiftCard extends AbstractTotal
             'code' => self::CODE,
             'title' => $title,
             'value' => -$amount,
-            'venbhas_giftcard_codes' => (string) $quote->getData('venbhas_giftcard_codes'),
         ];
     }
 }

@@ -9,9 +9,6 @@
             <field name="base_venbhas_giftcard_amount">
                 <aspect name="to_order"/>
             </field>
-            <field name="venbhas_giftcard_codes">
-                <aspect name="to_order"/>
-            </field>
         </fieldset>
     </scope>
 </config>

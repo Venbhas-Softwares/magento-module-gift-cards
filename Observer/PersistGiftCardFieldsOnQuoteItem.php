@@ -71,7 +71,6 @@ class PersistGiftCardFieldsOnQuoteItem extends AbstractObserver
         $data = (array)$this->_request->getParam('venbhas_giftcard', []);
 
         $mapped = [
-           // 'amount' => isset($data['amount']) ? (string)(float)$data['amount'] : '',
             'recipient_name' => trim((string)($data['recipient_name'] ?? '')),
             'recipient_email' => trim((string)($data['recipient_email'] ?? '')),
             'sender_name' => trim((string)($data['sender_name'] ?? '')),
