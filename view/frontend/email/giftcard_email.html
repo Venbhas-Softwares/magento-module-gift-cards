@@ -1,0 +1,31 @@
+<!--@subject {{trans "You received a Gift Card"}} @-->
+<!--@vars {
+"var giftcard_code":"Gift Card Code",
+"var giftcard_value":"Gift Card Value (raw)",
+"var giftcard_value_formatted":"Gift Card Value (formatted)",
+"var giftcard_currency":"Gift Card Currency",
+"var sender_name":"Sender Name",
+"var recipient_name":"Recipient Name",
+"var message":"Message",
+"var message|escape|nl2br":"Message (formatted)"
+} @-->
+
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Hi %name," name=$recipient_name}}</p>
+
+<p>
+    {{trans "You received a gift card from %sender." sender=$sender_name}}
+</p>
+
+<p><strong>{{trans "Gift Card Code:"}}</strong> {{var giftcard_code}}</p>
+<p><strong>{{trans "Amount:"}}</strong> {{var giftcard_value_formatted}}</p>
+
+{{depend message}}
+<p><strong>{{trans "Message:"}}</strong><br>{{var message|escape|nl2br}}</p>
+{{/depend}}
+
+<p>{{trans "You can apply this code in the cart/checkout."}}</p>
+
+{{template config_path="design/email/footer_template"}}
+

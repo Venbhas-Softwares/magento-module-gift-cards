@@ -1,0 +1,28 @@
+{
+    "name": "venbhas/module-gift-card",
+    "description": "Magento 2 Gift Card module (Luma/Blank). Optional venbhas/module-gift-card-hyva for Hyvä storefronts.",
+    "type": "magento2-module",
+    "version": "1.0.0",
+    "license": [
+        "proprietary"
+    ],
+    "authors": [
+        {
+            "name": "Venbhas",
+            "email": "support@venbhas.com"
+        }
+    ],
+    "require": {
+        "php": "~8.1.0||~8.2.0||~8.3.0",
+        "magento/framework": "*",
+        "magento/module-store": "*"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Venbhas\\GiftCard\\": ""
+        }
+    }
+}

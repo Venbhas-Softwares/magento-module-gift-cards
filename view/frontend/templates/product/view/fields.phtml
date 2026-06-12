@@ -1,0 +1,515 @@
+<?php
+/** @var \Venbhas\GiftCard\Block\Product\View\Fields $block */
+if (!$block->shouldRender()) {
+    return;
+}
+$presets = $block->getAmountPresets();
+$defaultAmount = $presets[0] ?? $block->getMinAmount();
+$allowCustom = $block->isCustomAmountAllowed();
+$showOtherOnly = $presets === [] && $allowCustom;
+$deliveryType = $block->getGiftDeliveryType();
+$deliveryVirtual = \Venbhas\GiftCard\Model\Config::GIFT_DELIVERY_VIRTUAL;
+$deliveryPhysical = \Venbhas\GiftCard\Model\Config::GIFT_DELIVERY_PHYSICAL;
+$deliveryBoth = \Venbhas\GiftCard\Model\Config::GIFT_DELIVERY_BOTH;
+$allowMessage = $block->isCustomMessageAllowed();
+$offerPhysicalAddress = $block->isPhysicalDeliveryOffered();
+$addressVisibleInitially = $offerPhysicalAddress && ($deliveryType === $deliveryPhysical);
+$directoryBlock = $block->getLayout()->createBlock(\Magento\Directory\Block\Data::class);
+$directoryHelper = $block->getDirectoryHelper();
+
+// Build region JSON compatible with `Magento_Directory/js/region-updater` (expects `id` inside each region node).
+$regionJsonForUpdater = '{}';
+try {
+    $base = json_decode((string) $directoryHelper->getRegionJson(), true);
+    $regionsOnly = json_decode((string) $directoryBlock->getRegionsJs(), true);
+    if (is_array($base) && is_array($regionsOnly)) {
+        foreach ($regionsOnly as $countryId => $regions) {
+            if (!is_array($regions)) {
+                continue;
+            }
+            foreach ($regions as $regionId => $regionData) {
+                if (!is_array($regionData)) {
+                    $regionData = [];
+                }
+                $base[$countryId][$regionId] = [
+                    'id' => (int) $regionId,
+                    'code' => (string) ($regionData['code'] ?? ''),
+                    'name' => (string) ($regionData['name'] ?? ''),
+                ];
+            }
+        }
+        $regionJsonForUpdater = json_encode($base) ?: '{}';
+    }
+} catch (\Throwable) {
+    $regionJsonForUpdater = '{}';
+}
+?>
+<fieldset class="fieldset venbhas-giftcard-fields" style="margin-top: 12px;">
+   
+    <div class="field required">
+        <label class="label">
+            <span><?= $escaper->escapeHtml(__('Amount')) ?></span>
+            <?php
+            $minFormatted = $block->formatAmount($block->getMinAmount());
+            $maxFormatted = $block->formatAmount($block->getMaxAmount());
+            ?>
+        </label>
+        
+        <div class="control venbhas-giftcard-amounts">
+            <input type="hidden"
+                   name="venbhas_giftcard[amount]"
+                   id="venbhas_giftcard_amount"
+                   value="<?= $escaper->escapeHtmlAttr($defaultAmount) ?>"
+                   class="venbhas-giftcard-amount-input"/>
+            <div class="venbhas-giftcard-preset-buttons"
+                 style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+                <?php foreach ($presets as $amt): ?>
+                    <?php $isActive = (float) $amt === (float) $defaultAmount; ?>
+                    <button type="button"
+                            class="action secondary venbhas-giftcard-preset<?= $isActive ? ' active' : '' ?>"
+                            data-amount="<?= $escaper->escapeHtmlAttr($amt) ?>"
+                            data-formatted="<?= $escaper->escapeHtmlAttr($block->formatAmount((float)$amt)) ?>">
+                        <?= $escaper->escapeHtml($block->formatAmount((float)$amt)) ?>
+                    </button>
+                <?php endforeach; ?>
+                <?php if ($allowCustom): ?>
+                    <button type="button" class="action secondary venbhas-giftcard-other" data-mode="other">
+                        <?= $escaper->escapeHtml(__('Other amount')) ?>
+                    </button>
+                <?php endif; ?>
+            </div>
+            <div class="venbhas-giftcard-other-wrap" style="<?= $showOtherOnly ? '' : 'display:none;' ?>">
+                <input type="number"
+                       class="input-text venbhas-giftcard-other-input"
+                       min="<?= $escaper->escapeHtmlAttr($block->getMinAmount()) ?>"
+                       max="<?= $escaper->escapeHtmlAttr($block->getMaxAmount()) ?>"
+                       step="0.01"
+                       placeholder="<?= $escaper->escapeHtmlAttr(__('Enter amount')) ?>"/>
+                <br><br><span class="note">
+                <?= $escaper->escapeHtml(__('from: %1  to: %2', $minFormatted, $maxFormatted)) ?>
+            </span>
+            </div>
+        </div>
+    </div>
+    <div class="field required">
+        <label class="label" for="venbhas_giftcard_recipient_name">
+            <span><?= $escaper->escapeHtml(__('Recipient Name')) ?></span>
+        </label>
+        <div class="control">
+            <input type="text"
+                   name="venbhas_giftcard[recipient_name]"
+                   id="venbhas_giftcard_recipient_name"
+                   class="input-text"
+                   required />
+        </div>
+    </div>
+
+    <div class="field required">
+        <label class="label" for="venbhas_giftcard_recipient_email">
+            <span><?= $escaper->escapeHtml(__('Recipient Email')) ?></span>
+        </label>
+        <div class="control">
+            <input type="email"
+                   name="venbhas_giftcard[recipient_email]"
+                   id="venbhas_giftcard_recipient_email"
+                   class="input-text"
+                   required />
+        </div>
+    </div>
+
+    <div class="field required">
+        <label class="label" for="venbhas_giftcard_sender_name">
+            <span><?= $escaper->escapeHtml(__('Sender Name')) ?></span>
+        </label>
+        <div class="control">
+            <input type="text"
+                   name="venbhas_giftcard[sender_name]"
+                   id="venbhas_giftcard_sender_name"
+                   class="input-text"
+                   required />
+        </div>
+    </div>
+
+    <div class="field required">
+        <label class="label" for="venbhas_giftcard_sender_email">
+            <span><?= $escaper->escapeHtml(__('Sender Email')) ?></span>
+        </label>
+        <div class="control">
+            <input type="email"
+                   name="venbhas_giftcard[sender_email]"
+                   id="venbhas_giftcard_sender_email"
+                   class="input-text"
+                   required />
+        </div>
+    </div>
+
+    <?php if ($allowMessage): ?>
+    <div class="field required">
+        <label class="label" for="venbhas_giftcard_message">
+            <span><?= $escaper->escapeHtml(__('Message')) ?></span>
+        </label>
+        <div class="control">
+            <textarea name="venbhas_giftcard[message]"
+                      id="venbhas_giftcard_message"
+                      class="input-text"
+                      rows="4"
+                      required></textarea>
+        </div>
+    </div>
+    <?php else: ?>
+        <input type="hidden" name="venbhas_giftcard[message]" value="" />
+    <?php endif; ?>
+    <?php if ($deliveryType === $deliveryBoth): ?>
+        <div class="field required">
+            <label class="label"><span><?= $escaper->escapeHtml(__('Delivery')) ?></span></label>
+            <div class="control">
+                <div class="field choice">
+                    <input type="radio"
+                           name="venbhas_giftcard[delivery_type]"
+                           id="venbhas_giftcard_delivery_virtual"
+                           value="<?= $escaper->escapeHtmlAttr($deliveryVirtual) ?>"
+                           checked="checked"/>
+                    <label for="venbhas_giftcard_delivery_virtual" class="label">
+                        <span><?= $escaper->escapeHtml(__('Email / virtual delivery')) ?></span>
+                    </label>
+                </div>
+                <div class="field choice">
+                    <input type="radio"
+                           name="venbhas_giftcard[delivery_type]"
+                           id="venbhas_giftcard_delivery_physical"
+                           value="<?= $escaper->escapeHtmlAttr($deliveryPhysical) ?>"/>
+                    <label for="venbhas_giftcard_delivery_physical" class="label">
+                        <span><?= $escaper->escapeHtml(__('Physical delivery (shipping address required)')) ?></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    <?php else:
+        $singleDeliveryId = $deliveryType === $deliveryPhysical
+            ? 'venbhas_giftcard_delivery_physical'
+            : 'venbhas_giftcard_delivery_virtual';
+        $singleDeliveryLabel = $deliveryType === $deliveryPhysical
+            ? __('Physical delivery (shipping address required)')
+            : __('Email / virtual delivery');
+        ?>
+        <div class="field">
+            <label class="label"><span><?= $escaper->escapeHtml(__('Delivery')) ?></span></label>
+            <div class="control">
+                <div class="field choice">
+                    <input type="radio"
+                           name="venbhas_giftcard[delivery_type]"
+                           id="<?= $escaper->escapeHtmlAttr($singleDeliveryId) ?>"
+                           value="<?= $escaper->escapeHtmlAttr($deliveryType) ?>"
+                           checked="checked"/>
+                    <label for="<?= $escaper->escapeHtmlAttr($singleDeliveryId) ?>" class="label">
+                        <span><?= $escaper->escapeHtml($singleDeliveryLabel) ?></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php if ($offerPhysicalAddress): ?>
+    <fieldset class="fieldset venbhas-giftcard-delivery-address"
+              id="venbhas_giftcard_address_wrap"
+              style="<?= $addressVisibleInitially ? '' : 'display:none;' ?>">
+        <legend class="legend">
+            <span><?= $escaper->escapeHtml(__('Physical delivery address')) ?></span>
+        </legend>
+        <div class="field required venbhas-gc-addr-field">
+            <label class="label" for="venbhas_giftcard_delivery_street">
+                <span><?= $escaper->escapeHtml(__('Street address')) ?></span>
+            </label>
+            <div class="control">
+                <input type="text"
+                       name="venbhas_giftcard[delivery_street]"
+                       id="venbhas_giftcard_delivery_street"
+                       class="input-text venbhas-gc-addr-input"
+                       autocomplete="street-address"
+                       <?= $addressVisibleInitially ? 'required' : '' ?>
+                       <?= $addressVisibleInitially ? '' : 'disabled' ?> />
+            </div>
+        </div>
+        <div class="field required venbhas-gc-addr-field">
+            <label class="label" for="venbhas_giftcard_delivery_city">
+                <span><?= $escaper->escapeHtml(__('City')) ?></span>
+            </label>
+            <div class="control">
+                <input type="text"
+                       name="venbhas_giftcard[delivery_city]"
+                       id="venbhas_giftcard_delivery_city"
+                       class="input-text venbhas-gc-addr-input"
+                       autocomplete="address-level2"
+                       <?= $addressVisibleInitially ? 'required' : '' ?>
+                       <?= $addressVisibleInitially ? '' : 'disabled' ?> />
+            </div>
+        </div>
+        <div class="field required venbhas-gc-addr-field">
+            <label class="label" for="venbhas_giftcard_delivery_postcode">
+                <span><?= $escaper->escapeHtml(__('ZIP / Postal code')) ?></span>
+            </label>
+            <div class="control">
+                <input type="text"
+                       name="venbhas_giftcard[delivery_postcode]"
+                       id="venbhas_giftcard_delivery_postcode"
+                       class="input-text venbhas-gc-addr-input"
+                       autocomplete="postal-code"
+                       <?= $addressVisibleInitially ? 'required' : '' ?>
+                       <?= $addressVisibleInitially ? '' : 'disabled' ?> />
+            </div>
+        </div>
+        <div class="field required venbhas-gc-addr-field">
+            <label class="label" for="venbhas_giftcard_delivery_country">
+                <span><?= $escaper->escapeHtml(__('Country')) ?></span>
+            </label>
+            <div class="control">
+                <?php
+                $countryOptions = $directoryBlock->getCountryCollection()->toOptionArray();
+                $defaultCountryId = $directoryBlock->getCountryId();
+                ?>
+                <select name="venbhas_giftcard[delivery_country_id]"
+                        id="venbhas_giftcard_delivery_country_id"
+                        class="select venbhas-gc-addr-input"
+                        autocomplete="country"
+                        <?= $addressVisibleInitially ? 'required' : '' ?>
+                        <?= $addressVisibleInitially ? '' : 'disabled' ?>>
+                    <?php foreach ($countryOptions as $opt): ?>
+                        <?php
+                        $value = (string)($opt['value'] ?? '');
+                        $label = (string)($opt['label'] ?? '');
+                        $isSelected = $value !== '' && $value === (string)$defaultCountryId;
+                        ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($value) ?>" <?= $isSelected ? 'selected' : '' ?>>
+                            <?= $escaper->escapeHtml($label) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="hidden"
+                       name="venbhas_giftcard[delivery_country]"
+                       id="venbhas_giftcard_delivery_country"
+                       value=""
+                       class="venbhas-gc-addr-input"
+                       <?= $addressVisibleInitially ? '' : 'disabled' ?> />
+            </div>
+        </div>
+        <div class="field required venbhas-gc-addr-field">
+            <label class="label" for="venbhas_giftcard_delivery_region">
+                <span><?= $escaper->escapeHtml(__('State / Province')) ?></span>
+            </label>
+            <div class="control">
+                <select name="venbhas_giftcard[delivery_region_id]"
+                        id="venbhas_giftcard_delivery_region_id"
+                        class="select venbhas-gc-addr-input"
+                        <?= $addressVisibleInitially ? 'required' : '' ?>
+                        <?= $addressVisibleInitially ? '' : 'disabled' ?>>
+                    <option value="">
+                        <?= $escaper->escapeHtml(__('Please select a region, state or province.')) ?>
+                    </option>
+                </select>
+                <input type="text"
+                       name="venbhas_giftcard[delivery_region]"
+                       id="venbhas_giftcard_delivery_region"
+                       class="input-text venbhas-gc-addr-input"
+                       autocomplete="address-level1"
+                       <?= $addressVisibleInitially ? 'required' : '' ?>
+                       <?= $addressVisibleInitially ? '' : 'disabled' ?> />
+            </div>
+        </div>
+    </fieldset>
+    <?php endif; ?>
+</fieldset>
+
+<script>
+require(['jquery', 'jquery-ui-modules/widget', 'Magento_Directory/js/region-updater'], function ($) {
+    'use strict';
+    var $form = $('#product_addtocart_form');
+    if (!$form.length) {
+        return;
+    }
+    var $hidden = $('#venbhas_giftcard_amount');
+    var $wrap = $form.find('.venbhas-giftcard-amounts');
+    if (!$wrap.length) {
+        return;
+    }
+    var $otherWrap = $wrap.find('.venbhas-giftcard-other-wrap');
+    var $otherInput = $wrap.find('.venbhas-giftcard-other-input');
+    var min = <?= (float)$block->getMinAmount() ?>;
+    var max = <?= (float)$block->getMaxAmount() ?>;
+    var allowCustom = <?= $allowCustom ? 'true' : 'false' ?>;
+    var currencySymbol = '<?= $escaper->escapeJs($block->getCurrencySymbol()) ?>';
+
+    function formatFallback(num) {
+        if (isNaN(num)) {
+            return '';
+        }
+        return currencySymbol + Number(num).toFixed(2);
+    }
+
+    function updatePdpPriceDisplay(raw, formatted) {
+        // Update Magento PDP price markup (your theme uses the standard priceBox structure).
+        var $priceBox = $form.closest('.product-info-main').find('[data-role=priceBox]').first();
+        if (!$priceBox.length) {
+            $priceBox = $form.find('[data-role=priceBox]').first();
+        }
+        if (!$priceBox.length) {
+            return;
+        }
+
+        var productId = String($priceBox.data('product-id') || '');
+        var $wrapper = productId
+            ? $('#product-price-' + productId)
+            : $priceBox.find('[data-price-type="finalPrice"]').first();
+        if (!$wrapper.length) {
+            $wrapper = $priceBox.find('[data-price-type="finalPrice"]').first();
+        }
+
+        // Text shown to customer.
+        var $priceText = $wrapper.find('.price').first();
+        if ($priceText.length) {
+            $priceText.text(formatted);
+        }
+
+        // Keep underlying amount in sync.
+        $wrapper.attr('data-price-amount', String(raw));
+        $priceBox.find('meta[itemprop="price"]').attr('content', String(raw));
+    }
+
+    function setAmount(num, formatted) {
+        if (isNaN(num) || num < min || num > max) {
+            return;
+        }
+        $hidden.val(num);
+        updatePdpPriceDisplay(num, formatted);
+    }
+
+    $wrap.on('click', '.venbhas-giftcard-preset', function () {
+        $wrap.find('.venbhas-giftcard-preset').removeClass('active');
+        $(this).addClass('active');
+        $otherWrap.hide();
+        var amt = parseFloat($(this).data('amount'));
+        var formatted = $(this).data('formatted') || String(amt);
+        setAmount(amt, formatted);
+    });
+
+    $wrap.on('click', '.venbhas-giftcard-other', function () {
+        if (!allowCustom) {
+            return;
+        }
+        $wrap.find('.venbhas-giftcard-preset').removeClass('active');
+        $otherWrap.show();
+        $otherInput.trigger('focus');
+    });
+
+    $otherInput.on('change input', function () {
+        var v = parseFloat($(this).val());
+        if (isNaN(v)) {
+            return;
+        }
+        setAmount(v, formatFallback(v));
+    });
+
+    var offerAddress = <?= $offerPhysicalAddress ? 'true' : 'false' ?>;
+    var deliveryBothMode = <?= ($deliveryType === $deliveryBoth) ? 'true' : 'false' ?>;
+    var physicalDeliveryValue = '<?= $escaper->escapeJs($deliveryPhysical) ?>';
+
+    function setGiftcardAddressVisible(show) {
+        var $addr = $('#venbhas_giftcard_address_wrap');
+        if (!$addr.length) {
+            return;
+        }
+        var $inputs = $addr.find('.venbhas-gc-addr-input');
+        if (show) {
+            $addr.show();
+            $inputs.prop('disabled', false).prop('required', true);
+        } else {
+            $addr.hide();
+            $inputs.prop('disabled', true).prop('required', false).val('');
+        }
+    }
+
+    var virtualDeliveryLabel = '<?= $escaper->escapeJs(__('Email / virtual delivery')) ?>';
+    var physicalDeliveryLabel = '<?= $escaper->escapeJs(__('Physical delivery')) ?>';
+    var selectedDeliveryPrefix = '<?= $escaper->escapeJs(__('Selected:')) ?> ';
+
+    function updateDeliverySelectionLabel() {
+        var $txt = $('#venbhas_giftcard_delivery_status_text');
+        if (!$txt.length || !deliveryBothMode) {
+            return;
+        }
+        var $checked = $form.find('input[name="venbhas_giftcard[delivery_type]"]:checked');
+        var val = $checked.length ? String($checked.val()) : '';
+        var label = val === physicalDeliveryValue ? physicalDeliveryLabel : virtualDeliveryLabel;
+        $txt.text(selectedDeliveryPrefix + label);
+    }
+
+    if (offerAddress && deliveryBothMode) {
+        $form.on('change', 'input[name="venbhas_giftcard[delivery_type]"]', function () {
+            setGiftcardAddressVisible($(this).val() === physicalDeliveryValue);
+            updateDeliverySelectionLabel();
+        });
+        var $checked = $form.find('input[name="venbhas_giftcard[delivery_type]"]:checked');
+        setGiftcardAddressVisible($checked.length && $checked.val() === physicalDeliveryValue);
+        updateDeliverySelectionLabel();
+    }
+
+    // Country/Region dropdowns like checkout (but keep text fields for existing backend storage)
+    var $countryId = $('#venbhas_giftcard_delivery_country_id');
+    var $countryText = $('#venbhas_giftcard_delivery_country');
+    var $regionId = $('#venbhas_giftcard_delivery_region_id');
+    var $regionText = $('#venbhas_giftcard_delivery_region');
+
+    function syncCountryText() {
+        if (!$countryId.length || !$countryText.length) {
+            return;
+        }
+        var t = $countryId.find('option:selected').text() || '';
+        $countryText.val($.trim(t));
+    }
+
+    function syncRegionTextFromSelect() {
+        if (!$regionId.length || !$regionText.length) {
+            return;
+        }
+        var t = $regionId.find('option:selected').text() || '';
+        t = $.trim(t);
+        // Skip placeholder option text
+        if ($regionId.val() === '' || t.toLowerCase().indexOf('please select') === 0) {
+            return;
+        }
+        $regionText.val(t);
+    }
+
+    if ($countryId.length) {
+        // Populate regions based on selected country
+        $countryId.directoryRegionUpdater({
+            regionListId: '#venbhas_giftcard_delivery_region_id',
+            regionInputId: '#venbhas_giftcard_delivery_region',
+            postcodeId: '#venbhas_giftcard_delivery_postcode',
+            form: '#product_addtocart_form',
+            regionJson: <?= /* @noEscape */ $regionJsonForUpdater ?>,
+            <?php
+            $optionalZip = $directoryHelper
+                ? $directoryHelper->getCountriesWithOptionalZip(true)
+                : '[]';
+            ?>
+            countriesWithOptionalZip: <?= /* @noEscape */ $optionalZip ?>,
+            defaultRegion: '',
+            optionalRegionAllowed: true
+        });
+
+        $countryId.on('change', function () {
+            syncCountryText();
+            // Reset region text when country changes; region-updater will toggle/select as needed
+            if ($regionText.length) {
+                $regionText.val('');
+            }
+        });
+        syncCountryText();
+        // Ensure region dropdown is populated for the initially selected country
+        $countryId.trigger('change');
+    }
+
+    if ($regionId.length) {
+        $regionId.on('change', syncRegionTextFromSelect);
+    }
+});
+</script>

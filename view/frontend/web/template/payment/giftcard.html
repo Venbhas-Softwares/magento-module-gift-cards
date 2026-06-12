@@ -1,0 +1,82 @@
+<!-- ko if: canShowSection() -->
+<div class="payment-option _collapsible opc-payment-additional venbhas-giftcard"
+     data-bind="mageInit: {'collapsible':{'openedState': '_active'}}">
+    <div class="payment-option-title field choice" data-role="title">
+        <span class="action action-toggle" id="block-giftcard-heading" role="heading" aria-level="2">
+            <!-- ko i18n: 'Apply Gift Card'--><!-- /ko -->
+        </span>
+    </div>
+    <div class="payment-option-content" data-role="content">
+        <!-- ko foreach: getRegion('messages') -->
+        <!-- ko template: getTemplate() --><!-- /ko -->
+        <!--/ko-->
+
+        <div class="field" style="margin-bottom: 10px;">
+            <strong data-bind="i18n: 'Available Gift Amount:'"></strong>
+            <span data-bind="text: getFormattedWalletBalance()"></span>
+        </div>
+
+        <!-- ko if: isApplied() -->
+        <div class="field" style="margin-bottom: 10px;">
+            <strong data-bind="i18n: 'Applied Gift Amount:'"></strong>
+            <span data-bind="text: getFormattedAppliedAmount()"></span>
+        </div>
+        <!-- /ko -->
+
+        <form class="form form-giftcard" id="giftcard-form">
+            <div class="payment-option-inner">
+                <div class="field">
+                    <label class="label" for="giftcard-amount">
+                        <span data-bind="i18n: 'Enter gift amount to apply'"></span>
+                    </label>
+                    <div class="control">
+                        <input class="input-text"
+                               type="text"
+                               id="giftcard-amount"
+                               name="amount"
+                               data-validate="{'required-entry':true}"
+                               data-bind="value: applyAmount, attr:{placeholder: $t('Enter amount'), disabled: isApplied()}">
+                    </div>
+                </div>
+            </div>
+            <div class="actions-toolbar">
+                <div class="primary">
+                    <!-- ko ifnot: isApplied() -->
+                    <button class="action action-apply" type="button" data-bind="click: apply">
+                        <span><!-- ko i18n: 'Apply'--><!-- /ko --></span>
+                    </button>
+                    <!-- /ko -->
+                    <!-- ko if: showAddButton() -->
+                    <button type="button"
+                            class="action secondary"
+                            style="margin-left: 10px;"
+                            data-bind="click: openAddGiftcard">
+                        <span data-bind="i18n: 'Add a new gift card'"></span>
+                    </button>
+                    <!-- /ko -->
+                </div>
+                <!-- ko if: isApplied() -->
+                <div class="secondary" style="margin-left: 10px;">
+                    <button class="action action-remove" type="button" data-bind="click: remove">
+                        <span><!-- ko i18n: 'Remove'--><!-- /ko --></span>
+                    </button>
+                </div>
+                <!-- /ko -->
+            </div>
+        </form>
+
+        <!-- Hidden modal used for checkout add-giftcard -->
+        <div id="venbhas-add-giftcard-modal-checkout" style="display:none">
+            <div class="message message-error venbhas-add-giftcard-msg" style="display:none; margin-bottom: 10px;"></div>
+            <div class="field">
+                <label for="venbhas-giftcard-code-checkout" class="label">
+                    <span data-bind="i18n: 'Gift card code'"></span>
+                </label>
+                <div class="control">
+                    <input type="text" id="venbhas-giftcard-code-checkout" class="input-text">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /ko -->

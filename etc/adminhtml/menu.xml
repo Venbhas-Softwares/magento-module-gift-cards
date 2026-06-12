@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Venbhas_GiftCard::root"
+             title="Gift Cards"
+             module="Venbhas_GiftCard"
+             sortOrder="20"
+             resource="Venbhas_GiftCard::root"/>
+
+        <add id="Venbhas_GiftCard::codes"
+             title="Gift Card Codes"
+             module="Venbhas_GiftCard"
+             sortOrder="10"
+             parent="Venbhas_GiftCard::root"
+             action="venbhas_giftcard/code/index"
+             resource="Venbhas_GiftCard::codes"/>
+
+        <add id="Venbhas_GiftCard::transactions"
+             title="Gift Card Transactions"
+             module="Venbhas_GiftCard"
+             sortOrder="20"
+             parent="Venbhas_GiftCard::root"
+             action="venbhas_giftcard/transaction/index"
+             resource="Venbhas_GiftCard::transactions"/>
+    </menu>
+</config>
+
