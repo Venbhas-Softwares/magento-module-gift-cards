@@ -13,7 +13,7 @@ Gift Card product type module for Magento 2.
 - Customer wallet: redeem codes to account balance, apply wallet amount at checkout
 - Balance management and transaction history
 - Admin order creation support with full configuration popup
-- Hyva compatibility for PDP and checkout
+- Luma/Blank storefront included; optional `Venbhas_GiftCardHyva` package for Hyvä account pages
 
 ## Admin Order Creation
 
@@ -93,6 +93,29 @@ app/code/Venbhas/GiftCard/
     └── templates/catalog/product/composite/fieldset/giftcard.phtml
 ```
 
+
+## Installation
+
+**Luma / Blank theme:**
+```bash
+bin/magento module:enable Venbhas_GiftCard
+bin/magento setup:upgrade
+bin/magento cache:clean
+```
+
+**Hyvä theme** (requires the base module plus the Hyvä integration package):
+```bash
+bin/magento module:enable Venbhas_GiftCard Venbhas_GiftCardHyva
+bin/magento setup:upgrade
+bin/magento cache:clean
+```
+
+## Module packages
+
+| Package | Module | Purpose |
+|---------|--------|---------|
+| `venbhas/module-gift-card` | `Venbhas_GiftCard` | Core logic, admin, Luma PDP/checkout, Luma account pages |
+| `venbhas/module-gift-card-hyva` | `Venbhas_GiftCardHyva` | Hyvä account transaction templates and pager |
 
 ## Requirements
 

@@ -1,6 +1,6 @@
 {
     "name": "venbhas/module-gift-card",
-    "description": "Magento 2 GiftCard module by Venbhas.",
+    "description": "Magento 2 Gift Card module (Luma/Blank). Optional venbhas/module-gift-card-hyva for Hyvä storefronts.",
     "type": "magento2-module",
     "version": "1.0.0",
     "license": [

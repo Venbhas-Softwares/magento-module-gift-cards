@@ -101,11 +101,21 @@ class GiftCardTransactions extends Template
             return '';
         }
 
-        return (string) $this->getLayout()
-            ->createBlock(Template::class)
-            ->setTemplate('Venbhas_GiftCard::account/transactions-pager.phtml')
-            ->setData('account_block', $this)
-            ->toHtml();
+        $template = (string) $this->getData('pager_template');
+        if ($template !== '') {
+            return (string) $this->getLayout()
+                ->createBlock(Template::class)
+                ->setTemplate($template)
+                ->setData('account_block', $this)
+                ->toHtml();
+        }
+
+        $pager = $this->getLayout()->createBlock(\Magento\Theme\Block\Html\Pager::class);
+        $pager->setAvailableLimit(self::PAGE_LIMITS);
+        $pager->setShowPerPage($this->showPagerLimitOptions());
+        $pager->setCollection($this->getTransactionsCollection());
+
+        return (string) $pager->toHtml();
     }
 
     /**
